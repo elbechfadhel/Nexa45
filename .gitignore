@@ -1,0 +1,19 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.env
+node_modules/
+dist/
+
+# Rapports et sorties de travail (copie manuelle)
+temp/
+
+# Fichiers déposés par les fournisseurs (FileStore local, V2c.1)
+var/
+
+# Design pack Nexa45 : partagé en zip seulement, jamais dans git (décision du 2026-10-19)
+/design-pack/
+/design-pack.zip

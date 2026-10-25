@@ -1,0 +1,184 @@
+# Tableau de source FICHIER du domaine PARTNER : colonnes qu'un fichier de clients / fournisseurs (export
+# d'un logiciel, liste tenue à la main) peut apporter, et ce qu'elles veulent dire. Aucun système ici.
+#
+# Les alias sont comparés après normalisation (casse, ponctuation, espaces) : « Kd-Nr. » → « kd nr »,
+# « USt-IdNr. » → « ust idnr », « E-Mail » → « e mail ». Ce tableau est HORS des vocabulaires des systèmes :
+# le modifier ne change aucune analyse sémantique (Odoo, Lexware…). Toute modification : incrémenter
+# table_version.
+#
+# Listes de référence (jamais une valeur devinée) :
+#   legal_forms   forme juridique en fin de nom → personne morale (le type d'adressat se déduit) ;
+#   countries     noms de pays (allemand, anglais, français) et codes → ISO 3166-1 alpha-2 ;
+#   postal_codes  motif du code postal par pays (un code allemand de 4 chiffres a perdu son zéro dans Excel) ;
+#   vat_ids       motif du numéro de TVA intracommunautaire par pays (préfixe compris, sans espaces).
+
+table_version: "1.0.0"
+domain: PARTNER
+data_types: ["Customers & suppliers", "Customers", "Suppliers"]
+home_country: DE
+
+columns:
+  - key: customer_number
+    label: Customer number
+    description: Number of the customer in the source (Kundennummer).
+    aliases: [kd nr, kdnr, kd nummer, kunden nr, kundennr, kundennummer, debitor nr, debitorennummer,
+              customer no, customer number, customer id, client no, client number, numéro client]
+  - key: supplier_number
+    label: Supplier number
+    description: Number of the supplier in the source (Lieferantennummer).
+    aliases: [lief nr, lieferanten nr, lieferantennummer, kreditor nr, kreditorennummer, supplier no,
+              supplier number, vendor no, vendor number, numéro fournisseur]
+  - key: name
+    label: Name
+    description: Name of the company or of the person.
+    required: true
+    aliases: [name, firma, firmenname, firmierung, unternehmen, kunde, kundenname, lieferant, company,
+              company name, customer name, supplier name, raison sociale, nom]
+  - key: contact_person
+    label: Contact person
+    group: contact
+    aliases: [ansprechpartner, ansprechperson, kontaktperson, contact person, contact, interlocuteur]
+  - key: street
+    label: Street
+    group: address
+    aliases: [straße, strasse, str, anschrift, adresse, street, address, rue]
+  - key: postal_code
+    label: Postal code
+    group: address
+    aliases: [plz, postleitzahl, zip, zip code, postal code, postcode, code postal]
+  - key: city
+    label: City
+    group: address
+    aliases: [ort, stadt, wohnort, city, town, ville]
+  - key: country
+    label: Country
+    group: address
+    aliases: [land, staat, country, pays, länderkennzeichen]
+  - key: vat_id
+    label: VAT ID
+    group: tax
+    aliases: [ust idnr, ust id, ustid, ustidnr, ust id nr, umsatzsteuer id, vat id, vat number,
+              vat no, n tva, numéro de tva]
+  - key: tax_number
+    label: Tax number
+    group: tax
+    aliases: [steuernummer, steuer nr, st nr, tax number]
+  - key: email
+    label: Email
+    group: contact
+    aliases: [e mail, email, mail, e mail adresse, email address, courriel]
+  - key: phone
+    label: Phone
+    group: contact
+    aliases: [telefon, tel, telefonnummer, phone, telephone, téléphone]
+  - key: mobile
+    label: Mobile
+    group: contact
+    aliases: [mobil, mobiltelefon, handy, mobile, portable]
+  - key: fax
+    label: Fax
+    group: contact
+    aliases: [fax, telefax]
+  - key: website
+    label: Website
+    group: contact
+    aliases: [homepage, internet, webseite, website, web, site web]
+  - key: iban
+    label: IBAN
+    group: banking
+    aliases: [iban, bankverbindung, kontonummer iban]
+  - key: bic
+    label: BIC
+    group: banking
+    aliases: [bic, swift, swift code]
+  - key: bank_name
+    label: Bank name
+    group: banking
+    aliases: [bank, kreditinstitut, bankname, bank name, banque]
+
+legal_forms: [GmbH, mbH, gGmbH, AG, KG, KGaA, OHG, GbR, UG, e.K., e.Kfm., e.Kfr., e.V., eG, PartG, PartGmbB,
+              SE, Stiftung, GmbH & Co. KG, AG & Co. KG, Ltd, Ltd., Limited, LLC, Inc, Inc., Corp, plc, SARL,
+              SAS, SASU, SA, EURL, SNC, BV, B.V., NV, N.V., S.r.l., S.p.A., Sp. z o.o., AB, ApS, A/S, Oy]
+
+countries:
+  Deutschland: DE
+  Germany: DE
+  Allemagne: DE
+  D: DE
+  DE: DE
+  Österreich: AT
+  Oesterreich: AT
+  Austria: AT
+  Autriche: AT
+  A: AT
+  AT: AT
+  Schweiz: CH
+  Switzerland: CH
+  Suisse: CH
+  CH: CH
+  Frankreich: FR
+  France: FR
+  F: FR
+  FR: FR
+  Italien: IT
+  Italy: IT
+  Italie: IT
+  IT: IT
+  Spanien: ES
+  Spain: ES
+  Espagne: ES
+  ES: ES
+  Niederlande: NL
+  Netherlands: NL
+  Pays-Bas: NL
+  NL: NL
+  Belgien: BE
+  Belgium: BE
+  Belgique: BE
+  BE: BE
+  Luxemburg: LU
+  Luxembourg: LU
+  LU: LU
+  Polen: PL
+  Poland: PL
+  Pologne: PL
+  PL: PL
+  Tschechien: CZ
+  Czechia: CZ
+  CZ: CZ
+  Dänemark: DK
+  Denmark: DK
+  DK: DK
+  Vereinigtes Königreich: GB
+  United Kingdom: GB
+  Großbritannien: GB
+  GB: GB
+  UK: GB
+
+postal_codes:
+  DE: '^\d{5}$'
+  AT: '^\d{4}$'
+  CH: '^\d{4}$'
+  FR: '^\d{5}$'
+  IT: '^\d{5}$'
+  ES: '^\d{5}$'
+  NL: '^\d{4} ?[A-Z]{2}$'
+  BE: '^\d{4}$'
+  LU: '^\d{4}$'
+  PL: '^\d{2}-\d{3}$'
+  CZ: '^\d{3} ?\d{2}$'
+  DK: '^\d{4}$'
+
+# motifs officiels des numéros de TVA intracommunautaires (forme seulement, pas l'existence)
+vat_ids:
+  DE: '^DE\d{9}$'
+  AT: '^ATU\d{8}$'
+  FR: '^FR[0-9A-Z]{2}\d{9}$'
+  IT: '^IT\d{11}$'
+  ES: '^ES[0-9A-Z]\d{7}[0-9A-Z]$'
+  NL: '^NL\d{9}B\d{2}$'
+  BE: '^BE[01]\d{9}$'
+  LU: '^LU\d{8}$'
+  PL: '^PL\d{10}$'
+  CZ: '^CZ\d{8,10}$'
+  DK: '^DK\d{8}$'

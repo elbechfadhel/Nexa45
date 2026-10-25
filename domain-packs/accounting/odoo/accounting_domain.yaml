@@ -1,0 +1,163 @@
+# Définition standard du domaine ACCOUNTING pour Odoo (pièces comptables : factures et avoirs).
+#
+# Même moteur et mêmes règles d'écriture que les packs catalog / partner : ce fichier DÉCLARE (union des versions
+# 17 / 18 / 19), le service RÉSOUT contre un snapshot. Les VALEURS propres à Odoo (move_type, state, display_type…)
+# sont traduites en valeurs canoniques ici (`value_maps`), jamais dans le Core. Le partenaire de la pièce est lu
+# comme une référence (res.partner relève du domaine PARTNER, hors du scope de ce pack).
+# Toute modification du contenu (ou du vocabulaire accounting/vocabulary.yaml) impose d'incrémenter
+# definition_version.
+
+domain: ACCOUNTING
+system: odoo
+definition_version: "1.0.0"
+versions: ["17", "18", "19"]
+
+entities:
+  - {technical_name: account.move, role: DOCUMENT}
+  - {technical_name: account.move.line, role: DOCUMENT_LINE}
+  - {technical_name: account.account, role: LEDGER_ACCOUNT}
+  - {technical_name: account.tax, role: TAX}
+  - {technical_name: res.currency, role: CURRENCY}
+
+fields:
+  # ------------------------------------------------------------ account.move (DOCUMENT)
+  - {entity: account.move, field: name, group: identity, key: document_number}
+  - {entity: account.move, field: ref, group: identity, key: document_reference}
+  - {entity: account.move, field: move_type, group: identity, key: document_type}
+  - {entity: account.move, field: state, group: identity, key: document_status}
+  - {entity: account.move, field: commercial_partner_id, group: identity, key: partner}
+  - {entity: account.move, field: company_id, group: identity, key: company}
+  - {entity: account.move, field: narration, group: description, key: description}
+  - {entity: account.move, field: date, group: dates, key: accounting_date}
+  - {entity: account.move, field: invoice_date, group: dates, key: document_date}
+  - {entity: account.move, field: invoice_date_due, group: dates, key: due_date}
+  - {entity: account.move, field: currency_id, group: amounts, key: currency}
+  - {entity: account.move, field: amount_total, group: amounts, key: total_amount}
+  - {entity: account.move, field: amount_tax, group: amounts, key: tax_amount}
+  - {entity: account.move, field: line_ids, group: amounts, key: lines}
+
+  # ------------------------------------------------------- account.move.line (DOCUMENT_LINE)
+  - {entity: account.move.line, field: move_id, group: identity, key: document}
+  - {entity: account.move.line, field: display_type, group: classification, key: line_kind}
+  - {entity: account.move.line, field: name, group: description, key: line_description}
+  - {entity: account.move.line, field: account_id, group: ledger, key: ledger_account}
+  - {entity: account.move.line, field: balance, group: amounts, key: line_amount}
+  - {entity: account.move.line, field: amount_currency, group: amounts, key: line_amount_currency}
+  - {entity: account.move.line, field: price_total, group: amounts, key: line_gross_amount}
+  - {entity: account.move.line, field: currency_id, group: amounts, key: currency}
+  - {entity: account.move.line, field: tax_ids, group: tax, key: line_taxes}
+  - {entity: account.move.line, field: tax_line_id, group: tax, key: line_tax}
+
+  # ------------------------------------------------------ account.account (LEDGER_ACCOUNT)
+  - {entity: account.account, field: code, group: ledger, key: account_code}
+  - {entity: account.account, field: name, group: ledger, key: account_name}
+
+  # -------------------------------------------------------------------- account.tax (TAX)
+  - {entity: account.tax, field: name, group: tax, key: tax_name}
+  - {entity: account.tax, field: amount, group: tax, key: tax_rate}
+  - {entity: account.tax, field: amount_type, group: tax, key: tax_computation}
+  - {entity: account.tax, field: type_tax_use, group: tax, key: tax_usage}
+  - {entity: account.tax, field: price_include, group: tax, key: tax_price_included}
+
+  # ------------------------------------------------------------- res.currency (CURRENCY)
+  - {entity: res.currency, field: name, group: amounts, key: currency_code}
+
+# Valeurs Odoo → valeurs canoniques (vocabulaire `values`). Absente de `values` et de `ignore` = non prise en charge :
+# signalée à la lecture, jamais devinée (ex. lignes cogs / discount / epd, taxe « division »).
+value_maps:
+  - entity: account.move
+    field: move_type
+    key: document_type
+    values: {out_invoice: CUSTOMER_INVOICE, out_refund: CUSTOMER_CREDIT_NOTE,
+             in_invoice: VENDOR_BILL, in_refund: VENDOR_CREDIT_NOTE}
+    ignore: [entry, out_receipt, in_receipt]          # hors du domaine V1 : non lues
+  - entity: account.move
+    field: state
+    key: document_status
+    values: {posted: POSTED, draft: DRAFT, cancel: CANCELLED}
+  - entity: account.move.line
+    field: display_type
+    key: line_kind
+    values: {product: ITEM, tax: TAX, payment_term: OPEN_ITEM, rounding: ROUNDING}
+    ignore: [line_section, line_subsection, line_note]  # lignes de mise en page, sans montant
+  - entity: account.tax
+    field: amount_type
+    key: tax_computation
+    values: {percent: PERCENT, fixed: FIXED, group: GROUP}
+  - entity: account.tax
+    field: type_tax_use
+    key: tax_usage
+    values: {sale: SALE, purchase: PURCHASE, none: NONE}
+
+media:
+  detect: {native_types: [], name_patterns: []}
+
+field_defaults:
+  listed_field_relevance: RELEVANT
+  unlisted_standard_field_relevance: POSSIBLE
+  unlisted_field_group: other
+  technical_fields_group: technical
+  technical_fields_relevance: NOT_RELEVANT
+
+# Règles de pertinence déterministes et génériques (propriétés du champ, jamais une liste de noms métier).
+semantics:
+  known_threshold: 0.90
+  structure_checks: [DOCUMENT, DOCUMENT_LINE, LEDGER_ACCOUNT, TAX]
+  rules:
+    - id: A01
+      description: technical fields (id, create_*, write_*, __last_update)
+      when:
+        any_of:
+          - {technical: true}
+          - {name_patterns: ['^id$', '^create_(uid|date)$', '^write_(uid|date)$', '^__last_update$']}
+      relevance: NOT_RELEVANT
+      reason: Technical field managed by the system
+    - id: A02
+      description: field explicitly listed in the pack with a business group
+      when: {listed: true, group_not_in: [other]}
+      relevance: RELEVANT
+      reason: Accounting field declared by the domain pack
+    - id: A03
+      description: relation to an entity outside the domain scope (no role)
+      when: {relation_outside_scope: true}
+      relevance: NOT_RELEVANT
+      reason: Link to {target}, which is not part of the accounting data
+    - id: A04
+      description: computed, non-stored helper (counters, has_*, display_name, html, activities, messages, search)
+      when:
+        computed: true
+        stored: false
+        name_patterns: ['_count$', '^has_', '^display_name$', '_html$', '(^|_)activity_', '^message_', '_search$']
+      relevance: NOT_RELEVANT
+      reason: Computed helper, not accounting data
+    - id: A05
+      description: user-interface flag (show_*, *_visible, hide_*...)
+      when:
+        native_types: [selection, boolean]
+        name_patterns: ['^show_', '_visible$', '^hide_', '_invisible$']
+      relevance: NOT_RELEVANT
+      reason: User-interface flag, not accounting data
+    - id: A06
+      description: standard related copy of a field of another domain entity (follows its decision)
+      when: {origins: [STANDARD], related_copy: true}
+      follow_source: true
+      reason: Reflects {source}
+    - id: A07
+      description: alias or pattern of the vocabulary with a compatible type
+      when: {min_match_confidence: 0.90}
+      relevance: RELEVANT
+      reason: Matches the accounting vocabulary ({key})
+    - id: A08
+      description: technical back-reference (collection whose relation is carried by the target entity)
+      when: {back_reference: true}
+      relevance: NOT_RELEVANT
+      reason: Technical back-reference to {target}; the relation is carried by {inverse}
+    - id: A09
+      description: custom field without vocabulary match (asked to the user)
+      when: {origins: [CUSTOM], no_match: true}
+      relevance: POSSIBLE
+      reason: Custom field without a known meaning
+    - id: A10
+      description: default
+      relevance: POSSIBLE
+      reason: Standard field not declared by the domain pack

@@ -1,0 +1,75 @@
+# Prompt du fallback LLM des imports de catalogue, domaine PRODUCT (V2c.3).
+#
+# Donnée versionnée du domain pack, jamais une chaîne dans le code : son checksum entre dans l'empreinte du
+# cache des imports et dans la provenance de chaque réponse ; modifier ce fichier impose d'incrémenter
+# `version`.
+#
+# Le LLM ne reçoit que les colonnes encore ambiguës après la mémoire et les règles (en-tête, type, taux de
+# remplissage, au plus 3 exemples masqués) et les cibles réellement offertes par le catalogue du système.
+# Il propose TARGET / NOT_RELEVANT / UNKNOWN ; le Core décide (seuils, priorités) et une personne valide.
+# Exemples INVENTÉS (boutique fictive), jamais tirés d'un fichier mesuré.
+
+domain: PRODUCT
+purpose: import_columns
+version: "1.1.0"
+
+system: |
+  You help an integration engine import a supplier's product catalog file into a business system
+  (ERP). Deterministic rules have already handled the columns they understand. You receive only the
+  remaining, ambiguous columns: for each one its header, detected type, fill ratio, up to three example
+  values (sensitive values are masked) and, sometimes, a weak suggestion from the rules. You also receive
+  the list of "targets": the catalog fields the target system can receive TODAY. This list is not
+  complete: some real product data (for example variant attributes) may have no target yet.
+
+  For EACH column, answer one decision:
+  - TARGET: the column holds exactly the data of one offered target. Give its semantic_key.
+  - NOT_RELEVANT: the column belongs to the application or channel that produced the file and has no
+    interest for a product catalog: its settings and internal data (display, theme or layout options,
+    internal record ids, sort positions, workflow, publication or visibility flags, review or comment
+    settings, checkout, shipping or tax switches of the shop), search-engine (SEO) metadata, advertising or
+    marketing-feed metadata. Answer NOT_RELEVANT only for such source-specific data, NEVER only because no
+    target is offered.
+  - UNKNOWN: the column seems to hold real product or catalog data (a characteristic, attribute, variant
+    option, price, cost, reference, identifier, measure, description, media...) but no offered target can
+    represent it correctly; or you are not sure. UNKNOWN keeps the column for a person to decide: it is an
+    expected, useful answer, always better than a guess.
+
+  Confidence (0 to 1) must be calibrated: 0.90 or more only when the header AND the example values leave no
+  doubt. A person reviews everything below that, and a confident wrong answer is worse than UNKNOWN.
+
+  Rules:
+  - Choose semantic_key only from the given targets. Never invent a key.
+  - Similar words are not enough. Judge the meaning from the values: a column named like a target but whose
+    values describe another concept (for example a listing format of the shop instead of the kind of goods)
+    is not that target.
+  - Do not give the same target to two columns unless you are unsure which one it is; then answer UNKNOWN
+    for the less likely one.
+  - reason: one short sentence (at most 120 characters), in English, for the administrator.
+  - Answer every column, with its position and header, and nothing else.
+
+few_shots:
+  - input:
+      columns:
+        - {position: 0, header: "Blurb", detected_type: text, fill_ratio: 0.9,
+           examples: ["Hand-made oak tray for keys", "Stackable birch crate"]}
+        - {position: 1, header: "Theme: sidebar_layout", detected_type: text, fill_ratio: 1.0,
+           examples: ["left", "none", "right"]}
+        - {position: 2, header: "Colour shade", detected_type: text, fill_ratio: 0.7,
+           examples: ["navy", "olive", "sand"]}
+        - {position: 3, header: "Gift wrap available", detected_type: integer, fill_ratio: 1.0,
+           examples: ["0", "1"]}
+        - {position: 4, header: "Net kg", detected_type: decimal, fill_ratio: 1.0,
+           examples: ["0.45", "2.1", "12"]}
+      targets: [name, description_sale, weight, list_price, category]
+    answer:
+      columns:
+        - {position: 0, source_header: "Blurb", decision: TARGET, semantic_key: description_sale,
+           confidence: 0.9, reason: "Short sentences describing each product for customers."}
+        - {position: 1, source_header: "Theme: sidebar_layout", decision: NOT_RELEVANT, semantic_key: "",
+           confidence: 0.97, reason: "Page layout setting of the shop theme."}
+        - {position: 2, source_header: "Colour shade", decision: UNKNOWN, semantic_key: "",
+           confidence: 0.3, reason: "A product attribute, but no offered target holds colours."}
+        - {position: 3, source_header: "Gift wrap available", decision: NOT_RELEVANT, semantic_key: "",
+           confidence: 0.9, reason: "Checkout option of the shop, not catalog data."}
+        - {position: 4, source_header: "Net kg", decision: TARGET, semantic_key: weight,
+           confidence: 0.94, reason: "Net weight in kilograms."}

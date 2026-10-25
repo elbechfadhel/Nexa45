@@ -1,0 +1,16 @@
+spec: uie-datev-format/1
+system: datev
+format: demo-stamm
+format_name: Demo/Stamm
+data_category: 92
+format_version: "1"
+header_version: "900"
+entity: demo_stamm
+header:
+- {position: 1, label: Kennung, datev_type: Text, pattern: "^[\"](DEMO)[\"]$"}
+- {position: 2, label: Kopfversion, datev_type: Zahl, pattern: "^(900)$"}
+- {position: 3, label: Kategorie, datev_type: Zahl}
+fields:
+- {position: 1, label: Nummer, datev_type: Konto, length: 9, required: true}
+- {position: 2, label: Name, datev_type: Text, length: 50}
+source: {definition: {file: invented.xml, sha256: "0"}}

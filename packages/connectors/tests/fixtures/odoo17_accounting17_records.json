@@ -1,0 +1,1840 @@
+{
+ "_comment": "Pièces INVENTÉES d'accounting17 (docker/accounting17-setup.py), format search_read.",
+ "records": {
+  "account.move": [
+   {
+    "id": 1,
+    "name": "RE/2026/00001",
+    "ref": "UIE-ACC-A",
+    "move_type": "out_invoice",
+    "state": "posted",
+    "commercial_partner_id": [
+     7,
+     "Bäckerei Sonnenschein GmbH"
+    ],
+    "company_id": [
+     1,
+     "GO45 Demo GmbH"
+    ],
+    "narration": false,
+    "date": "2026-01-12",
+    "invoice_date": "2026-01-12",
+    "invoice_date_due": "2026-02-11",
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "amount_total": 404.6,
+    "amount_tax": 64.6,
+    "line_ids": [
+     1,
+     2,
+     3
+    ],
+    "display_name": "RE/2026/00001 (UIE-ACC-A)"
+   },
+   {
+    "id": 2,
+    "name": "RE/2026/00002",
+    "ref": "UIE-ACC-B",
+    "move_type": "out_invoice",
+    "state": "posted",
+    "commercial_partner_id": [
+     8,
+     "Lena Hoffmann"
+    ],
+    "company_id": [
+     1,
+     "GO45 Demo GmbH"
+    ],
+    "narration": false,
+    "date": "2026-01-15",
+    "invoice_date": "2026-01-15",
+    "invoice_date_due": "2026-01-30",
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "amount_total": 739.89,
+    "amount_tax": 110.09,
+    "line_ids": [
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ],
+    "display_name": "RE/2026/00002 (UIE-ACC-B)"
+   },
+   {
+    "id": 3,
+    "name": "RRE/2026/00001",
+    "ref": "UIE-ACC-C",
+    "move_type": "out_refund",
+    "state": "posted",
+    "commercial_partner_id": [
+     7,
+     "Bäckerei Sonnenschein GmbH"
+    ],
+    "company_id": [
+     1,
+     "GO45 Demo GmbH"
+    ],
+    "narration": false,
+    "date": "2026-01-20",
+    "invoice_date": "2026-01-20",
+    "invoice_date_due": "2026-02-19",
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "amount_total": 101.15,
+    "amount_tax": 16.15,
+    "line_ids": [
+     10,
+     11,
+     12
+    ],
+    "display_name": "RRE/2026/00001 (UIE-ACC-C)"
+   },
+   {
+    "id": 4,
+    "name": "RECHN/2026/01/0001",
+    "ref": "UIE-ACC-D",
+    "move_type": "in_invoice",
+    "state": "posted",
+    "commercial_partner_id": [
+     9,
+     "Holzhandel Nord GmbH"
+    ],
+    "company_id": [
+     1,
+     "GO45 Demo GmbH"
+    ],
+    "narration": false,
+    "date": "2026-01-08",
+    "invoice_date": "2026-01-08",
+    "invoice_date_due": "2026-02-22",
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "amount_total": 1237.6,
+    "amount_tax": 197.6,
+    "line_ids": [
+     13,
+     14,
+     15
+    ],
+    "display_name": "RECHN/2026/01/0001 (UIE-ACC-D)"
+   },
+   {
+    "id": 5,
+    "name": "RRECHN/2026/01/0001",
+    "ref": "UIE-ACC-E",
+    "move_type": "in_refund",
+    "state": "posted",
+    "commercial_partner_id": [
+     9,
+     "Holzhandel Nord GmbH"
+    ],
+    "company_id": [
+     1,
+     "GO45 Demo GmbH"
+    ],
+    "narration": false,
+    "date": "2026-01-22",
+    "invoice_date": "2026-01-22",
+    "invoice_date_due": "2026-02-21",
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "amount_total": 123.76,
+    "amount_tax": 19.76,
+    "line_ids": [
+     16,
+     17,
+     18
+    ],
+    "display_name": "RRECHN/2026/01/0001 (UIE-ACC-E)"
+   },
+   {
+    "id": 6,
+    "name": "RE/2026/00003",
+    "ref": "UIE-ACC-F1",
+    "move_type": "out_invoice",
+    "state": "posted",
+    "commercial_partner_id": [
+     11,
+     "Rhein Logistik AG"
+    ],
+    "company_id": [
+     1,
+     "GO45 Demo GmbH"
+    ],
+    "narration": false,
+    "date": "2026-01-16",
+    "invoice_date": "2026-01-16",
+    "invoice_date_due": "2026-02-15",
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "amount_total": 714.0,
+    "amount_tax": 114.0,
+    "line_ids": [
+     19,
+     20,
+     21
+    ],
+    "display_name": "RE/2026/00003 (UIE-ACC-F1)"
+   },
+   {
+    "id": 7,
+    "name": "RECHN/2026/01/0002",
+    "ref": "UIE-ACC-F2",
+    "move_type": "in_invoice",
+    "state": "posted",
+    "commercial_partner_id": [
+     11,
+     "Rhein Logistik AG"
+    ],
+    "company_id": [
+     1,
+     "GO45 Demo GmbH"
+    ],
+    "narration": false,
+    "date": "2026-01-18",
+    "invoice_date": "2026-01-18",
+    "invoice_date_due": "2026-02-17",
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "amount_total": 571.2,
+    "amount_tax": 91.2,
+    "line_ids": [
+     22,
+     23,
+     24
+    ],
+    "display_name": "RECHN/2026/01/0002 (UIE-ACC-F2)"
+   },
+   {
+    "id": 8,
+    "name": "RE/2026/00004",
+    "ref": "UIE-ACC-G",
+    "move_type": "out_invoice",
+    "state": "posted",
+    "commercial_partner_id": [
+     7,
+     "Bäckerei Sonnenschein GmbH"
+    ],
+    "company_id": [
+     1,
+     "GO45 Demo GmbH"
+    ],
+    "narration": false,
+    "date": "2026-01-05",
+    "invoice_date": "2025-12-30",
+    "invoice_date_due": "2026-01-29",
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "amount_total": 202.3,
+    "amount_tax": 32.3,
+    "line_ids": [
+     25,
+     26,
+     27
+    ],
+    "display_name": "RE/2026/00004 (UIE-ACC-G)"
+   },
+   {
+    "id": 9,
+    "name": "RE/2026/00005",
+    "ref": "UIE-ACC-H",
+    "move_type": "out_invoice",
+    "state": "posted",
+    "commercial_partner_id": [
+     12,
+     "Gesellschaft für Innenausbau und Holzverarbeitung Süddeutschland mbH"
+    ],
+    "company_id": [
+     1,
+     "GO45 Demo GmbH"
+    ],
+    "narration": false,
+    "date": "2026-01-19",
+    "invoice_date": "2026-01-19",
+    "invoice_date_due": "2026-02-18",
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "amount_total": 142.8,
+    "amount_tax": 22.8,
+    "line_ids": [
+     28,
+     29,
+     30
+    ],
+    "display_name": "RE/2026/00005 (UIE-ACC-H)"
+   },
+   {
+    "id": 10,
+    "name": "RE/2026/00006",
+    "ref": "UIE-ACC-I",
+    "move_type": "out_invoice",
+    "state": "posted",
+    "commercial_partner_id": [
+     11,
+     "Rhein Logistik AG"
+    ],
+    "company_id": [
+     1,
+     "GO45 Demo GmbH"
+    ],
+    "narration": false,
+    "date": "2026-01-21",
+    "invoice_date": "2026-01-21",
+    "invoice_date_due": "2026-02-20",
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "amount_total": 285.6,
+    "amount_tax": 45.6,
+    "line_ids": [
+     31,
+     32,
+     33
+    ],
+    "display_name": "RE/2026/00006 (UIE-ACC-I)"
+   },
+   {
+    "id": 11,
+    "name": "/",
+    "ref": "UIE-ACC-J",
+    "move_type": "out_invoice",
+    "state": "draft",
+    "commercial_partner_id": [
+     8,
+     "Lena Hoffmann"
+    ],
+    "company_id": [
+     1,
+     "GO45 Demo GmbH"
+    ],
+    "narration": false,
+    "date": "2026-01-25",
+    "invoice_date": "2026-01-25",
+    "invoice_date_due": "2026-02-24",
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "amount_total": 142.8,
+    "amount_tax": 22.8,
+    "line_ids": [
+     34,
+     35,
+     36
+    ],
+    "display_name": "Rechnungsentwurf (* 11) (UIE-ACC-J)"
+   },
+   {
+    "id": 12,
+    "name": "/",
+    "ref": "UIE-ACC-K",
+    "move_type": "out_invoice",
+    "state": "cancel",
+    "commercial_partner_id": [
+     7,
+     "Bäckerei Sonnenschein GmbH"
+    ],
+    "company_id": [
+     1,
+     "GO45 Demo GmbH"
+    ],
+    "narration": false,
+    "date": "2026-01-26",
+    "invoice_date": "2026-01-26",
+    "invoice_date_due": "2026-02-25",
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "amount_total": 101.15,
+    "amount_tax": 16.15,
+    "line_ids": [
+     37,
+     38,
+     39
+    ],
+    "display_name": "(* 12) (UIE-ACC-K)"
+   },
+   {
+    "id": 13,
+    "name": "RE/2026/00007",
+    "ref": "UIE-ACC-L",
+    "move_type": "out_invoice",
+    "state": "posted",
+    "commercial_partner_id": [
+     11,
+     "Rhein Logistik AG"
+    ],
+    "company_id": [
+     1,
+     "GO45 Demo GmbH"
+    ],
+    "narration": false,
+    "date": "2026-01-27",
+    "invoice_date": "2026-01-27",
+    "invoice_date_due": "2026-02-26",
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "amount_total": 151.2,
+    "amount_tax": 31.2,
+    "line_ids": [
+     40,
+     41,
+     42,
+     43
+    ],
+    "display_name": "RE/2026/00007 (UIE-ACC-L)"
+   },
+   {
+    "id": 14,
+    "name": "RE/2026/00008",
+    "ref": "UIE-ACC-M",
+    "move_type": "out_invoice",
+    "state": "posted",
+    "commercial_partner_id": [
+     8,
+     "Lena Hoffmann"
+    ],
+    "company_id": [
+     1,
+     "GO45 Demo GmbH"
+    ],
+    "narration": false,
+    "date": "2026-02-03",
+    "invoice_date": "2026-02-03",
+    "invoice_date_due": "2026-03-05",
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "amount_total": 142.8,
+    "amount_tax": 22.8,
+    "line_ids": [
+     44,
+     45,
+     46
+    ],
+    "display_name": "RE/2026/00008 (UIE-ACC-M)"
+   }
+  ],
+  "account.move.line": [
+   {
+    "id": 1,
+    "move_id": [
+     1,
+     "RE/2026/00001 (UIE-ACC-A)"
+    ],
+    "display_type": "product",
+    "name": "Holzplatte Eiche",
+    "account_id": [
+     1151,
+     "8400 Revenue, 19 % VAT"
+    ],
+    "balance": -340.0,
+    "amount_currency": -340.0,
+    "price_total": 404.6,
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "tax_ids": [
+     14
+    ],
+    "tax_line_id": false,
+    "display_name": "RE/2026/00001 (UIE-ACC-A) Holzplatte Eiche"
+   },
+   {
+    "id": 2,
+    "move_id": [
+     1,
+     "RE/2026/00001 (UIE-ACC-A)"
+    ],
+    "display_type": "tax",
+    "name": "19%",
+    "account_id": [
+     491,
+     "1776 VAT, 19 %"
+    ],
+    "balance": -64.6,
+    "amount_currency": -64.6,
+    "price_total": 0.0,
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "tax_ids": [],
+    "tax_line_id": [
+     14,
+     "19%"
+    ],
+    "display_name": "RE/2026/00001 (UIE-ACC-A) 19%"
+   },
+   {
+    "id": 3,
+    "move_id": [
+     1,
+     "RE/2026/00001 (UIE-ACC-A)"
+    ],
+    "display_type": "payment_term",
+    "name": "RE/2026/00001",
+    "account_id": [
+     283,
+     "1410 Trade receivables, no separate receivables/payables accounting"
+    ],
+    "balance": 404.6,
+    "amount_currency": 404.6,
+    "price_total": 0.0,
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "tax_ids": [],
+    "tax_line_id": false,
+    "display_name": "RE/2026/00001 (UIE-ACC-A)"
+   },
+   {
+    "id": 4,
+    "move_id": [
+     2,
+     "RE/2026/00002 (UIE-ACC-B)"
+    ],
+    "display_type": "product",
+    "name": "Beratung (Stunde)",
+    "account_id": [
+     1151,
+     "8400 Revenue, 19 % VAT"
+    ],
+    "balance": -360.0,
+    "amount_currency": -360.0,
+    "price_total": 428.4,
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "tax_ids": [
+     14
+    ],
+    "tax_line_id": false,
+    "display_name": "RE/2026/00002 (UIE-ACC-B) Beratung (Stunde)"
+   },
+   {
+    "id": 5,
+    "move_id": [
+     2,
+     "RE/2026/00002 (UIE-ACC-B)"
+    ],
+    "display_type": "product",
+    "name": "Beratung Planung",
+    "account_id": [
+     1151,
+     "8400 Revenue, 19 % VAT"
+    ],
+    "balance": -190.0,
+    "amount_currency": -190.0,
+    "price_total": 226.1,
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "tax_ids": [
+     14
+    ],
+    "tax_line_id": false,
+    "display_name": "RE/2026/00002 (UIE-ACC-B) Beratung Planung"
+   },
+   {
+    "id": 6,
+    "move_id": [
+     2,
+     "RE/2026/00002 (UIE-ACC-B)"
+    ],
+    "display_type": "product",
+    "name": "Fachbuch Holzbau",
+    "account_id": [
+     1141,
+     "8300 Revenue, 7 % VAT"
+    ],
+    "balance": -79.8,
+    "amount_currency": -79.8,
+    "price_total": 85.39,
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "tax_ids": [
+     15
+    ],
+    "tax_line_id": false,
+    "display_name": "RE/2026/00002 (UIE-ACC-B) Fachbuch Holzbau"
+   },
+   {
+    "id": 7,
+    "move_id": [
+     2,
+     "RE/2026/00002 (UIE-ACC-B)"
+    ],
+    "display_type": "tax",
+    "name": "19%",
+    "account_id": [
+     491,
+     "1776 VAT, 19 %"
+    ],
+    "balance": -104.5,
+    "amount_currency": -104.5,
+    "price_total": 0.0,
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "tax_ids": [],
+    "tax_line_id": [
+     14,
+     "19%"
+    ],
+    "display_name": "RE/2026/00002 (UIE-ACC-B) 19%"
+   },
+   {
+    "id": 8,
+    "move_id": [
+     2,
+     "RE/2026/00002 (UIE-ACC-B)"
+    ],
+    "display_type": "tax",
+    "name": "7%",
+    "account_id": [
+     488,
+     "1771 VAT 7%"
+    ],
+    "balance": -5.59,
+    "amount_currency": -5.59,
+    "price_total": 0.0,
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "tax_ids": [],
+    "tax_line_id": [
+     15,
+     "7%"
+    ],
+    "display_name": "RE/2026/00002 (UIE-ACC-B) 7%"
+   },
+   {
+    "id": 9,
+    "move_id": [
+     2,
+     "RE/2026/00002 (UIE-ACC-B)"
+    ],
+    "display_type": "payment_term",
+    "name": "RE/2026/00002",
+    "account_id": [
+     283,
+     "1410 Trade receivables, no separate receivables/payables accounting"
+    ],
+    "balance": 739.89,
+    "amount_currency": 739.89,
+    "price_total": 0.0,
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "tax_ids": [],
+    "tax_line_id": false,
+    "display_name": "RE/2026/00002 (UIE-ACC-B)"
+   },
+   {
+    "id": 10,
+    "move_id": [
+     3,
+     "RRE/2026/00001 (UIE-ACC-C)"
+    ],
+    "display_type": "product",
+    "name": "Gutschrift beschädigte Platte",
+    "account_id": [
+     1151,
+     "8400 Revenue, 19 % VAT"
+    ],
+    "balance": 85.0,
+    "amount_currency": 85.0,
+    "price_total": 101.15,
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "tax_ids": [
+     14
+    ],
+    "tax_line_id": false,
+    "display_name": "RRE/2026/00001 (UIE-ACC-C) Gutschrift beschädigte Platte"
+   },
+   {
+    "id": 11,
+    "move_id": [
+     3,
+     "RRE/2026/00001 (UIE-ACC-C)"
+    ],
+    "display_type": "tax",
+    "name": "19%",
+    "account_id": [
+     491,
+     "1776 VAT, 19 %"
+    ],
+    "balance": 16.15,
+    "amount_currency": 16.15,
+    "price_total": 0.0,
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "tax_ids": [],
+    "tax_line_id": [
+     14,
+     "19%"
+    ],
+    "display_name": "RRE/2026/00001 (UIE-ACC-C) 19%"
+   },
+   {
+    "id": 12,
+    "move_id": [
+     3,
+     "RRE/2026/00001 (UIE-ACC-C)"
+    ],
+    "display_type": "payment_term",
+    "name": false,
+    "account_id": [
+     283,
+     "1410 Trade receivables, no separate receivables/payables accounting"
+    ],
+    "balance": -101.15,
+    "amount_currency": -101.15,
+    "price_total": 0.0,
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "tax_ids": [],
+    "tax_line_id": false,
+    "display_name": "RRE/2026/00001 (UIE-ACC-C)"
+   },
+   {
+    "id": 13,
+    "move_id": [
+     4,
+     "RECHN/2026/01/0001 (UIE-ACC-D)"
+    ],
+    "display_type": "product",
+    "name": "Holzplatte Eiche",
+    "account_id": [
+     828,
+     "3400 Cost of merchandise, 19 % input tax"
+    ],
+    "balance": 1040.0,
+    "amount_currency": 1040.0,
+    "price_total": 1237.6,
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "tax_ids": [
+     23
+    ],
+    "tax_line_id": false,
+    "display_name": "RECHN/2026/01/0001 (UIE-ACC-D) Holzplatte Eiche"
+   },
+   {
+    "id": 14,
+    "move_id": [
+     4,
+     "RECHN/2026/01/0001 (UIE-ACC-D)"
+    ],
+    "display_type": "tax",
+    "name": "19% I",
+    "account_id": [
+     364,
+     "1576 Deductible input tax, 19 %"
+    ],
+    "balance": 197.6,
+    "amount_currency": 197.6,
+    "price_total": 0.0,
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "tax_ids": [],
+    "tax_line_id": [
+     23,
+     "19% I"
+    ],
+    "display_name": "RECHN/2026/01/0001 (UIE-ACC-D) 19% I"
+   },
+   {
+    "id": 15,
+    "move_id": [
+     4,
+     "RECHN/2026/01/0001 (UIE-ACC-D)"
+    ],
+    "display_type": "payment_term",
+    "name": false,
+    "account_id": [
+     390,
+     "1610 Trade payables, no separate receivables/payables accounting"
+    ],
+    "balance": -1237.6,
+    "amount_currency": -1237.6,
+    "price_total": 0.0,
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "tax_ids": [],
+    "tax_line_id": false,
+    "display_name": "RECHN/2026/01/0001 (UIE-ACC-D)"
+   },
+   {
+    "id": 16,
+    "move_id": [
+     5,
+     "RRECHN/2026/01/0001 (UIE-ACC-E)"
+    ],
+    "display_type": "product",
+    "name": "Rücksendung",
+    "account_id": [
+     828,
+     "3400 Cost of merchandise, 19 % input tax"
+    ],
+    "balance": -104.0,
+    "amount_currency": -104.0,
+    "price_total": 123.76,
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "tax_ids": [
+     23
+    ],
+    "tax_line_id": false,
+    "display_name": "RRECHN/2026/01/0001 (UIE-ACC-E) Rücksendung"
+   },
+   {
+    "id": 17,
+    "move_id": [
+     5,
+     "RRECHN/2026/01/0001 (UIE-ACC-E)"
+    ],
+    "display_type": "tax",
+    "name": "19% I",
+    "account_id": [
+     364,
+     "1576 Deductible input tax, 19 %"
+    ],
+    "balance": -19.76,
+    "amount_currency": -19.76,
+    "price_total": 0.0,
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "tax_ids": [],
+    "tax_line_id": [
+     23,
+     "19% I"
+    ],
+    "display_name": "RRECHN/2026/01/0001 (UIE-ACC-E) 19% I"
+   },
+   {
+    "id": 18,
+    "move_id": [
+     5,
+     "RRECHN/2026/01/0001 (UIE-ACC-E)"
+    ],
+    "display_type": "payment_term",
+    "name": false,
+    "account_id": [
+     390,
+     "1610 Trade payables, no separate receivables/payables accounting"
+    ],
+    "balance": 123.76,
+    "amount_currency": 123.76,
+    "price_total": 0.0,
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "tax_ids": [],
+    "tax_line_id": false,
+    "display_name": "RRECHN/2026/01/0001 (UIE-ACC-E)"
+   },
+   {
+    "id": 19,
+    "move_id": [
+     6,
+     "RE/2026/00003 (UIE-ACC-F1)"
+    ],
+    "display_type": "product",
+    "name": "Beratung (Stunde)",
+    "account_id": [
+     1151,
+     "8400 Revenue, 19 % VAT"
+    ],
+    "balance": -600.0,
+    "amount_currency": -600.0,
+    "price_total": 714.0,
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "tax_ids": [
+     14
+    ],
+    "tax_line_id": false,
+    "display_name": "RE/2026/00003 (UIE-ACC-F1) Beratung (Stunde)"
+   },
+   {
+    "id": 20,
+    "move_id": [
+     6,
+     "RE/2026/00003 (UIE-ACC-F1)"
+    ],
+    "display_type": "tax",
+    "name": "19%",
+    "account_id": [
+     491,
+     "1776 VAT, 19 %"
+    ],
+    "balance": -114.0,
+    "amount_currency": -114.0,
+    "price_total": 0.0,
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "tax_ids": [],
+    "tax_line_id": [
+     14,
+     "19%"
+    ],
+    "display_name": "RE/2026/00003 (UIE-ACC-F1) 19%"
+   },
+   {
+    "id": 21,
+    "move_id": [
+     6,
+     "RE/2026/00003 (UIE-ACC-F1)"
+    ],
+    "display_type": "payment_term",
+    "name": "RE/2026/00003",
+    "account_id": [
+     283,
+     "1410 Trade receivables, no separate receivables/payables accounting"
+    ],
+    "balance": 714.0,
+    "amount_currency": 714.0,
+    "price_total": 0.0,
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "tax_ids": [],
+    "tax_line_id": false,
+    "display_name": "RE/2026/00003 (UIE-ACC-F1)"
+   },
+   {
+    "id": 22,
+    "move_id": [
+     7,
+     "RECHN/2026/01/0002 (UIE-ACC-F2)"
+    ],
+    "display_type": "product",
+    "name": "Transport Januar",
+    "account_id": [
+     828,
+     "3400 Cost of merchandise, 19 % input tax"
+    ],
+    "balance": 480.0,
+    "amount_currency": 480.0,
+    "price_total": 571.2,
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "tax_ids": [
+     23
+    ],
+    "tax_line_id": false,
+    "display_name": "RECHN/2026/01/0002 (UIE-ACC-F2) Transport Januar"
+   },
+   {
+    "id": 23,
+    "move_id": [
+     7,
+     "RECHN/2026/01/0002 (UIE-ACC-F2)"
+    ],
+    "display_type": "tax",
+    "name": "19% I",
+    "account_id": [
+     364,
+     "1576 Deductible input tax, 19 %"
+    ],
+    "balance": 91.2,
+    "amount_currency": 91.2,
+    "price_total": 0.0,
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "tax_ids": [],
+    "tax_line_id": [
+     23,
+     "19% I"
+    ],
+    "display_name": "RECHN/2026/01/0002 (UIE-ACC-F2) 19% I"
+   },
+   {
+    "id": 24,
+    "move_id": [
+     7,
+     "RECHN/2026/01/0002 (UIE-ACC-F2)"
+    ],
+    "display_type": "payment_term",
+    "name": false,
+    "account_id": [
+     390,
+     "1610 Trade payables, no separate receivables/payables accounting"
+    ],
+    "balance": -571.2,
+    "amount_currency": -571.2,
+    "price_total": 0.0,
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "tax_ids": [],
+    "tax_line_id": false,
+    "display_name": "RECHN/2026/01/0002 (UIE-ACC-F2)"
+   },
+   {
+    "id": 25,
+    "move_id": [
+     8,
+     "RE/2026/00004 (UIE-ACC-G)"
+    ],
+    "display_type": "product",
+    "name": "Holzplatten Eiche geölt für die Ladeneinrichtung, Lieferung inklusive Montage vor Ort",
+    "account_id": [
+     1151,
+     "8400 Revenue, 19 % VAT"
+    ],
+    "balance": -170.0,
+    "amount_currency": -170.0,
+    "price_total": 202.3,
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "tax_ids": [
+     14
+    ],
+    "tax_line_id": false,
+    "display_name": "RE/2026/00004 (UIE-ACC-G) Holzplatten Eiche geölt für die Ladeneinrichtung, Lieferung inklusive Montage vor Ort"
+   },
+   {
+    "id": 26,
+    "move_id": [
+     8,
+     "RE/2026/00004 (UIE-ACC-G)"
+    ],
+    "display_type": "tax",
+    "name": "19%",
+    "account_id": [
+     491,
+     "1776 VAT, 19 %"
+    ],
+    "balance": -32.3,
+    "amount_currency": -32.3,
+    "price_total": 0.0,
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "tax_ids": [],
+    "tax_line_id": [
+     14,
+     "19%"
+    ],
+    "display_name": "RE/2026/00004 (UIE-ACC-G) 19%"
+   },
+   {
+    "id": 27,
+    "move_id": [
+     8,
+     "RE/2026/00004 (UIE-ACC-G)"
+    ],
+    "display_type": "payment_term",
+    "name": "RE/2026/00004",
+    "account_id": [
+     283,
+     "1410 Trade receivables, no separate receivables/payables accounting"
+    ],
+    "balance": 202.3,
+    "amount_currency": 202.3,
+    "price_total": 0.0,
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "tax_ids": [],
+    "tax_line_id": false,
+    "display_name": "RE/2026/00004 (UIE-ACC-G)"
+   },
+   {
+    "id": 28,
+    "move_id": [
+     9,
+     "RE/2026/00005 (UIE-ACC-H)"
+    ],
+    "display_type": "product",
+    "name": "Beratung (Stunde)",
+    "account_id": [
+     1151,
+     "8400 Revenue, 19 % VAT"
+    ],
+    "balance": -120.0,
+    "amount_currency": -120.0,
+    "price_total": 142.8,
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "tax_ids": [
+     14
+    ],
+    "tax_line_id": false,
+    "display_name": "RE/2026/00005 (UIE-ACC-H) Beratung (Stunde)"
+   },
+   {
+    "id": 29,
+    "move_id": [
+     9,
+     "RE/2026/00005 (UIE-ACC-H)"
+    ],
+    "display_type": "tax",
+    "name": "19%",
+    "account_id": [
+     491,
+     "1776 VAT, 19 %"
+    ],
+    "balance": -22.8,
+    "amount_currency": -22.8,
+    "price_total": 0.0,
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "tax_ids": [],
+    "tax_line_id": [
+     14,
+     "19%"
+    ],
+    "display_name": "RE/2026/00005 (UIE-ACC-H) 19%"
+   },
+   {
+    "id": 30,
+    "move_id": [
+     9,
+     "RE/2026/00005 (UIE-ACC-H)"
+    ],
+    "display_type": "payment_term",
+    "name": "RE/2026/00005",
+    "account_id": [
+     283,
+     "1410 Trade receivables, no separate receivables/payables accounting"
+    ],
+    "balance": 142.8,
+    "amount_currency": 142.8,
+    "price_total": 0.0,
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "tax_ids": [],
+    "tax_line_id": false,
+    "display_name": "RE/2026/00005 (UIE-ACC-H)"
+   },
+   {
+    "id": 31,
+    "move_id": [
+     10,
+     "RE/2026/00006 (UIE-ACC-I)"
+    ],
+    "display_type": "product",
+    "name": "Sonstige Erlöse",
+    "account_id": [
+     1140,
+     "8200 Revenue"
+    ],
+    "balance": -240.0,
+    "amount_currency": -240.0,
+    "price_total": 285.6,
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "tax_ids": [
+     14
+    ],
+    "tax_line_id": false,
+    "display_name": "RE/2026/00006 (UIE-ACC-I) Sonstige Erlöse"
+   },
+   {
+    "id": 32,
+    "move_id": [
+     10,
+     "RE/2026/00006 (UIE-ACC-I)"
+    ],
+    "display_type": "tax",
+    "name": "19%",
+    "account_id": [
+     491,
+     "1776 VAT, 19 %"
+    ],
+    "balance": -45.6,
+    "amount_currency": -45.6,
+    "price_total": 0.0,
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "tax_ids": [],
+    "tax_line_id": [
+     14,
+     "19%"
+    ],
+    "display_name": "RE/2026/00006 (UIE-ACC-I) 19%"
+   },
+   {
+    "id": 33,
+    "move_id": [
+     10,
+     "RE/2026/00006 (UIE-ACC-I)"
+    ],
+    "display_type": "payment_term",
+    "name": "RE/2026/00006",
+    "account_id": [
+     283,
+     "1410 Trade receivables, no separate receivables/payables accounting"
+    ],
+    "balance": 285.6,
+    "amount_currency": 285.6,
+    "price_total": 0.0,
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "tax_ids": [],
+    "tax_line_id": false,
+    "display_name": "RE/2026/00006 (UIE-ACC-I)"
+   },
+   {
+    "id": 34,
+    "move_id": [
+     11,
+     "Rechnungsentwurf (* 11) (UIE-ACC-J)"
+    ],
+    "display_type": "product",
+    "name": "Beratung (Stunde)",
+    "account_id": [
+     1151,
+     "8400 Revenue, 19 % VAT"
+    ],
+    "balance": -120.0,
+    "amount_currency": -120.0,
+    "price_total": 142.8,
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "tax_ids": [
+     14
+    ],
+    "tax_line_id": false,
+    "display_name": "(UIE-ACC-J) Beratung (Stunde)"
+   },
+   {
+    "id": 35,
+    "move_id": [
+     11,
+     "Rechnungsentwurf (* 11) (UIE-ACC-J)"
+    ],
+    "display_type": "tax",
+    "name": "19%",
+    "account_id": [
+     491,
+     "1776 VAT, 19 %"
+    ],
+    "balance": -22.8,
+    "amount_currency": -22.8,
+    "price_total": 0.0,
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "tax_ids": [],
+    "tax_line_id": [
+     14,
+     "19%"
+    ],
+    "display_name": "(UIE-ACC-J) 19%"
+   },
+   {
+    "id": 36,
+    "move_id": [
+     11,
+     "Rechnungsentwurf (* 11) (UIE-ACC-J)"
+    ],
+    "display_type": "payment_term",
+    "name": false,
+    "account_id": [
+     283,
+     "1410 Trade receivables, no separate receivables/payables accounting"
+    ],
+    "balance": 142.8,
+    "amount_currency": 142.8,
+    "price_total": 0.0,
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "tax_ids": [],
+    "tax_line_id": false,
+    "display_name": "(UIE-ACC-J)"
+   },
+   {
+    "id": 37,
+    "move_id": [
+     12,
+     "(* 12) (UIE-ACC-K)"
+    ],
+    "display_type": "product",
+    "name": "Holzplatte Eiche",
+    "account_id": [
+     1151,
+     "8400 Revenue, 19 % VAT"
+    ],
+    "balance": -85.0,
+    "amount_currency": -85.0,
+    "price_total": 101.15,
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "tax_ids": [
+     14
+    ],
+    "tax_line_id": false,
+    "display_name": "(UIE-ACC-K) Holzplatte Eiche"
+   },
+   {
+    "id": 38,
+    "move_id": [
+     12,
+     "(* 12) (UIE-ACC-K)"
+    ],
+    "display_type": "tax",
+    "name": "19%",
+    "account_id": [
+     491,
+     "1776 VAT, 19 %"
+    ],
+    "balance": -16.15,
+    "amount_currency": -16.15,
+    "price_total": 0.0,
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "tax_ids": [],
+    "tax_line_id": [
+     14,
+     "19%"
+    ],
+    "display_name": "(UIE-ACC-K) 19%"
+   },
+   {
+    "id": 39,
+    "move_id": [
+     12,
+     "(* 12) (UIE-ACC-K)"
+    ],
+    "display_type": "payment_term",
+    "name": false,
+    "account_id": [
+     283,
+     "1410 Trade receivables, no separate receivables/payables accounting"
+    ],
+    "balance": 101.15,
+    "amount_currency": 101.15,
+    "price_total": 0.0,
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "tax_ids": [],
+    "tax_line_id": false,
+    "display_name": "(UIE-ACC-K)"
+   },
+   {
+    "id": 40,
+    "move_id": [
+     13,
+     "RE/2026/00007 (UIE-ACC-L)"
+    ],
+    "display_type": "product",
+    "name": "Zwei Steuern auf einer Zeile",
+    "account_id": [
+     1151,
+     "8400 Revenue, 19 % VAT"
+    ],
+    "balance": -120.0,
+    "amount_currency": -120.0,
+    "price_total": 151.2,
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "tax_ids": [
+     14,
+     15
+    ],
+    "tax_line_id": false,
+    "display_name": "RE/2026/00007 (UIE-ACC-L) Zwei Steuern auf einer Zeile"
+   },
+   {
+    "id": 41,
+    "move_id": [
+     13,
+     "RE/2026/00007 (UIE-ACC-L)"
+    ],
+    "display_type": "tax",
+    "name": "19%",
+    "account_id": [
+     491,
+     "1776 VAT, 19 %"
+    ],
+    "balance": -22.8,
+    "amount_currency": -22.8,
+    "price_total": 0.0,
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "tax_ids": [],
+    "tax_line_id": [
+     14,
+     "19%"
+    ],
+    "display_name": "RE/2026/00007 (UIE-ACC-L) 19%"
+   },
+   {
+    "id": 42,
+    "move_id": [
+     13,
+     "RE/2026/00007 (UIE-ACC-L)"
+    ],
+    "display_type": "tax",
+    "name": "7%",
+    "account_id": [
+     488,
+     "1771 VAT 7%"
+    ],
+    "balance": -8.4,
+    "amount_currency": -8.4,
+    "price_total": 0.0,
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "tax_ids": [],
+    "tax_line_id": [
+     15,
+     "7%"
+    ],
+    "display_name": "RE/2026/00007 (UIE-ACC-L) 7%"
+   },
+   {
+    "id": 43,
+    "move_id": [
+     13,
+     "RE/2026/00007 (UIE-ACC-L)"
+    ],
+    "display_type": "payment_term",
+    "name": "RE/2026/00007",
+    "account_id": [
+     283,
+     "1410 Trade receivables, no separate receivables/payables accounting"
+    ],
+    "balance": 151.2,
+    "amount_currency": 151.2,
+    "price_total": 0.0,
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "tax_ids": [],
+    "tax_line_id": false,
+    "display_name": "RE/2026/00007 (UIE-ACC-L)"
+   },
+   {
+    "id": 44,
+    "move_id": [
+     14,
+     "RE/2026/00008 (UIE-ACC-M)"
+    ],
+    "display_type": "product",
+    "name": "Beratung (Stunde)",
+    "account_id": [
+     1151,
+     "8400 Revenue, 19 % VAT"
+    ],
+    "balance": -120.0,
+    "amount_currency": -120.0,
+    "price_total": 142.8,
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "tax_ids": [
+     14
+    ],
+    "tax_line_id": false,
+    "display_name": "RE/2026/00008 (UIE-ACC-M) Beratung (Stunde)"
+   },
+   {
+    "id": 45,
+    "move_id": [
+     14,
+     "RE/2026/00008 (UIE-ACC-M)"
+    ],
+    "display_type": "tax",
+    "name": "19%",
+    "account_id": [
+     491,
+     "1776 VAT, 19 %"
+    ],
+    "balance": -22.8,
+    "amount_currency": -22.8,
+    "price_total": 0.0,
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "tax_ids": [],
+    "tax_line_id": [
+     14,
+     "19%"
+    ],
+    "display_name": "RE/2026/00008 (UIE-ACC-M) 19%"
+   },
+   {
+    "id": 46,
+    "move_id": [
+     14,
+     "RE/2026/00008 (UIE-ACC-M)"
+    ],
+    "display_type": "payment_term",
+    "name": "RE/2026/00008",
+    "account_id": [
+     283,
+     "1410 Trade receivables, no separate receivables/payables accounting"
+    ],
+    "balance": 142.8,
+    "amount_currency": 142.8,
+    "price_total": 0.0,
+    "currency_id": [
+     126,
+     "EUR"
+    ],
+    "tax_ids": [],
+    "tax_line_id": false,
+    "display_name": "RE/2026/00008 (UIE-ACC-M)"
+   }
+  ],
+  "account.account": [
+   {
+    "id": 283,
+    "code": "1410",
+    "name": "Trade receivables, no separate receivables/payables accounting",
+    "display_name": "1410 Trade receivables, no separate receivables/payables accounting"
+   },
+   {
+    "id": 364,
+    "code": "1576",
+    "name": "Deductible input tax, 19 %",
+    "display_name": "1576 Deductible input tax, 19 %"
+   },
+   {
+    "id": 390,
+    "code": "1610",
+    "name": "Trade payables, no separate receivables/payables accounting",
+    "display_name": "1610 Trade payables, no separate receivables/payables accounting"
+   },
+   {
+    "id": 488,
+    "code": "1771",
+    "name": "VAT 7%",
+    "display_name": "1771 VAT 7%"
+   },
+   {
+    "id": 491,
+    "code": "1776",
+    "name": "VAT, 19 %",
+    "display_name": "1776 VAT, 19 %"
+   },
+   {
+    "id": 828,
+    "code": "3400",
+    "name": "Cost of merchandise, 19 % input tax",
+    "display_name": "3400 Cost of merchandise, 19 % input tax"
+   },
+   {
+    "id": 1140,
+    "code": "8200",
+    "name": "Revenue",
+    "display_name": "8200 Revenue"
+   },
+   {
+    "id": 1141,
+    "code": "8300",
+    "name": "Revenue, 7 % VAT",
+    "display_name": "8300 Revenue, 7 % VAT"
+   },
+   {
+    "id": 1151,
+    "code": "8400",
+    "name": "Revenue, 19 % VAT",
+    "display_name": "8400 Revenue, 19 % VAT"
+   }
+  ],
+  "account.tax": [
+   {
+    "id": 14,
+    "name": "19%",
+    "amount": 19.0,
+    "amount_type": "percent",
+    "type_tax_use": "sale",
+    "price_include": false,
+    "display_name": "19%"
+   },
+   {
+    "id": 15,
+    "name": "7%",
+    "amount": 7.0,
+    "amount_type": "percent",
+    "type_tax_use": "sale",
+    "price_include": false,
+    "display_name": "7%"
+   },
+   {
+    "id": 23,
+    "name": "19% I",
+    "amount": 19.0,
+    "amount_type": "percent",
+    "type_tax_use": "purchase",
+    "price_include": false,
+    "display_name": "19% I"
+   }
+  ],
+  "res.currency": [
+   {
+    "id": 126,
+    "name": "EUR",
+    "display_name": "EUR"
+   }
+  ],
+  "res.company": [
+   {
+    "id": 1,
+    "name": "GO45 Demo GmbH",
+    "display_name": "GO45 Demo GmbH"
+   }
+  ],
+  "res.partner": [
+   {
+    "id": 7,
+    "name": "Bäckerei Sonnenschein GmbH",
+    "is_company": true,
+    "ref": false,
+    "company_registry": false,
+    "active": true,
+    "parent_id": false,
+    "type": "contact",
+    "customer_rank": 6,
+    "supplier_rank": 0,
+    "street": "Marktplatz 3",
+    "street2": false,
+    "zip": "50667",
+    "city": "Köln",
+    "state_id": false,
+    "country_id": [
+     57,
+     "Germany"
+    ],
+    "email": "info@baeckerei-sonnenschein.example",
+    "phone": false,
+    "mobile": false,
+    "website": false,
+    "lang": "de_DE",
+    "vat": "DE811907980",
+    "bank_ids": [],
+    "display_name": "Bäckerei Sonnenschein GmbH"
+   },
+   {
+    "id": 8,
+    "name": "Lena Hoffmann",
+    "is_company": false,
+    "ref": false,
+    "company_registry": false,
+    "active": true,
+    "parent_id": false,
+    "type": "contact",
+    "customer_rank": 4,
+    "supplier_rank": 0,
+    "street": "Lindenstraße 8",
+    "street2": false,
+    "zip": "60311",
+    "city": "Frankfurt am Main",
+    "state_id": false,
+    "country_id": [
+     57,
+     "Germany"
+    ],
+    "email": false,
+    "phone": false,
+    "mobile": false,
+    "website": false,
+    "lang": "de_DE",
+    "vat": false,
+    "bank_ids": [],
+    "display_name": "Lena Hoffmann"
+   },
+   {
+    "id": 9,
+    "name": "Holzhandel Nord GmbH",
+    "is_company": true,
+    "ref": false,
+    "company_registry": false,
+    "active": true,
+    "parent_id": false,
+    "type": "contact",
+    "customer_rank": 0,
+    "supplier_rank": 4,
+    "street": "Hafenweg 12",
+    "street2": false,
+    "zip": "20457",
+    "city": "Hamburg",
+    "state_id": false,
+    "country_id": [
+     57,
+     "Germany"
+    ],
+    "email": false,
+    "phone": false,
+    "mobile": false,
+    "website": false,
+    "lang": "de_DE",
+    "vat": "DE118645675",
+    "bank_ids": [],
+    "display_name": "Holzhandel Nord GmbH"
+   },
+   {
+    "id": 11,
+    "name": "Rhein Logistik AG",
+    "is_company": true,
+    "ref": false,
+    "company_registry": false,
+    "active": true,
+    "parent_id": false,
+    "type": "contact",
+    "customer_rank": 6,
+    "supplier_rank": 2,
+    "street": "Rheinallee 21",
+    "street2": false,
+    "zip": "55116",
+    "city": "Mainz",
+    "state_id": false,
+    "country_id": [
+     57,
+     "Germany"
+    ],
+    "email": false,
+    "phone": false,
+    "mobile": false,
+    "website": false,
+    "lang": "de_DE",
+    "vat": "DE129273398",
+    "bank_ids": [],
+    "display_name": "Rhein Logistik AG"
+   },
+   {
+    "id": 12,
+    "name": "Gesellschaft für Innenausbau und Holzverarbeitung Süddeutschland mbH",
+    "is_company": true,
+    "ref": false,
+    "company_registry": false,
+    "active": true,
+    "parent_id": false,
+    "type": "contact",
+    "customer_rank": 2,
+    "supplier_rank": 0,
+    "street": "Industriestraße 77",
+    "street2": false,
+    "zip": "70173",
+    "city": "Stuttgart",
+    "state_id": false,
+    "country_id": [
+     57,
+     "Germany"
+    ],
+    "email": false,
+    "phone": false,
+    "mobile": false,
+    "website": false,
+    "lang": "de_DE",
+    "vat": false,
+    "bank_ids": [],
+    "display_name": "Gesellschaft für Innenausbau und Holzverarbeitung Süddeutschland mbH"
+   }
+  ],
+  "res.country": [
+   {
+    "id": 57,
+    "code": "DE",
+    "name": "Germany",
+    "display_name": "Germany"
+   }
+  ]
+ }
+}

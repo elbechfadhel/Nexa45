@@ -1,0 +1,20 @@
+# Champs protégés du domaine ACCOUNTING pour Odoo : LISTE DE SÛRETÉ, pas une règle.
+#
+# Données comptables par nature : aucune règle ne peut les rendre NOT_RELEVANT ; seul un humain peut les ignorer.
+# Union des versions 17 / 18 / 19. Entre dans le checksum des règles : toute modification impose d'incrémenter
+# definition_version dans accounting_domain.yaml.
+
+domain: ACCOUNTING
+system: odoo
+
+# toute extension custom (x_*) est posée ou proposée, jamais exclue par une règle
+origins: [CUSTOM]
+
+fields:
+  account.move: [name, ref, move_type, state, commercial_partner_id, company_id, date, invoice_date,
+                 invoice_date_due, currency_id, amount_total, amount_tax, line_ids]
+  account.move.line: [move_id, display_type, name, account_id, balance, amount_currency, price_total, currency_id,
+                      tax_ids, tax_line_id]
+  account.account: [code, name]
+  account.tax: [name, amount, amount_type, type_tax_use, price_include]
+  res.currency: [name]

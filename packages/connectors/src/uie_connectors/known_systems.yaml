@@ -1,0 +1,37 @@
+# Systèmes CONNUS du Registry (identifiés, SANS schéma) : nom, éditeur, catégorie, description courte.
+#
+# Importés dans le Registry existant (table `systems`, statut `known`) par
+#   uv run uie registry known-systems
+# Aucun produit, aucune version, aucun champ, aucune capacité d'API : rien n'est supposé vérifié. Un système
+# qui reçoit un jour un schéma publié (loader + snapshot) passe en « supported » et n'est plus modifié ici.
+# Les systèmes qui ont déjà un schéma (Odoo, DATEV, Lexware Office) ne sont pas listés : ils viennent de leurs
+# loaders. Descriptions = nature du logiciel seulement (jamais une version, un format ou une API supposés).
+
+catalog_version: "1.0.0"
+systems:
+  # --- priorité 1
+  - {code: sevdesk, name: sevdesk, category: accounting, description: "Cloud accounting and invoicing software"}
+  - {code: weclapp, name: weclapp, category: erp, description: "Cloud ERP for small and mid-sized companies"}
+  - {code: sap_business_one, name: SAP Business One, vendor: SAP, category: erp,
+     description: "ERP for small and mid-sized companies"}
+  - {code: lexware_warenwirtschaft, name: Lexware Warenwirtschaft, vendor: Haufe-Lexware, category: erp,
+     description: "Merchandise management: articles, stock, orders and invoices"}
+  - {code: jtl_wawi, name: JTL-Wawi, vendor: JTL-Software, category: ecommerce,
+     description: "Merchandise management for online retail"}
+  # --- priorité 2
+  - {code: billbee, name: Billbee, category: ecommerce, description: "Order processing for online sellers"}
+  - {code: xentral, name: Xentral, category: erp, description: "ERP for e-commerce and wholesale"}
+  - {code: easybill, name: easybill, category: accounting, description: "Online invoicing software"}
+  - {code: haufe_x360, name: Haufe X360, vendor: Haufe-Lexware, category: erp,
+     description: "Cloud ERP for mid-sized companies"}
+  - {code: dynamics_365_finance, name: Microsoft Dynamics 365 Finance, vendor: Microsoft, category: erp,
+     description: "Finance and operations ERP for large organizations"}
+  # --- systèmes déjà proposés par le Wizard (conservés)
+  - {code: sap_s4hana, name: SAP S/4HANA, vendor: SAP, category: erp, description: "ERP suite for large organizations"}
+  - {code: dynamics_365_business_central, name: Microsoft Dynamics 365 Business Central, vendor: Microsoft,
+     category: erp, description: "ERP for small and mid-sized companies"}
+  - {code: oracle_netsuite, name: Oracle NetSuite, vendor: Oracle, category: erp, description: "Cloud ERP suite"}
+  - {code: quickbooks_online, name: QuickBooks Online, vendor: Intuit, category: accounting,
+     description: "Cloud accounting software"}
+  - {code: shopify, name: Shopify, category: ecommerce, description: "E-commerce platform"}
+  - {code: xero, name: Xero, category: accounting, description: "Cloud accounting software"}

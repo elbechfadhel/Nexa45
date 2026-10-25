@@ -1,0 +1,135 @@
+# Définition standard du domaine PARTNER pour Odoo (client / fournisseur).
+#
+# Même moteur et mêmes règles d'écriture que catalog/odoo/product_domain.yaml : ce fichier DÉCLARE (union des
+# versions 17 / 18 / 19 : un élément absent d'un snapshot est present=false, jamais une erreur), le service
+# RÉSOUT contre un snapshot. Les champs non listés d'une entité du scope sont classés par les règles
+# ci-dessous ; une extension custom (x_*) qui correspond au vocabulaire devient une QUESTION (ex. un numéro de
+# client) : jamais une correspondance codée en dur.
+# Toute modification du contenu (ou du vocabulaire partner/vocabulary.yaml) impose d'incrémenter
+# definition_version.
+
+domain: PARTNER
+system: odoo
+definition_version: "1.0.0"
+versions: ["17", "18", "19"]
+
+entities:
+  - {technical_name: res.partner, role: PRIMARY}
+  - {technical_name: res.partner.bank, role: BANK_ACCOUNT}
+  - {technical_name: res.bank, role: BANK}
+  - {technical_name: res.country, role: COUNTRY}
+
+fields:
+  # ------------------------------------------------------------ res.partner (PRIMARY)
+  - {entity: res.partner, field: name, group: identity, key: name}
+  - {entity: res.partner, field: is_company, group: identity, key: is_organization}
+  - {entity: res.partner, field: ref, group: identity, key: partner_reference}
+  - {entity: res.partner, field: company_registry, group: identity, key: company_registry}
+  - {entity: res.partner, field: active, group: identity, key: active}
+  - {entity: res.partner, field: parent_id, group: identity, key: parent_partner}
+  - {entity: res.partner, field: type, group: identity, key: address_type}
+  - {entity: res.partner, field: customer_rank, group: commercial, key: customer_rank}
+  - {entity: res.partner, field: supplier_rank, group: commercial, key: supplier_rank}
+  - {entity: res.partner, field: street, group: address, key: street}
+  - {entity: res.partner, field: street2, group: address, key: street2}
+  - {entity: res.partner, field: zip, group: address, key: postal_code}
+  - {entity: res.partner, field: city, group: address, key: city}
+  - {entity: res.partner, field: state_id, group: address, key: region}
+  - {entity: res.partner, field: country_id, group: address, key: country}
+  - {entity: res.partner, field: email, group: contact, key: email}
+  - {entity: res.partner, field: phone, group: contact, key: phone}
+  - {entity: res.partner, field: mobile, group: contact, key: mobile}
+  - {entity: res.partner, field: website, group: contact, key: website}
+  - {entity: res.partner, field: lang, group: contact, key: language}
+  - {entity: res.partner, field: vat, group: tax, key: vat_id}
+  - {entity: res.partner, field: bank_ids, group: banking, key: bank_accounts}
+
+  # ------------------------------------------------------- res.partner.bank (BANK_ACCOUNT)
+  - {entity: res.partner.bank, field: acc_number, group: banking, key: bank_account_number}
+  - {entity: res.partner.bank, field: acc_holder_name, group: banking, key: account_holder}
+  - {entity: res.partner.bank, field: sequence, group: banking, key: bank_priority}
+  - {entity: res.partner.bank, field: bank_id, group: banking, key: bank}
+  - {entity: res.partner.bank, field: partner_id, group: banking}
+
+  # -------------------------------------------------------------------- res.bank (BANK)
+  - {entity: res.bank, field: bic, group: banking, key: bic}
+  - {entity: res.bank, field: name, group: banking, key: bank_name}
+
+  # -------------------------------------------------------------- res.country (COUNTRY)
+  - {entity: res.country, field: code, group: address, key: country_code}
+  - {entity: res.country, field: name, group: address}
+
+# aucun média dans ce domaine
+media:
+  detect: {native_types: [], name_patterns: []}
+
+field_defaults:
+  listed_field_relevance: RELEVANT
+  unlisted_standard_field_relevance: POSSIBLE
+  unlisted_field_group: other
+  technical_fields_group: technical
+  technical_fields_relevance: NOT_RELEVANT
+
+# Règles de pertinence déterministes (évaluées dans l'ordre, la première gagne), génériques : elles portent sur
+# une PROPRIÉTÉ du champ, jamais sur une liste de noms métier. Raison affichée en anglais.
+semantics:
+  known_threshold: 0.90
+  structure_checks: [PRIMARY, BANK_ACCOUNT, COUNTRY]
+  rules:
+    - id: P01
+      description: technical fields (id, create_*, write_*, __last_update)
+      when:
+        any_of:
+          - {technical: true}
+          - {name_patterns: ['^id$', '^create_(uid|date)$', '^write_(uid|date)$', '^__last_update$']}
+      relevance: NOT_RELEVANT
+      reason: Technical field managed by the system
+    - id: P02
+      description: field explicitly listed in the pack with a business group
+      when: {listed: true, group_not_in: [other]}
+      relevance: RELEVANT
+      reason: Partner field declared by the domain pack
+    - id: P03
+      description: relation to an entity outside the domain scope (no role)
+      when: {relation_outside_scope: true}
+      relevance: NOT_RELEVANT
+      reason: Link to {target}, which is not part of the partner data
+    - id: P04
+      description: computed, non-stored helper (counters, has_*, display_name, html, activities, messages, search)
+      when:
+        computed: true
+        stored: false
+        name_patterns: ['_count$', '^has_', '^display_name$', '_html$', '(^|_)activity_', '^message_', '_search$']
+      relevance: NOT_RELEVANT
+      reason: Computed helper, not partner data
+    - id: P05
+      description: user-interface flag (show_*, *_visible, hide_*...)
+      when:
+        native_types: [selection, boolean]
+        name_patterns: ['^show_', '_visible$', '^hide_', '_invisible$']
+      relevance: NOT_RELEVANT
+      reason: User-interface flag, not partner data
+    - id: P06
+      description: standard related copy of a field of another domain entity (follows its decision)
+      when: {origins: [STANDARD], related_copy: true}
+      follow_source: true
+      reason: Reflects {source}
+    - id: P07
+      description: alias or pattern of the vocabulary with a compatible type
+      when: {min_match_confidence: 0.90}
+      relevance: RELEVANT
+      reason: Matches the partner vocabulary ({key})
+    - id: P08
+      description: technical back-reference (collection whose relation is carried by the target entity)
+      when: {back_reference: true}
+      relevance: NOT_RELEVANT
+      reason: Technical back-reference to {target}; the relation is carried by {inverse}
+    - id: P09
+      description: custom field without vocabulary match (asked to the user)
+      when: {origins: [CUSTOM], no_match: true}
+      relevance: POSSIBLE
+      reason: Custom field without a known meaning
+    - id: P10
+      description: default
+      relevance: POSSIBLE
+      reason: Standard field not declared by the domain pack

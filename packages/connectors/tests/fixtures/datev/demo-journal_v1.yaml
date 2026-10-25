@@ -1,0 +1,18 @@
+spec: uie-datev-format/1
+system: datev
+format: demo-journal
+format_name: Demo Journal
+data_category: 91
+format_version: "1"
+header_version: "900"
+entity: demo_journal
+header:
+- {position: 1, label: Kennung, datev_type: Text, pattern: "^[\"](DEMO)[\"]$"}
+- {position: 2, label: Kopfversion, datev_type: Zahl, pattern: "^(900)$"}
+- {position: 3, label: Kategorie, datev_type: Zahl}
+fields:
+- {position: 1, label: Betrag, datev_type: Betrag, length: 8, decimals: 2, required: true}
+- {position: 2, label: Konto, datev_type: Konto, length: 6, required: true}
+- {position: 3, label: Datum, datev_type: Datum, length: 4}
+- {position: 4, label: Text kurz, datev_type: Text, length: 20}
+source: {definition: {file: invented.xml, sha256: "0"}}

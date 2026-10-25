@@ -1,0 +1,197 @@
+# Contrat MINIMAL de l'API publique Lexware Office pour UIE (format uie-lexware-api/1).
+#
+# Ce fichier est NOTRE description, écrite à la main : noms des ressources et des champs, types, lecture
+# seule, longueurs, valeurs admises — le strict nécessaire pour préparer et valider une requête. Il ne
+# reproduit aucun texte de la documentation Lexware (les libellés sont les nôtres) ; chaque ressource renvoie
+# à la page officielle qui fait foi (`doc`). Une contrainte absente de la documentation est absente ici.
+#
+# Périmètre : profile, contacts, countries (phase 1a) ; posting-categories, vouchers, voucherlist (phase 2a :
+# pièces comptables externes, LECTURE et préparation ; posting-categories vérifiée sur un compte réel, vouchers
+# et voucherlist d'après la documentation seulement — permission absente de la clé de test) ; articles (produits,
+# phase articles 1a : APERÇU seulement, d'après la documentation lue le 2026-10-16).
+# `api_version` = version de ROUTE (/v1/…). `contract_revision` = date de tête du journal des changements
+# officiel pour l'état décrit. Quand l'API évolue : nouveau fichier / nouvelle révision → NOUVEAU snapshot du
+# Registry ; un snapshot publié n'est jamais modifié.
+
+spec: uie-lexware-api/1
+system: lexware
+system_name: Lexware Office
+product: public-api
+product_name: Public API
+api_version: v1
+interface: rest
+contract_revision: "2026-08-11"
+sources:
+  - https://developers.lexware.io/docs/
+  - https://developers.lexware.io/docs/#change-log
+
+resources:
+  - name: profile
+    label: Profile
+    path: /v1/profile
+    doc: https://developers.lexware.io/docs/#profile-endpoint
+    operations: {read: true}
+    fields:
+      - {path: organizationId, label: Organization id, type: uuid, readonly: true}
+      - {path: companyName, label: Company name, readonly: true}
+      - {path: created.userId, label: Connection user id, type: uuid, readonly: true}
+      - {path: created.userName, label: Connection user name, readonly: true}
+      - {path: created.userEmail, label: Connection user e-mail, readonly: true}
+      - {path: created.date, label: Connection date, type: datetime, readonly: true}
+      - {path: connectionId, label: Connection id, type: uuid, readonly: true}
+      - {path: taxType, label: Tax type, type: enum, readonly: true, enum: [net, gross, vatfree]}
+      - {path: distanceSalesPrinciple, label: Distance sales principle, type: enum, readonly: true,
+         enum: [ORIGIN, DESTINATION]}
+      - {path: businessFeatures, label: Business features, type: list, readonly: true}
+      - {path: smallBusiness, label: Small business, type: boolean, readonly: true}
+
+  - name: contacts
+    label: Contacts
+    path: /v1/contacts
+    doc: https://developers.lexware.io/docs/#contacts-endpoint
+    operations: {read: true, search: true, create: true, update: true, delete: false, events: true}
+    fields:
+      - {path: id, label: Contact id, type: uuid, readonly: true}
+      - {path: organizationId, label: Organization id, type: uuid, readonly: true}
+      - {path: version, label: Revision, type: integer, protocol: true}
+      - {path: archived, label: Archived, type: boolean, readonly: true}
+      - {path: roles.customer, label: Customer role, type: object, presence: true}
+      - {path: roles.customer.number, label: Customer number, type: integer, readonly: true}
+      - {path: roles.vendor, label: Supplier role, type: object, presence: true}
+      - {path: roles.vendor.number, label: Supplier number, type: integer, readonly: true}
+      - {path: company.name, label: Company name, required_group: company}
+      - {path: company.taxNumber, label: Tax number}
+      - {path: company.vatRegistrationId, label: VAT ID}
+      - {path: company.allowTaxFreeInvoices, label: Tax-free invoices allowed, type: boolean}
+      - {path: "company.contactPersons[0].salutation", label: Contact person salutation, length: 25}
+      - {path: "company.contactPersons[0].firstName", label: Contact person first name}
+      - {path: "company.contactPersons[0].lastName", label: Contact person last name,
+         required_group: company.contactPersons}
+      - {path: "company.contactPersons[0].primary", label: Primary contact person, type: boolean}
+      - {path: "company.contactPersons[0].emailAddress", label: Contact person e-mail}
+      - {path: "company.contactPersons[0].phoneNumber", label: Contact person phone}
+      - {path: person.salutation, label: Salutation, length: 25}
+      - {path: person.firstName, label: First name}
+      - {path: person.lastName, label: Last name, required_group: person}
+      - {path: "addresses.billing[0].supplement", label: Billing address supplement}
+      - {path: "addresses.billing[0].street", label: Billing street}
+      - {path: "addresses.billing[0].zip", label: Billing postal code}
+      - {path: "addresses.billing[0].city", label: Billing city}
+      - {path: "addresses.billing[0].countryCode", label: Billing country, required_group: addresses.billing}
+      - {path: "addresses.shipping[0].supplement", label: Shipping address supplement}
+      - {path: "addresses.shipping[0].street", label: Shipping street}
+      - {path: "addresses.shipping[0].zip", label: Shipping postal code}
+      - {path: "addresses.shipping[0].city", label: Shipping city}
+      - {path: "addresses.shipping[0].countryCode", label: Shipping country, required_group: addresses.shipping}
+      - {path: xRechnung.buyerReference, label: Buyer reference}
+      - {path: xRechnung.vendorNumberAtCustomer, label: Vendor number at the customer}
+      - {path: "emailAddresses.business[0]", label: Business e-mail}
+      - {path: "emailAddresses.office[0]", label: Office e-mail}
+      - {path: "emailAddresses.private[0]", label: Private e-mail}
+      - {path: "emailAddresses.other[0]", label: Other e-mail}
+      - {path: "phoneNumbers.business[0]", label: Business phone}
+      - {path: "phoneNumbers.office[0]", label: Office phone}
+      - {path: "phoneNumbers.mobile[0]", label: Mobile phone}
+      - {path: "phoneNumbers.private[0]", label: Private phone}
+      - {path: "phoneNumbers.fax[0]", label: Fax}
+      - {path: "phoneNumbers.other[0]", label: Other phone}
+      - {path: note, label: Note, length: 1000}
+
+  - name: countries
+    label: Countries
+    path: /v1/countries
+    doc: https://developers.lexware.io/docs/#countries-endpoint
+    operations: {read: true}
+    fields:
+      - {path: countryCode, label: Country code, readonly: true}
+      - {path: countryNameEN, label: Country name (English), readonly: true}
+      - {path: countryNameDE, label: Country name (German), readonly: true}
+      - {path: taxClassification, label: Tax classification, type: enum, readonly: true,
+         enum: [de, intraCommunity, thirdPartyCountry]}
+
+  - name: posting-categories
+    label: Posting categories
+    path: /v1/posting-categories
+    doc: https://developers.lexware.io/docs/#posting-categories-endpoint
+    operations: {read: true}
+    fields:
+      - {path: id, label: Category id, type: uuid, readonly: true}
+      - {path: name, label: Category name, readonly: true}
+      - {path: type, label: Category kind, type: enum, readonly: true, enum: [income, outgo]}
+      - {path: contactRequired, label: Contact required, type: boolean, readonly: true}
+      - {path: splitAllowed, label: Split allowed, type: boolean, readonly: true}
+      - {path: groupName, label: Category group, readonly: true}
+
+  - name: vouchers
+    label: Bookkeeping vouchers
+    path: /v1/vouchers
+    doc: https://developers.lexware.io/docs/#vouchers-endpoint
+    operations: {read: true, search: true, create: true, update: true, delete: false, extra: [upload]}
+    fields:
+      - {path: id, label: Voucher id, type: uuid, readonly: true}
+      - {path: organizationId, label: Organization id, type: uuid, readonly: true}
+      - {path: type, label: Voucher type, type: enum,
+         enum: [salesinvoice, salescreditnote, purchaseinvoice, purchasecreditnote]}
+      - {path: voucherStatus, label: Voucher status, readonly: true}
+      - {path: voucherNumber, label: Voucher number}
+      - {path: voucherDate, label: Voucher date, type: datetime}
+      - {path: shippingDate, label: Shipping date, type: datetime}
+      - {path: dueDate, label: Due date, type: datetime}
+      - {path: totalGrossAmount, label: Total gross amount, type: number, decimals: 2}
+      - {path: totalTaxAmount, label: Total tax amount, type: number, decimals: 2}
+      - {path: taxType, label: Tax type, type: enum, enum: [net, gross]}
+      - {path: useCollectiveContact, label: Collective contact, type: boolean}
+      - {path: contactId, label: Contact id, type: uuid}
+      - {path: remark, label: Remark}
+      - {path: files, label: Attached files, type: list, readonly: true}
+      - {path: "voucherItems[0].amount", label: Item amount, type: number, decimals: 2,
+         required_group: voucherItems}
+      - {path: "voucherItems[0].taxAmount", label: Item tax amount, type: number, decimals: 2,
+         required_group: voucherItems}
+      - {path: "voucherItems[0].taxRatePercent", label: Item tax rate, type: number,
+         required_group: voucherItems}
+      - {path: "voucherItems[0].categoryId", label: Item category, type: uuid, required_group: voucherItems}
+      - {path: version, label: Revision, type: integer, protocol: true}
+      - {path: createdDate, label: Created, type: datetime, readonly: true}
+      - {path: updatedDate, label: Updated, type: datetime, readonly: true}
+
+  - name: voucherlist
+    label: Voucher list
+    path: /v1/voucherlist
+    doc: https://developers.lexware.io/docs/#voucherlist-endpoint
+    operations: {read: true, search: true}
+    fields:
+      - {path: id, label: Voucher id, type: uuid, readonly: true}
+      - {path: voucherType, label: Voucher type, readonly: true}
+      - {path: voucherStatus, label: Voucher status, readonly: true}
+      - {path: voucherNumber, label: Voucher number, readonly: true}
+      - {path: voucherDate, label: Voucher date, type: datetime, readonly: true}
+      - {path: contactName, label: Contact name, readonly: true}
+      - {path: totalAmount, label: Total amount, type: number, readonly: true}
+      - {path: openAmount, label: Open amount, type: number, readonly: true}
+      - {path: currency, label: Currency, readonly: true}
+      - {path: archived, label: Archived, type: boolean, readonly: true}
+
+  - name: articles
+    label: Articles
+    path: /v1/articles
+    doc: https://developers.lexware.io/docs/#articles-endpoint
+    operations: {read: true, search: true, create: true, update: true, delete: true, events: true}
+    fields:
+      - {path: id, label: Article id, type: uuid, readonly: true}
+      - {path: organizationId, label: Organization id, type: uuid, readonly: true}
+      - {path: createdDate, label: Created, type: datetime, readonly: true}
+      - {path: updatedDate, label: Updated, type: datetime, readonly: true}
+      - {path: archived, label: Archived, type: boolean, readonly: true}
+      - {path: title, label: Title, required: true}
+      - {path: description, label: Description}
+      - {path: type, label: Article type, type: enum, required: true, enum: [PRODUCT, SERVICE]}
+      - {path: articleNumber, label: Article number}
+      - {path: gtin, label: GTIN, pattern: '^(\d{8}|\d{12}|\d{13}|\d{14})$'}
+      - {path: note, label: Internal note}
+      - {path: unitName, label: Unit, required: true}
+      - {path: price.netPrice, label: Net price, type: number}
+      - {path: price.grossPrice, label: Gross price, type: number}
+      - {path: price.leadingPrice, label: Leading price, type: enum, required: true, enum: [NET, GROSS]}
+      - {path: price.taxRate, label: Tax rate, type: number, required: true, enum: ["0", "7", "19"]}
+      - {path: version, label: Revision, type: integer, protocol: true}

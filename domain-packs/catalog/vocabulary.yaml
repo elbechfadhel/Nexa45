@@ -1,0 +1,674 @@
+# Vocabulaire contrôlé du domaine PRODUCT (Product Domain V1).
+#
+# Liste fermée des semantic_key du catalogue produit : Semantic Enrichment (V1b) et le futur CDM Product
+# s'y réfèrent. Ajouter une clé = éditer ce fichier, jamais une chaîne libre dans le code. Toute
+# modification change le checksum des règles sémantiques : incrémenter aussi definition_version des packs
+# (catalog/<système>/product_domain.yaml), sinon la définition standard persistée est refusée.
+#
+# Champs d'une clé :
+#   key                    snake_case, unique, stable ; « other » est réservé (réponse « autre »)
+#   group                  groupe de champs du domaine (8 groupes métier)
+#   label, description     affichés au supplier (anglais : langue de l'interface)
+#   data_type              type logique attendu (vocabulaire DataType du Registry)
+#   cardinality            single | multi (single : au plus un champ par entité sur cette clé)
+#   required_for_catalog   indispensable à un catalogue exploitable
+#   aliases                noms techniques / libellés connus (casse, _ - espace normalisés), génériques
+#   patterns               regex optionnelles sur le nom technique
+#   expected_types         types compatibles (défaut : data_type) ; un type incompatible annule la proposition
+#   relation_target_roles  références : rôle attendu de l'entité cible dans le domaine
+#   entity_roles           rôles des entités où la clé a un sens (défaut : toutes)
+# Les alias propres à un système se déclarent dans son pack (clé « key » d'un champ) et priment.
+
+domain: PRODUCT
+vocabulary_version: "1.6.0"
+# valeurs canoniques des clés énumérées (cibles des value_maps des packs) ; hors du modèle Vocabulary du Core :
+# le checksum des règles sémantiques ne change pas (Product CDM 1.0.0 : ProductKind sans UNKNOWN)
+values:
+  product_type: [GOODS, SERVICE]
+
+keys:
+  # ---------------------------------------------------------------- identity
+  - key: sku
+    group: identity
+    label: SKU / internal reference
+    description: Stock keeping unit / internal product code used to identify the article.
+    data_type: string
+    cardinality: single
+    required_for_catalog: true
+    aliases: [sku, internal reference, item code, article number, article no, asin, item number, product code,
+              artikelnummer, artikel nr, art nr, artnr, art.-nr.]
+    patterns: ['^x_?sku$']
+    entity_roles: [PRIMARY, VARIANT]
+  - key: ean_gtin
+    group: identity
+    label: EAN / GTIN barcode
+    description: Global trade item number (EAN-8/13, UPC, GTIN-14) printed as barcode.
+    data_type: string
+    cardinality: single
+    required_for_catalog: false
+    aliases: [barcode, ean, ean13, gtin, upc, ean code, upc code, strichcode, ean nummer]
+    patterns: ['^x_?(ean|gtin|upc)(_?\d+)?$']
+    entity_roles: [PRIMARY, VARIANT]
+  - key: name
+    group: identity
+    label: Product name
+    description: Commercial name of the product.
+    data_type: string
+    cardinality: single
+    required_for_catalog: true
+    aliases: [name, product name, title, product title, item name, bezeichnung, artikelbezeichnung, artikelname,
+              produktname, produktbezeichnung]
+    entity_roles: [PRIMARY, VARIANT]
+  - key: active
+    group: identity
+    label: Active
+    description: Whether the product is active (not archived) in the catalog.
+    data_type: boolean
+    cardinality: single
+    required_for_catalog: false
+    aliases: [active, aktiv]
+    entity_roles: [PRIMARY, VARIANT]
+  - key: internal_reference
+    group: identity
+    label: Additional internal reference
+    description: Additional internal reference distinct from the SKU (legacy code, ERP key).
+    data_type: string
+    cardinality: single
+    required_for_catalog: false
+    aliases: [legacy code, legacy reference, erp code, old reference]
+    patterns: ['^x_?(legacy|old|erp)_?(code|ref|reference)$']
+    entity_roles: [PRIMARY, VARIANT]
+  - key: manufacturer_reference
+    group: identity
+    label: Manufacturer reference
+    description: Part number given by the manufacturer (MPN).
+    data_type: string
+    cardinality: single
+    required_for_catalog: false
+    aliases: [manufacturer reference, manufacturer code, mpn, manufacturer part number]
+    patterns: ['^x_?(mpn|manufacturer_?(ref|reference|code))$']
+    entity_roles: [PRIMARY, VARIANT]
+  - key: company
+    group: identity
+    label: Company
+    description: Company that owns the product record (empty = shared by all companies).
+    data_type: reference
+    cardinality: single
+    required_for_catalog: false
+    entity_roles: [PRIMARY, VARIANT]
+  - key: product_template
+    group: identity
+    label: Product (template)
+    description: Link to the product template this record belongs to.
+    data_type: reference
+    cardinality: single
+    required_for_catalog: false
+    relation_target_roles: [PRIMARY]
+    entity_roles: [VARIANT, VARIANT_VALUE, ATTRIBUTE_LINE, SUPPLIER_INFO]
+  - key: product_variant
+    group: identity
+    label: Product variant
+    description: Link to one concrete product variant.
+    data_type: reference
+    cardinality: single
+    required_for_catalog: false
+    relation_target_roles: [VARIANT]
+    entity_roles: [SUPPLIER_INFO]
+
+  # -------------------------------------------------------------- commercial
+  - key: list_price
+    group: commercial
+    label: Sales price
+    description: Public sales price (before discounts and taxes).
+    data_type: decimal
+    cardinality: single
+    required_for_catalog: true
+    aliases: [list price, sales price, sale price, public price, regular price, final price, selling price,
+              vk netto, vk-preis, vk preis, verkaufspreis, verkaufspreis netto]
+    entity_roles: [PRIMARY, VARIANT]
+  - key: cost_price
+    group: commercial
+    label: Cost
+    description: Cost of the product used for margin and valuation.
+    data_type: decimal
+    cardinality: single
+    required_for_catalog: false
+    aliases: [cost, cost price, standard price, purchase price, ek netto, ek-preis, ek preis, einkaufspreis,
+              einkaufspreis netto]
+    entity_roles: [PRIMARY, VARIANT]
+  - key: can_be_sold
+    group: commercial
+    label: Can be sold
+    description: The product can be sold.
+    data_type: boolean
+    cardinality: single
+    required_for_catalog: false
+    aliases: [can be sold, sellable, sale ok]
+    entity_roles: [PRIMARY, VARIANT]
+  - key: can_be_purchased
+    group: commercial
+    label: Can be purchased
+    description: The product can be purchased.
+    data_type: boolean
+    cardinality: single
+    required_for_catalog: false
+    aliases: [can be purchased, purchasable, purchase ok]
+    entity_roles: [PRIMARY, VARIANT]
+  - key: currency
+    group: commercial
+    label: Currency
+    description: Currency of the prices.
+    data_type: reference
+    cardinality: single
+    required_for_catalog: false
+    aliases: [currency]
+    entity_roles: [PRIMARY, VARIANT, SUPPLIER_INFO]
+  - key: sales_taxes
+    group: commercial
+    label: Customer taxes
+    description: Default taxes applied when the product is sold.
+    data_type: collection
+    cardinality: multi
+    required_for_catalog: false
+    aliases: [customer taxes, sales taxes]
+    entity_roles: [PRIMARY, VARIANT]
+  - key: purchase_taxes
+    group: commercial
+    label: Vendor taxes
+    description: Default taxes applied when the product is purchased.
+    data_type: collection
+    cardinality: multi
+    required_for_catalog: false
+    aliases: [vendor taxes, supplier taxes, purchase taxes]
+    entity_roles: [PRIMARY, VARIANT]
+
+  - key: optional_products
+    group: commercial
+    label: Optional products (cross-sell)
+    description: Other products suggested together with this product (options, accessories, cross-selling).
+    data_type: collection
+    cardinality: multi
+    required_for_catalog: false
+    relation_target_roles: [PRIMARY]
+    entity_roles: [PRIMARY, VARIANT]
+
+  # ------------------------------------------------------------- description
+  - key: description_sale
+    group: description
+    label: Sales description
+    description: Description shown to customers on quotations and orders.
+    data_type: text
+    cardinality: single
+    required_for_catalog: false
+    # « description » seul (fichier d'un client, export de boutique) = texte destiné aux clients (1.6.0)
+    aliases: [description, product description, sales description, sale description, beschreibung,
+              artikelbeschreibung, produktbeschreibung]
+    expected_types: [text, string]
+    entity_roles: [PRIMARY, VARIANT]
+  - key: description_purchase
+    group: description
+    label: Purchase description
+    description: Description shown to vendors on purchase orders.
+    data_type: text
+    cardinality: single
+    required_for_catalog: false
+    aliases: [purchase description]
+    expected_types: [text, string]
+    entity_roles: [PRIMARY, VARIANT]
+  - key: description_internal
+    group: description
+    label: Internal description
+    description: Internal description of the product, not shown to customers or vendors.
+    data_type: text
+    cardinality: single
+    required_for_catalog: false
+    aliases: [internal description]
+    expected_types: [text, string]
+    entity_roles: [PRIMARY, VARIANT]
+
+  # ---------------------------------------------------------- classification
+  - key: category
+    group: classification
+    label: Category
+    description: Product category in the catalog hierarchy.
+    data_type: reference
+    cardinality: single
+    required_for_catalog: true
+    aliases: [category, product category, categories, warengruppe, kategorie, produktkategorie, artikelgruppe]
+    relation_target_roles: [CATEGORY]
+    entity_roles: [PRIMARY, VARIANT]
+  - key: product_type
+    group: classification
+    label: Product type
+    description: Nature of the product (goods, service, combo, storable...).
+    data_type: enum
+    cardinality: single
+    required_for_catalog: true
+    aliases: [product type]
+    entity_roles: [PRIMARY, VARIANT]
+  - key: tags
+    group: classification
+    label: Tags
+    description: Free classification tags.
+    data_type: collection
+    cardinality: multi
+    required_for_catalog: false
+    aliases: [tags, product tags]
+    entity_roles: [PRIMARY, VARIANT]
+  - key: property_values
+    group: classification
+    label: Category-defined property values
+    description: Free product properties whose definition comes from the category (material, brand...).
+    data_type: json
+    cardinality: single
+    required_for_catalog: false
+    entity_roles: [PRIMARY, VARIANT]
+  - key: category_name
+    group: classification
+    label: Category name
+    description: Name of the category (last level only).
+    data_type: string
+    cardinality: single
+    required_for_catalog: true
+    entity_roles: [CATEGORY]
+  - key: category_path
+    group: classification
+    label: Category full path
+    description: Full path of the category in the hierarchy (parent / child).
+    data_type: string
+    cardinality: single
+    required_for_catalog: false
+    entity_roles: [CATEGORY]
+  - key: parent_category
+    group: classification
+    label: Parent category
+    description: Parent category in the hierarchy.
+    data_type: reference
+    cardinality: single
+    required_for_catalog: false
+    relation_target_roles: [CATEGORY]
+    entity_roles: [CATEGORY]
+  - key: child_categories
+    group: classification
+    label: Child categories
+    description: Sub-categories of the category.
+    data_type: collection
+    cardinality: multi
+    required_for_catalog: false
+    relation_target_roles: [CATEGORY]
+    entity_roles: [CATEGORY]
+
+  # --------------------------------------------------------------- logistics
+  - key: uom
+    group: logistics
+    label: Unit of measure
+    description: Unit of measure used for sales and stock.
+    data_type: reference
+    cardinality: single
+    required_for_catalog: true
+    aliases: [uom, unit of measure, unit, einheit, mengeneinheit, verkaufseinheit]
+    relation_target_roles: [UOM]
+    entity_roles: [PRIMARY, VARIANT, SUPPLIER_INFO]
+  - key: uom_purchase
+    group: logistics
+    label: Purchase unit of measure
+    description: Unit of measure used on purchase orders.
+    data_type: reference
+    cardinality: single
+    required_for_catalog: false
+    aliases: [purchase uom, purchase unit of measure]
+    relation_target_roles: [UOM]
+    entity_roles: [PRIMARY, VARIANT]
+  - key: weight
+    group: logistics
+    label: Weight
+    description: Weight of one unit.
+    data_type: decimal
+    cardinality: single
+    required_for_catalog: false
+    aliases: [weight, net weight, item weight, gewicht, nettogewicht]
+    entity_roles: [PRIMARY, VARIANT]
+  - key: volume
+    group: logistics
+    label: Volume
+    description: Volume of one unit.
+    data_type: decimal
+    cardinality: single
+    required_for_catalog: false
+    aliases: [volume]
+    entity_roles: [PRIMARY, VARIANT]
+  - key: packaging_code
+    group: logistics
+    label: Packaging code
+    description: Code identifying the packaging unit of the product.
+    data_type: string
+    cardinality: single
+    required_for_catalog: false
+    aliases: [packaging code, pack code, package code]
+    patterns: ['^x_?pack(age|aging)?_?code$']
+    entity_roles: [PRIMARY, VARIANT]
+  - key: packaging
+    group: logistics
+    label: Packagings
+    description: Packaging units available for the product (box, pallet...).
+    data_type: collection
+    cardinality: multi
+    required_for_catalog: false
+    aliases: [packagings, product packages]
+    entity_roles: [PRIMARY, VARIANT]
+  - key: tracking
+    group: logistics
+    label: Traceability
+    description: Tracking by lot or serial number.
+    data_type: enum
+    cardinality: single
+    required_for_catalog: false
+    aliases: [tracking, traceability]
+    entity_roles: [PRIMARY, VARIANT]
+  - key: uom_name
+    group: logistics
+    label: Unit name
+    description: Name of the unit of measure (Units, kg, m...).
+    data_type: string
+    cardinality: single
+    required_for_catalog: true
+    entity_roles: [UOM]
+  - key: uom_category
+    group: logistics
+    label: Unit category
+    description: Category of units that can be converted into each other (weight, length...).
+    data_type: reference
+    cardinality: single
+    required_for_catalog: false
+    entity_roles: [UOM]
+  - key: uom_type
+    group: logistics
+    label: Unit type
+    description: Position of the unit relative to the reference unit of its category (reference, bigger, smaller).
+    data_type: enum
+    cardinality: single
+    required_for_catalog: false
+    entity_roles: [UOM]
+  - key: uom_factor
+    group: logistics
+    label: Unit conversion factor
+    description: Conversion ratio between the unit and the reference unit of its category.
+    data_type: decimal
+    cardinality: single
+    required_for_catalog: false
+    entity_roles: [UOM]
+  - key: uom_ratio
+    group: logistics
+    label: Unit ratio as displayed
+    description: Ratio between the unit and the reference unit of its category, in the direction shown to users.
+    data_type: decimal
+    cardinality: single
+    required_for_catalog: false
+    entity_roles: [UOM]
+  - key: uom_rounding
+    group: logistics
+    label: Unit rounding precision
+    description: Rounding precision of quantities expressed in the unit.
+    data_type: decimal
+    cardinality: single
+    required_for_catalog: false
+    entity_roles: [UOM]
+
+  # ---------------------------------------------------------------- variants
+  - key: attribute
+    group: variants
+    label: Variant attribute
+    description: Variant attribute (size, color...).
+    data_type: reference
+    cardinality: multi
+    required_for_catalog: false
+    aliases: [attribute]
+    relation_target_roles: [ATTRIBUTE]
+  - key: attribute_value
+    group: variants
+    label: Attribute value
+    description: Value of a variant attribute (M, red...).
+    data_type: reference
+    cardinality: multi
+    required_for_catalog: false
+    aliases: [attribute value, attribute values]
+    expected_types: [reference, collection]
+    relation_target_roles: [ATTRIBUTE_VALUE]
+  - key: variant_identity
+    group: variants
+    label: Variant combination
+    description: Combination of attribute values that identifies a concrete variant.
+    data_type: collection
+    cardinality: multi
+    required_for_catalog: false
+    aliases: [variant values, combination indices]
+    expected_types: [collection, string]
+    entity_roles: [VARIANT]
+  - key: variants
+    group: variants
+    label: Variants
+    description: Concrete variants of the product template.
+    data_type: collection
+    cardinality: multi
+    required_for_catalog: false
+    relation_target_roles: [VARIANT]
+    entity_roles: [PRIMARY]
+  - key: attribute_lines
+    group: variants
+    label: Attribute lines
+    description: Attributes used by a product template, with their allowed values (variant definition).
+    data_type: collection
+    cardinality: multi
+    required_for_catalog: false
+    expected_types: [collection, reference]
+    relation_target_roles: [ATTRIBUTE_LINE]
+    entity_roles: [PRIMARY]
+  - key: attribute_name
+    group: variants
+    label: Attribute name
+    description: Name of a variant attribute (Size, Color...).
+    data_type: string
+    cardinality: single
+    required_for_catalog: false
+    entity_roles: [ATTRIBUTE]
+  - key: attribute_display_type
+    group: variants
+    label: Attribute display type
+    description: How the attribute is displayed for selection (radio, pills, select, color...).
+    data_type: enum
+    cardinality: single
+    required_for_catalog: false
+    entity_roles: [ATTRIBUTE]
+  - key: variant_creation_mode
+    group: variants
+    label: Variant creation mode
+    description: Whether variants are created for this attribute (always, dynamically, never).
+    data_type: enum
+    cardinality: single
+    required_for_catalog: false
+    entity_roles: [ATTRIBUTE]
+  - key: display_order
+    group: variants
+    label: Display order
+    description: Order in which attributes or values are displayed.
+    data_type: integer
+    cardinality: single
+    required_for_catalog: false
+    entity_roles: [ATTRIBUTE, ATTRIBUTE_VALUE]
+  - key: attribute_value_name
+    group: variants
+    label: Attribute value name
+    description: Name of an attribute value (M, Red...).
+    data_type: string
+    cardinality: single
+    required_for_catalog: false
+    entity_roles: [ATTRIBUTE_VALUE]
+  - key: color_code
+    group: variants
+    label: Color code
+    description: HTML color code of an attribute value (#FF0000).
+    data_type: string
+    cardinality: single
+    required_for_catalog: false
+    entity_roles: [ATTRIBUTE_VALUE]
+  - key: free_text_value
+    group: variants
+    label: Free text value
+    description: The customer can enter a free value for this attribute value.
+    data_type: boolean
+    cardinality: single
+    required_for_catalog: false
+    entity_roles: [ATTRIBUTE_VALUE]
+  - key: variant_extra_price
+    group: variants
+    label: Variant extra price
+    description: Price added to the product price when this attribute value is selected.
+    data_type: decimal
+    cardinality: single
+    required_for_catalog: false
+    entity_roles: [ATTRIBUTE_VALUE]
+  - key: variant_value_active
+    group: variants
+    label: Value active on the product
+    description: Whether the attribute value is still used by the product template.
+    data_type: boolean
+    cardinality: single
+    required_for_catalog: false
+    entity_roles: [VARIANT_VALUE]
+
+  # ---------------------------------------------------------------- supplier
+  - key: supplier_reference
+    group: supplier
+    label: Supplier product code
+    description: Product code used by the supplier.
+    data_type: string
+    cardinality: single
+    required_for_catalog: false
+    aliases: [supplier reference, supplier ref, vendor reference, supplier product code, vendor product code]
+    patterns: ['^x_?(supplier|vendor)_?ref(erence)?$']
+    entity_roles: [PRIMARY, VARIANT, SUPPLIER_INFO]
+  - key: supplier_name
+    group: supplier
+    label: Supplier
+    description: Supplier (vendor) of the product.
+    data_type: reference
+    cardinality: single
+    required_for_catalog: false
+    aliases: [supplier, vendor]
+    entity_roles: [SUPPLIER_INFO]
+  - key: supplier_product_name
+    group: supplier
+    label: Supplier product name
+    description: Name of the product in the supplier's catalog.
+    data_type: string
+    cardinality: single
+    required_for_catalog: false
+    aliases: [supplier product name, vendor product name]
+    entity_roles: [SUPPLIER_INFO]
+  - key: supplier_price
+    group: supplier
+    label: Supplier price
+    description: Purchase price agreed with the supplier.
+    data_type: decimal
+    cardinality: single
+    required_for_catalog: false
+    aliases: [supplier price, vendor price]
+    entity_roles: [SUPPLIER_INFO]
+  - key: supplier_min_qty
+    group: supplier
+    label: Minimum order quantity
+    description: Minimum quantity to order from the supplier.
+    data_type: decimal
+    cardinality: single
+    required_for_catalog: false
+    aliases: [minimum quantity, minimal quantity, min qty, moq]
+    expected_types: [decimal, integer]
+    entity_roles: [SUPPLIER_INFO]
+  - key: supplier_lead_time
+    group: supplier
+    label: Supplier lead time
+    description: Delivery lead time of the supplier, in days.
+    data_type: integer
+    cardinality: single
+    required_for_catalog: false
+    aliases: [delivery lead time, supplier lead time]
+    expected_types: [integer, decimal]
+    entity_roles: [SUPPLIER_INFO]
+  - key: supplier_offers
+    group: supplier
+    label: Supplier offers
+    description: Supplier price lists of the product (supplier, code, price, quantity, lead time).
+    data_type: collection
+    cardinality: multi
+    required_for_catalog: false
+    relation_target_roles: [SUPPLIER_INFO]
+    entity_roles: [PRIMARY, VARIANT]
+  - key: supplier_discount
+    group: supplier
+    label: Supplier discount rate
+    description: Discount percentage granted by the supplier on its purchase price.
+    data_type: decimal
+    cardinality: single
+    required_for_catalog: false
+    entity_roles: [SUPPLIER_INFO]
+  - key: supplier_net_price
+    group: supplier
+    label: Supplier net purchase price
+    description: Supplier purchase price after the supplier discount.
+    data_type: decimal
+    cardinality: single
+    required_for_catalog: false
+    entity_roles: [SUPPLIER_INFO]
+  - key: supplier_valid_from
+    group: supplier
+    label: Supplier offer start date
+    description: First day the supplier offer is valid.
+    data_type: date
+    cardinality: single
+    required_for_catalog: false
+    entity_roles: [SUPPLIER_INFO]
+  - key: supplier_valid_to
+    group: supplier
+    label: Supplier offer end date
+    description: Last day the supplier offer is valid.
+    data_type: date
+    cardinality: single
+    required_for_catalog: false
+    entity_roles: [SUPPLIER_INFO]
+
+  # ------------------------------------------------------------------- media
+  - key: main_image
+    group: media
+    label: Main image
+    description: Main product image (highest available resolution).
+    data_type: binary
+    cardinality: single
+    required_for_catalog: false
+    aliases: [main image]
+    entity_roles: [PRIMARY]
+  - key: variant_image
+    group: media
+    label: Variant image
+    description: Image specific to one variant (highest available resolution).
+    data_type: binary
+    cardinality: single
+    required_for_catalog: false
+    aliases: [variant image]
+    entity_roles: [VARIANT]
+  - key: attribute_value_image
+    group: media
+    label: Attribute value swatch image
+    description: Image illustrating one attribute value (colour swatch, pattern, material sample).
+    data_type: binary
+    cardinality: single
+    required_for_catalog: false
+    entity_roles: [ATTRIBUTE_VALUE, VARIANT_VALUE]
+  - key: additional_images
+    group: media
+    label: Additional images
+    description: Additional product images (gallery), only when the system proves they exist.
+    data_type: binary
+    cardinality: multi
+    required_for_catalog: false
+    aliases: [additional images, extra images, gallery]
+    expected_types: [binary, collection]

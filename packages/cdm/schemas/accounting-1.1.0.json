@@ -1,0 +1,466 @@
+{
+  "$defs": {
+    "DocumentLine": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/LineKind"
+        },
+        "account": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LedgerAccountRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "amount": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Amount"
+        },
+        "gross_amount": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Gross Amount"
+        },
+        "taxes": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/TaxRef"
+          },
+          "title": "Taxes",
+          "type": "array"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "category": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PostingCategoryRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "tax_rate": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tax Rate"
+        },
+        "tax_amount": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tax Amount"
+        }
+      },
+      "required": [
+        "kind",
+        "amount"
+      ],
+      "title": "DocumentLine",
+      "type": "object"
+    },
+    "DocumentStatus": {
+      "enum": [
+        "POSTED",
+        "DRAFT",
+        "CANCELLED"
+      ],
+      "title": "DocumentStatus",
+      "type": "string"
+    },
+    "DocumentType": {
+      "enum": [
+        "CUSTOMER_INVOICE",
+        "CUSTOMER_CREDIT_NOTE",
+        "VENDOR_BILL",
+        "VENDOR_CREDIT_NOTE"
+      ],
+      "title": "DocumentType",
+      "type": "string"
+    },
+    "LedgerAccountRef": {
+      "additionalProperties": false,
+      "properties": {
+        "source_ref": {
+          "minLength": 1,
+          "title": "Source Ref",
+          "type": "string"
+        },
+        "code": {
+          "minLength": 1,
+          "title": "Code",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        }
+      },
+      "required": [
+        "source_ref",
+        "code"
+      ],
+      "title": "LedgerAccountRef",
+      "type": "object"
+    },
+    "LineKind": {
+      "enum": [
+        "ITEM",
+        "TAX",
+        "OPEN_ITEM",
+        "ROUNDING"
+      ],
+      "title": "LineKind",
+      "type": "string"
+    },
+    "PartnerRef": {
+      "additionalProperties": false,
+      "properties": {
+        "source_ref": {
+          "minLength": 1,
+          "title": "Source Ref",
+          "type": "string"
+        },
+        "role": {
+          "$ref": "#/$defs/PartnerRole"
+        },
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_ref",
+        "role",
+        "name"
+      ],
+      "title": "PartnerRef",
+      "type": "object"
+    },
+    "PartnerRole": {
+      "enum": [
+        "CUSTOMER",
+        "SUPPLIER"
+      ],
+      "title": "PartnerRole",
+      "type": "string"
+    },
+    "PostingCategoryRef": {
+      "additionalProperties": false,
+      "description": "Catégorie de comptabilisation de la SOURCE (1.1.0) : classe une ligne sans être un compte.",
+      "properties": {
+        "source_ref": {
+          "minLength": 1,
+          "title": "Source Ref",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        }
+      },
+      "required": [
+        "source_ref"
+      ],
+      "title": "PostingCategoryRef",
+      "type": "object"
+    },
+    "TaxComputation": {
+      "enum": [
+        "PERCENT",
+        "FIXED",
+        "GROUP"
+      ],
+      "title": "TaxComputation",
+      "type": "string"
+    },
+    "TaxRef": {
+      "additionalProperties": false,
+      "properties": {
+        "source_ref": {
+          "minLength": 1,
+          "title": "Source Ref",
+          "type": "string"
+        },
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "computation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TaxComputation"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "rate": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rate"
+        },
+        "scope": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TaxScope"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "price_included": {
+          "default": false,
+          "title": "Price Included",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "source_ref",
+        "name"
+      ],
+      "title": "TaxRef",
+      "type": "object"
+    },
+    "TaxScope": {
+      "enum": [
+        "SALE",
+        "PURCHASE",
+        "NONE"
+      ],
+      "title": "TaxScope",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "model_version": {
+      "default": "1.1.0",
+      "title": "Model Version",
+      "type": "string"
+    },
+    "source_ref": {
+      "minLength": 1,
+      "title": "Source Ref",
+      "type": "string"
+    },
+    "document_type": {
+      "$ref": "#/$defs/DocumentType"
+    },
+    "status": {
+      "$ref": "#/$defs/DocumentStatus"
+    },
+    "number": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Number"
+    },
+    "reference": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Reference"
+    },
+    "accounting_date": {
+      "format": "date",
+      "title": "Accounting Date",
+      "type": "string"
+    },
+    "document_date": {
+      "anyOf": [
+        {
+          "format": "date",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Document Date"
+    },
+    "due_date": {
+      "anyOf": [
+        {
+          "format": "date",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Due Date"
+    },
+    "currency": {
+      "pattern": "^[A-Z]{3}$",
+      "title": "Currency",
+      "type": "string"
+    },
+    "partner": {
+      "$ref": "#/$defs/PartnerRef"
+    },
+    "total_amount": {
+      "anyOf": [
+        {
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "title": "Total Amount"
+    },
+    "tax_amount": {
+      "anyOf": [
+        {
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "title": "Tax Amount"
+    },
+    "lines": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/DocumentLine"
+      },
+      "title": "Lines",
+      "type": "array"
+    },
+    "description": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Description"
+    }
+  },
+  "required": [
+    "source_ref",
+    "document_type",
+    "status",
+    "accounting_date",
+    "currency",
+    "partner",
+    "total_amount",
+    "tax_amount"
+  ],
+  "title": "AccountingDocument",
+  "type": "object",
+  "$id": "https://go45.io/uie/cdm/accounting-1.1.0.json"
+}

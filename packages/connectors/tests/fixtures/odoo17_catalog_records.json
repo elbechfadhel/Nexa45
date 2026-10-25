@@ -1,0 +1,275 @@
+{
+ "format": "uie-odoo-records/1",
+ "note": "Données INVENTÉES pour les tests (catalogue minimal), format search_read Odoo.",
+ "records": {
+  "product.category": [
+   {
+    "id": 1,
+    "display_name": "All",
+    "name": "All",
+    "complete_name": "All",
+    "parent_id": false
+   },
+   {
+    "id": 2,
+    "display_name": "All / Furniture",
+    "name": "Furniture",
+    "complete_name": "All / Furniture",
+    "parent_id": [
+     1,
+     "All"
+    ]
+   },
+   {
+    "id": 3,
+    "display_name": "All / Furniture / Chairs",
+    "name": "Chairs",
+    "complete_name": "All / Furniture / Chairs",
+    "parent_id": [
+     2,
+     "All / Furniture"
+    ]
+   }
+  ],
+  "product.template": [
+   {
+    "currency_id": [
+     1,
+     "EUR"
+    ],
+    "uom_id": [
+     1,
+     "Units"
+    ],
+    "detailed_type": "consu",
+    "volume": 0.3,
+    "description_sale": "Ergonomic office chair",
+    "x_notes_internal": "do not publish",
+    "x_pack_code": "PK-10",
+    "x_supplier_ref": "SUP-CH-1",
+    "image_1920": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+    "image_128": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+    "image_256": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+    "image_512": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+    "image_1024": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+    "id": 1,
+    "display_name": "Office Chair",
+    "name": "Office Chair",
+    "default_code": false,
+    "barcode": false,
+    "list_price": 120.0,
+    "categ_id": [
+     3,
+     "All / Furniture / Chairs"
+    ],
+    "weight": 7.5,
+    "active": true
+   },
+   {
+    "currency_id": [
+     1,
+     "EUR"
+    ],
+    "uom_id": [
+     1,
+     "Units"
+    ],
+    "detailed_type": "consu",
+    "volume": 0.0,
+    "description_sale": false,
+    "x_notes_internal": false,
+    "x_pack_code": false,
+    "x_supplier_ref": false,
+    "image_1920": false,
+    "image_128": false,
+    "image_256": false,
+    "image_512": false,
+    "image_1024": false,
+    "id": 2,
+    "display_name": "[LAMP-01] Desk Lamp",
+    "name": "Desk Lamp",
+    "default_code": "LAMP-01",
+    "barcode": "4006381333931",
+    "list_price": 35.5,
+    "categ_id": [
+     2,
+     "All / Furniture"
+    ],
+    "weight": 1.2,
+    "active": true
+   },
+   {
+    "currency_id": [
+     1,
+     "EUR"
+    ],
+    "uom_id": [
+     1,
+     "Units"
+    ],
+    "detailed_type": "consu",
+    "volume": 0.0,
+    "description_sale": false,
+    "x_notes_internal": false,
+    "x_pack_code": false,
+    "x_supplier_ref": false,
+    "image_1920": false,
+    "image_128": false,
+    "image_256": false,
+    "image_512": false,
+    "image_1024": false,
+    "id": 3,
+    "display_name": "Old Stool",
+    "name": "Old Stool",
+    "default_code": "STOOL-OLD",
+    "barcode": false,
+    "list_price": 10.0,
+    "categ_id": [
+     2,
+     "All / Furniture"
+    ],
+    "weight": 2.0,
+    "active": false
+   }
+  ],
+  "product.product": [
+   {
+    "id": 11,
+    "display_name": "[CHAIR-01-BLK] Office Chair (Black)",
+    "product_tmpl_id": [
+     1,
+     "Office Chair"
+    ],
+    "default_code": "CHAIR-01-BLK",
+    "barcode": "4006381333948",
+    "lst_price": 120.0,
+    "weight": 7.5,
+    "active": true,
+    "product_template_attribute_value_ids": [
+     101,
+     103
+    ],
+    "image_variant_1920": false,
+    "image_variant_128": false,
+    "image_variant_1024": false
+   },
+   {
+    "id": 12,
+    "display_name": "[CHAIR-01-RED] Office Chair (Red)",
+    "product_tmpl_id": [
+     1,
+     "Office Chair"
+    ],
+    "default_code": "CHAIR-01-RED",
+    "barcode": false,
+    "lst_price": 130.0,
+    "weight": 7.5,
+    "active": true,
+    "product_template_attribute_value_ids": [
+     102,
+     103
+    ],
+    "image_variant_1920": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+    "image_variant_128": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+    "image_variant_1024": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+   },
+   {
+    "id": 21,
+    "display_name": "[LAMP-01] Desk Lamp",
+    "product_tmpl_id": [
+     2,
+     "Desk Lamp"
+    ],
+    "default_code": "LAMP-01",
+    "barcode": "4006381333931",
+    "lst_price": 35.5,
+    "weight": 1.2,
+    "active": true,
+    "product_template_attribute_value_ids": [],
+    "image_variant_1920": false,
+    "image_variant_128": false,
+    "image_variant_1024": false
+   },
+   {
+    "id": 31,
+    "display_name": "[STOOL-OLD] Old Stool",
+    "product_tmpl_id": [
+     3,
+     "Old Stool"
+    ],
+    "default_code": "STOOL-OLD",
+    "barcode": false,
+    "lst_price": 10.0,
+    "weight": 2.0,
+    "active": false,
+    "product_template_attribute_value_ids": [],
+    "image_variant_1920": false,
+    "image_variant_128": false,
+    "image_variant_1024": false
+   }
+  ],
+  "product.template.attribute.value": [
+   {
+    "id": 101,
+    "display_name": "Color: Black",
+    "attribute_id": [
+     1,
+     "Color"
+    ],
+    "name": "Black",
+    "product_tmpl_id": [
+     1,
+     "Office Chair"
+    ]
+   },
+   {
+    "id": 102,
+    "display_name": "Color: Red",
+    "attribute_id": [
+     1,
+     "Color"
+    ],
+    "name": "Red",
+    "product_tmpl_id": [
+     1,
+     "Office Chair"
+    ]
+   },
+   {
+    "id": 103,
+    "display_name": "Size: Standard",
+    "attribute_id": [
+     2,
+     "Size"
+    ],
+    "name": "Standard",
+    "product_tmpl_id": [
+     1,
+     "Office Chair"
+    ]
+   }
+  ],
+  "product.supplierinfo": [
+   {
+    "id": 201,
+    "display_name": "Wood & Co",
+    "product_tmpl_id": [
+     1,
+     "Office Chair"
+    ],
+    "partner_id": [
+     7,
+     "Wood & Co"
+    ],
+    "product_code": "WC-778",
+    "price": 55.0,
+    "currency_id": [
+     1,
+     "EUR"
+    ],
+    "min_qty": 10.0,
+    "delay": 14
+   }
+  ]
+ }
+}

@@ -1,0 +1,86 @@
+# Binding cible : Partner CDM → contact Lexware Office (API publique), résolu contre le Registry
+# (lexware / public-api / v1 / rest). Livraison PAR API : une requête par partenaire (jamais un fichier).
+#
+# Ce fichier ne lit QUE le Partner CDM (chemins de sa vue : kind, organization_name, person.last_name,
+# roles.CUSTOMER, address.MAIN.city…). Il ne connaît aucune source : le même binding sert quel que soit le
+# système qui a rempli le CDM. Il ne cite que des champs du contrat cible (technical_name du Registry) ;
+# libellé, type, longueur, valeurs admises et obligations conditionnelles viennent du Registry.
+#
+# Choix de la phase 1 (tirés du contrat officiel, rien d'inventé) :
+#   - UN contact par partenaire, avec ses rôles (client et / ou fournisseur) ;
+#   - société → `company`, personne → `person` ; sorte inconnue → bloqué (le contrat exige l'un ou l'autre) ;
+#   - le nom de famille d'une personne est obligatoire : il n'est JAMAIS déduit du nom complet (bloqué) ;
+#   - une seule adresse de facturation (adresse principale) et une de livraison ; le pays est obligatoire dès
+#     qu'une adresse est transmise (obligation déclarée par le Registry) ;
+#   - e-mail et téléphone principaux → type « business » ; mobile → « mobile » ; fax → « fax » ;
+#   - numéros client / fournisseur : attribués par le système cible, jamais transmis ;
+#   - ce que le contrat ne sait pas recevoir est écarté ET signalé (`omitted`).
+
+binding_version: "1.0.0"
+name: Lexware Office contacts
+source: {model: partner, version: "1"}
+target:
+  system: lexware
+  product: public-api
+  versions: ["v1"]
+  interface: rest
+  entity: contacts
+  display: Lexware Office
+records: single
+delivery: api
+
+fields:
+  - {field: roles.customer, source: roles.CUSTOMER}
+  - {field: roles.vendor, source: roles.SUPPLIER}
+  - {field: company.name, source: organization_name, fallback: name, when: {kind: [ORGANIZATION]}, identity: true}
+  - {field: company.vatRegistrationId, source: tax.vat_id, when: {kind: [ORGANIZATION]}}
+  - {field: company.taxNumber, source: tax.tax_number, when: {kind: [ORGANIZATION]}}
+  - {field: person.lastName, source: person.last_name, when: {kind: [PERSON]}, identity: true}
+  - {field: person.firstName, source: person.first_name, when: {kind: [PERSON]}}
+  - {field: addresses.billing.street, source: address.MAIN.street}
+  - {field: addresses.billing.supplement, source: address.MAIN.street2}
+  - {field: addresses.billing.zip, source: address.MAIN.postal_code}
+  - {field: addresses.billing.city, source: address.MAIN.city}
+  - {field: addresses.billing.countryCode, source: address.MAIN.country_code}
+  - {field: addresses.shipping.street, source: address.DELIVERY.street}
+  - {field: addresses.shipping.supplement, source: address.DELIVERY.street2}
+  - {field: addresses.shipping.zip, source: address.DELIVERY.postal_code}
+  - {field: addresses.shipping.city, source: address.DELIVERY.city}
+  - {field: addresses.shipping.countryCode, source: address.DELIVERY.country_code}
+  - {field: emailAddresses.business, source: contact.email}
+  - {field: phoneNumbers.business, source: contact.phone}
+  - {field: phoneNumbers.mobile, source: contact.mobile}
+  - {field: phoneNumbers.fax, source: contact.fax}
+
+omitted:
+  - {source: bank_accounts, label: Bank accounts}
+  - {source: contact.website, label: Website}
+  - {source: identifiers.customer_number, label: Customer number,
+     reason: "is not sent: Lexware Office assigns its own number"}
+  - {source: identifiers.supplier_number, label: Supplier number,
+     reason: "is not sent: Lexware Office assigns its own number"}
+  - {source: tax.vat_id, label: VAT ID, when: {kind: [PERSON]},
+     reason: "can only be sent for a company"}
+  - {source: tax.tax_number, label: Tax number, when: {kind: [PERSON]},
+     reason: "can only be sent for a company"}
+
+rules:
+  - id: L01
+    kind: required_unless
+    field: roles.customer
+    source: roles.SUPPLIER
+    equals: "true"
+    level: BLOCKING
+    message: Lexware Office needs at least one role (customer or supplier)
+  - id: L02
+    kind: required_unless
+    field: person.lastName
+    when: {kind: [PERSON]}
+    level: BLOCKING
+    message: "Lexware Office requires a last name, and the source does not provide one separately from the full name"
+  - id: L03
+    kind: required_unless
+    field: company.name
+    when: {kind: [UNKNOWN]}
+    level: BLOCKING
+    message: Lexware Office needs to know whether this partner is a company or a person

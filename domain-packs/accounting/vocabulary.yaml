@@ -1,0 +1,298 @@
+# Vocabulaire contrôlé du domaine ACCOUNTING (pièces comptables : factures et avoirs clients / fournisseurs).
+#
+# Liste fermée des semantic_key ; les attributs de l'Accounting CDM (uie_cdm.accounting) s'y réfèrent. Mêmes règles que
+# les vocabulaires catalog / partner : ajouter une clé = éditer ce fichier, incrémenter definition_version des packs
+# (accounting/<système>/accounting_domain.yaml). Alias SPÉCIFIQUES et entity_roles au plus juste (une proposition
+# faible sur un champ standard = une question).
+#
+# `values` : valeurs canoniques des clés énumérées = valeurs des énumérations de l'Accounting CDM (test) ; ce sont
+# les seules cibles possibles des `value_maps` d'un pack de système.
+
+domain: ACCOUNTING
+vocabulary_version: "1.0.0"
+
+values:
+  document_type: [CUSTOMER_INVOICE, CUSTOMER_CREDIT_NOTE, VENDOR_BILL, VENDOR_CREDIT_NOTE]
+  document_status: [POSTED, DRAFT, CANCELLED]
+  line_kind: [ITEM, TAX, OPEN_ITEM, ROUNDING]
+  tax_computation: [PERCENT, FIXED, GROUP]
+  tax_usage: [SALE, PURCHASE, NONE]
+
+keys:
+  # ---------------------------------------------------------------- document (identity)
+  - key: document_number
+    group: identity
+    label: Document number
+    description: Number of the accounting document (invoice or credit note number).
+    data_type: string
+    cardinality: single
+    required_for_catalog: true
+    aliases: [document number, invoice number]
+    entity_roles: [DOCUMENT]
+  - key: document_reference
+    group: identity
+    label: External reference
+    description: Reference given by the partner (for example the supplier's invoice number).
+    data_type: string
+    cardinality: single
+    required_for_catalog: false
+    aliases: [external reference, vendor reference, bill reference]
+    entity_roles: [DOCUMENT]
+  - key: document_type
+    group: identity
+    label: Document type
+    description: Customer invoice, customer credit note, vendor bill or vendor credit note.
+    data_type: enum
+    cardinality: single
+    required_for_catalog: true
+    entity_roles: [DOCUMENT]
+  - key: document_status
+    group: identity
+    label: Status
+    description: Whether the document is posted, draft or cancelled.
+    data_type: enum
+    cardinality: single
+    required_for_catalog: true
+    entity_roles: [DOCUMENT]
+  - key: partner
+    group: identity
+    label: Partner
+    description: Customer or supplier of the document (the commercial partner).
+    data_type: reference
+    cardinality: single
+    required_for_catalog: true
+    entity_roles: [DOCUMENT]
+  - key: company
+    group: identity
+    label: Company
+    description: Company that owns the document.
+    data_type: reference
+    cardinality: single
+    required_for_catalog: false
+    entity_roles: [DOCUMENT]
+  - key: description
+    group: description
+    label: Note
+    description: Free note of the document.
+    data_type: text
+    expected_types: [text, string]
+    cardinality: single
+    required_for_catalog: false
+    entity_roles: [DOCUMENT]
+
+  # ---------------------------------------------------------------- document (dates)
+  - key: accounting_date
+    group: dates
+    label: Accounting date
+    description: Date that determines the accounting period of the document.
+    data_type: date
+    cardinality: single
+    required_for_catalog: true
+    aliases: [accounting date]
+    entity_roles: [DOCUMENT]
+  - key: document_date
+    group: dates
+    label: Document date
+    description: Date of the invoice or credit note.
+    data_type: date
+    cardinality: single
+    required_for_catalog: false
+    aliases: [invoice date, bill date]
+    entity_roles: [DOCUMENT]
+  - key: due_date
+    group: dates
+    label: Due date
+    description: Date by which the document must be paid.
+    data_type: date
+    cardinality: single
+    required_for_catalog: false
+    aliases: [due date]
+    entity_roles: [DOCUMENT]
+
+  # ---------------------------------------------------------------- document (amounts)
+  - key: currency
+    group: amounts
+    label: Currency
+    description: Currency of the document.
+    data_type: reference
+    cardinality: single
+    required_for_catalog: true
+    relation_target_roles: [CURRENCY]
+    entity_roles: [DOCUMENT, DOCUMENT_LINE]
+  - key: total_amount
+    group: amounts
+    label: Total amount
+    description: Total amount of the document, taxes included.
+    data_type: decimal
+    cardinality: single
+    required_for_catalog: true
+    entity_roles: [DOCUMENT]
+  - key: tax_amount
+    group: amounts
+    label: Tax amount
+    description: Total amount of taxes of the document.
+    data_type: decimal
+    cardinality: single
+    required_for_catalog: true
+    entity_roles: [DOCUMENT]
+  - key: lines
+    group: amounts
+    label: Document lines
+    description: Lines of the document (items, taxes, amount due).
+    data_type: collection
+    cardinality: single
+    required_for_catalog: true
+    relation_target_roles: [DOCUMENT_LINE]
+    entity_roles: [DOCUMENT]
+
+  # ---------------------------------------------------------------- lines
+  - key: document
+    group: identity
+    label: Document
+    description: Document this line belongs to.
+    data_type: reference
+    cardinality: single
+    required_for_catalog: true
+    relation_target_roles: [DOCUMENT]
+    entity_roles: [DOCUMENT_LINE]
+  - key: line_kind
+    group: classification
+    label: Line type
+    description: Item, tax, amount due or rounding line.
+    data_type: enum
+    cardinality: single
+    required_for_catalog: true
+    entity_roles: [DOCUMENT_LINE]
+  - key: line_description
+    group: description
+    label: Line description
+    description: Label of the line.
+    data_type: string
+    expected_types: [string, text]
+    cardinality: single
+    required_for_catalog: false
+    entity_roles: [DOCUMENT_LINE]
+  - key: ledger_account
+    group: ledger
+    label: Account
+    description: Account of the chart of accounts the line is booked on.
+    data_type: reference
+    cardinality: single
+    required_for_catalog: true
+    relation_target_roles: [LEDGER_ACCOUNT]
+    entity_roles: [DOCUMENT_LINE]
+  - key: line_amount
+    group: amounts
+    label: Amount (signed)
+    description: Signed amount of the line in the company currency (debit positive, credit negative).
+    data_type: decimal
+    cardinality: single
+    required_for_catalog: true
+    entity_roles: [DOCUMENT_LINE]
+  - key: line_amount_currency
+    group: amounts
+    label: Amount in document currency (signed)
+    description: Signed amount of the line in the currency of the document.
+    data_type: decimal
+    cardinality: single
+    required_for_catalog: false
+    entity_roles: [DOCUMENT_LINE]
+  - key: line_gross_amount
+    group: amounts
+    label: Amount including taxes
+    description: Amount of an item line, taxes included.
+    data_type: decimal
+    cardinality: single
+    required_for_catalog: true
+    entity_roles: [DOCUMENT_LINE]
+  - key: line_taxes
+    group: tax
+    label: Taxes
+    description: Taxes applied to an item line.
+    data_type: collection
+    cardinality: single
+    required_for_catalog: true
+    relation_target_roles: [TAX]
+    entity_roles: [DOCUMENT_LINE]
+  - key: line_tax
+    group: tax
+    label: Tax of the tax line
+    description: Tax that produced a tax line.
+    data_type: reference
+    cardinality: single
+    required_for_catalog: true
+    relation_target_roles: [TAX]
+    entity_roles: [DOCUMENT_LINE]
+
+  # ---------------------------------------------------------------- ledger account
+  - key: account_code
+    group: ledger
+    label: Account code
+    description: Code of the account in the source chart of accounts.
+    data_type: string
+    cardinality: single
+    required_for_catalog: true
+    aliases: [account code]
+    entity_roles: [LEDGER_ACCOUNT]
+  - key: account_name
+    group: ledger
+    label: Account name
+    description: Name of the account.
+    data_type: string
+    cardinality: single
+    required_for_catalog: false
+    aliases: [account name]
+    entity_roles: [LEDGER_ACCOUNT]
+
+  # ---------------------------------------------------------------- tax
+  - key: tax_name
+    group: tax
+    label: Tax name
+    description: Name of the tax.
+    data_type: string
+    cardinality: single
+    required_for_catalog: true
+    aliases: [tax name]
+    entity_roles: [TAX]
+  - key: tax_rate
+    group: tax
+    label: Tax rate
+    description: Rate of a percentage tax (for example 19).
+    data_type: decimal
+    cardinality: single
+    required_for_catalog: true
+    entity_roles: [TAX]
+  - key: tax_computation
+    group: tax
+    label: Tax computation
+    description: Percentage, fixed amount or group of taxes.
+    data_type: enum
+    cardinality: single
+    required_for_catalog: true
+    entity_roles: [TAX]
+  - key: tax_usage
+    group: tax
+    label: Tax usage
+    description: Whether the tax is used on sales, purchases or neither.
+    data_type: enum
+    cardinality: single
+    required_for_catalog: false
+    entity_roles: [TAX]
+  - key: tax_price_included
+    group: tax
+    label: Included in price
+    description: The tax is included in the price of the item.
+    data_type: boolean
+    cardinality: single
+    required_for_catalog: false
+    entity_roles: [TAX]
+
+  # ---------------------------------------------------------------- currency
+  - key: currency_code
+    group: amounts
+    label: Currency code
+    description: ISO 4217 code of the currency.
+    data_type: string
+    cardinality: single
+    required_for_catalog: true
+    entity_roles: [CURRENCY]

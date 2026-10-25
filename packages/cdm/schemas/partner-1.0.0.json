@@ -1,0 +1,497 @@
+{
+  "$defs": {
+    "Address": {
+      "additionalProperties": false,
+      "properties": {
+        "usage": {
+          "$ref": "#/$defs/AddressUsage",
+          "default": "MAIN"
+        },
+        "street": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Street"
+        },
+        "street2": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Street2"
+        },
+        "po_box": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Po Box"
+        },
+        "postal_code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Postal Code"
+        },
+        "city": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "City"
+        },
+        "region": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Region"
+        },
+        "country_code": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Z]{2}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Country Code"
+        }
+      },
+      "title": "Address",
+      "type": "object"
+    },
+    "AddressUsage": {
+      "enum": [
+        "MAIN",
+        "INVOICE",
+        "DELIVERY",
+        "POSTAL"
+      ],
+      "title": "AddressUsage",
+      "type": "string"
+    },
+    "BankAccount": {
+      "additionalProperties": false,
+      "properties": {
+        "iban": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Iban"
+        },
+        "account_number": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Account Number"
+        },
+        "bic": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bic"
+        },
+        "bank_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bank Name"
+        },
+        "holder_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Holder Name"
+        },
+        "is_main": {
+          "default": false,
+          "title": "Is Main",
+          "type": "boolean"
+        }
+      },
+      "title": "BankAccount",
+      "type": "object"
+    },
+    "ContactInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "email": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Email"
+        },
+        "phone": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Phone"
+        },
+        "mobile": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mobile"
+        },
+        "fax": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fax"
+        },
+        "website": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Website"
+        }
+      },
+      "title": "ContactInfo",
+      "type": "object"
+    },
+    "Identifier": {
+      "additionalProperties": false,
+      "properties": {
+        "scheme": {
+          "$ref": "#/$defs/IdentifierScheme"
+        },
+        "value": {
+          "minLength": 1,
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "scheme",
+        "value"
+      ],
+      "title": "Identifier",
+      "type": "object"
+    },
+    "IdentifierScheme": {
+      "enum": [
+        "customer_number",
+        "supplier_number",
+        "partner_reference",
+        "company_registry"
+      ],
+      "title": "IdentifierScheme",
+      "type": "string"
+    },
+    "PartnerKind": {
+      "enum": [
+        "ORGANIZATION",
+        "PERSON",
+        "UNKNOWN"
+      ],
+      "title": "PartnerKind",
+      "type": "string"
+    },
+    "PartnerRole": {
+      "enum": [
+        "CUSTOMER",
+        "SUPPLIER"
+      ],
+      "title": "PartnerRole",
+      "type": "string"
+    },
+    "PersonName": {
+      "additionalProperties": false,
+      "description": "Nom d'une personne. `first_name` / `last_name` seulement si la SOURCE les sépare : jamais déduits\nd'un nom complet.",
+      "properties": {
+        "full_name": {
+          "minLength": 1,
+          "title": "Full Name",
+          "type": "string"
+        },
+        "first_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "First Name"
+        },
+        "last_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Last Name"
+        }
+      },
+      "required": [
+        "full_name"
+      ],
+      "title": "PersonName",
+      "type": "object"
+    },
+    "TaxInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "vat_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Vat Id"
+        },
+        "tax_number": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tax Number"
+        }
+      },
+      "title": "TaxInfo",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "model_version": {
+      "default": "1.0.0",
+      "title": "Model Version",
+      "type": "string"
+    },
+    "source_ref": {
+      "minLength": 1,
+      "title": "Source Ref",
+      "type": "string"
+    },
+    "kind": {
+      "$ref": "#/$defs/PartnerKind"
+    },
+    "name": {
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+    },
+    "organization_name": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Organization Name"
+    },
+    "person": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/PersonName"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "short_name": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Short Name"
+    },
+    "roles": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/PartnerRole"
+      },
+      "title": "Roles",
+      "type": "array"
+    },
+    "identifiers": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Identifier"
+      },
+      "title": "Identifiers",
+      "type": "array"
+    },
+    "addresses": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Address"
+      },
+      "title": "Addresses",
+      "type": "array"
+    },
+    "tax": {
+      "$ref": "#/$defs/TaxInfo",
+      "default": {
+        "vat_id": null,
+        "tax_number": null
+      }
+    },
+    "contact": {
+      "$ref": "#/$defs/ContactInfo",
+      "default": {
+        "email": null,
+        "phone": null,
+        "mobile": null,
+        "fax": null,
+        "website": null
+      }
+    },
+    "bank_accounts": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/BankAccount"
+      },
+      "title": "Bank Accounts",
+      "type": "array"
+    },
+    "language": {
+      "anyOf": [
+        {
+          "pattern": "^[a-z]{2}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Language"
+    },
+    "active": {
+      "default": true,
+      "title": "Active",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "source_ref",
+    "kind",
+    "name"
+  ],
+  "title": "Partner",
+  "type": "object",
+  "$id": "https://go45.io/uie/cdm/partner-1.0.0.json"
+}

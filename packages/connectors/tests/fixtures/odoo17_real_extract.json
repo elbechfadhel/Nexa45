@@ -1,0 +1,2199 @@
+{
+ "version_info": {
+  "server_version": "17.0-20260908",
+  "server_version_info": [
+   17,
+   0,
+   0,
+   "final",
+   0,
+   ""
+  ],
+  "server_serie": "17.0",
+  "protocol_version": 1
+ },
+ "describe": {
+  "loader": "odoo.xmlrpc",
+  "url": "http://localhost:8017",
+  "db": "ref17",
+  "server_version": "17.0-20260908",
+  "server_serie": "17.0",
+  "installed_modules": [
+   "account",
+   "account_add_gln",
+   "account_edi_ubl_cii",
+   "account_payment",
+   "account_payment_term",
+   "analytic",
+   "auth_signup",
+   "auth_totp",
+   "auth_totp_mail",
+   "auth_totp_portal",
+   "barcodes",
+   "barcodes_gs1_nomenclature",
+   "base",
+   "base_import",
+   "base_import_module",
+   "base_install_request",
+   "base_setup",
+   "bus",
+   "contacts",
+   "digest",
+   "google_gmail",
+   "http_routing",
+   "iap",
+   "iap_mail",
+   "mail",
+   "mail_bot",
+   "onboarding",
+   "partner_autocomplete",
+   "payment",
+   "phone_validation",
+   "portal",
+   "privacy_lookup",
+   "product",
+   "purchase",
+   "purchase_stock",
+   "resource",
+   "sale",
+   "sale_async_emails",
+   "sale_management",
+   "sale_pdf_quote_builder",
+   "sale_product_configurator",
+   "sale_purchase",
+   "sale_purchase_stock",
+   "sale_sms",
+   "sale_stock",
+   "sales_team",
+   "sms",
+   "snailmail",
+   "snailmail_account",
+   "spreadsheet",
+   "spreadsheet_account",
+   "spreadsheet_dashboard",
+   "spreadsheet_dashboard_account",
+   "spreadsheet_dashboard_purchase",
+   "spreadsheet_dashboard_purchase_stock",
+   "spreadsheet_dashboard_sale",
+   "spreadsheet_dashboard_stock_account",
+   "stock",
+   "stock_account",
+   "stock_sms",
+   "uom",
+   "utm",
+   "web",
+   "web_editor",
+   "web_tour",
+   "web_unsplash"
+  ]
+ },
+ "modules": [
+  {
+   "id": 1,
+   "name": "account",
+   "shortdesc": "Invoicing",
+   "installed_version": "17.0.1.2",
+   "author": "Odoo S.A.",
+   "category_id": [
+    2,
+    "Invoicing"
+   ]
+  },
+  {
+   "id": 2,
+   "name": "account_add_gln",
+   "shortdesc": "Add Partner GLN",
+   "installed_version": "17.0.1.0",
+   "author": "Odoo S.A.",
+   "category_id": [
+    2,
+    "Invoicing"
+   ]
+  },
+  {
+   "id": 9,
+   "name": "account_edi_ubl_cii",
+   "shortdesc": "Import/Export electronic invoices with UBL/CII",
+   "installed_version": "17.0.1.0",
+   "author": "Odoo S.A.",
+   "category_id": [
+    2,
+    "Invoicing"
+   ]
+  },
+  {
+   "id": 13,
+   "name": "account_payment",
+   "shortdesc": "Payment - Account",
+   "installed_version": "17.0.2.0",
+   "author": "Odoo S.A.",
+   "category_id": [
+    2,
+    "Invoicing"
+   ]
+  },
+  {
+   "id": 14,
+   "name": "account_payment_term",
+   "shortdesc": "Payment Term - Days end of month on the",
+   "installed_version": "17.0.1.0",
+   "author": "Odoo S.A.",
+   "category_id": [
+    2,
+    "Invoicing"
+   ]
+  },
+  {
+   "id": 23,
+   "name": "analytic",
+   "shortdesc": "Analytic Accounting",
+   "installed_version": "17.0.1.2",
+   "author": "Odoo S.A.",
+   "category_id": [
+    2,
+    "Invoicing"
+   ]
+  },
+  {
+   "id": 30,
+   "name": "auth_signup",
+   "shortdesc": "Signup",
+   "installed_version": "17.0.1.0",
+   "author": "Odoo S.A.",
+   "category_id": [
+    5,
+    "Tools"
+   ]
+  },
+  {
+   "id": 31,
+   "name": "auth_totp",
+   "shortdesc": "Two-Factor Authentication (TOTP)",
+   "installed_version": "17.0.1.0",
+   "author": "Odoo S.A.",
+   "category_id": [
+    7,
+    "Extra Tools"
+   ]
+  },
+  {
+   "id": 32,
+   "name": "auth_totp_mail",
+   "shortdesc": "2FA Invite mail",
+   "installed_version": "17.0.1.0",
+   "author": "Odoo S.A.",
+   "category_id": [
+    7,
+    "Extra Tools"
+   ]
+  },
+  {
+   "id": 34,
+   "name": "auth_totp_portal",
+   "shortdesc": "TOTPortal",
+   "installed_version": "17.0.1.0",
+   "author": "Odoo S.A.",
+   "category_id": [
+    4,
+    "Technical"
+   ]
+  },
+  {
+   "id": 35,
+   "name": "barcodes",
+   "shortdesc": "Barcode",
+   "installed_version": "17.0.2.0",
+   "author": "Odoo S.A.",
+   "category_id": [
+    4,
+    "Technical"
+   ]
+  },
+  {
+   "id": 36,
+   "name": "barcodes_gs1_nomenclature",
+   "shortdesc": "Barcode - GS1 Nomenclature",
+   "installed_version": "17.0.1.0",
+   "author": "Odoo S.A.",
+   "category_id": [
+    4,
+    "Technical"
+   ]
+  },
+  {
+   "id": 37,
+   "name": "base",
+   "shortdesc": "Base",
+   "installed_version": "17.0.1.3",
+   "author": "Odoo S.A.",
+   "category_id": [
+    4,
+    "Technical"
+   ]
+  },
+  {
+   "id": 42,
+   "name": "base_import",
+   "shortdesc": "Base import",
+   "installed_version": "17.0.2.0",
+   "author": "Odoo S.A.",
+   "category_id": [
+    5,
+    "Tools"
+   ]
+  },
+  {
+   "id": 43,
+   "name": "base_import_module",
+   "shortdesc": "Base import module",
+   "installed_version": "17.0.1.0",
+   "author": "Odoo S.A.",
+   "category_id": [
+    5,
+    "Tools"
+   ]
+  },
+  {
+   "id": 44,
+   "name": "base_install_request",
+   "shortdesc": "Base - Module Install Request",
+   "installed_version": "17.0.1.0",
+   "author": "Odoo S.A.",
+   "category_id": [
+    4,
+    "Technical"
+   ]
+  },
+  {
+   "id": 45,
+   "name": "base_setup",
+   "shortdesc": "Initial Setup Tools",
+   "installed_version": "17.0.1.0",
+   "author": "Odoo S.A.",
+   "category_id": [
+    4,
+    "Technical"
+   ]
+  },
+  {
+   "id": 49,
+   "name": "bus",
+   "shortdesc": "IM Bus",
+   "installed_version": "17.0.1.0",
+   "author": "Odoo S.A.",
+   "category_id": [
+    4,
+    "Technical"
+   ]
+  },
+  {
+   "id": 52,
+   "name": "contacts",
+   "shortdesc": "Contacts",
+   "installed_version": "17.0.1.0",
+   "author": "Odoo S.A.",
+   "category_id": [
+    12,
+    "CRM"
+   ]
+  },
+  {
+   "id": 63,
+   "name": "digest",
+   "shortdesc": "KPI Digests",
+   "installed_version": "17.0.1.1",
+   "author": "Odoo S.A.",
+   "category_id": [
+    17,
+    "Marketing"
+   ]
+  },
+  {
+   "id": 76,
+   "name": "google_gmail",
+   "shortdesc": "Google Gmail",
+   "installed_version": "17.0.1.2",
+   "author": "Odoo S.A.",
+   "category_id": [
+    4,
+    "Technical"
+   ]
+  },
+  {
+   "id": 104,
+   "name": "http_routing",
+   "shortdesc": "Web Routing",
+   "installed_version": "17.0.1.0",
+   "author": "Odoo S.A.",
+   "category_id": [
+    4,
+    "Technical"
+   ]
+  },
+  {
+   "id": 108,
+   "name": "iap",
+   "shortdesc": "In-App Purchases",
+   "installed_version": "17.0.1.1",
+   "author": "Odoo S.A.",
+   "category_id": [
+    5,
+    "Tools"
+   ]
+  },
+  {
+   "id": 110,
+   "name": "iap_mail",
+   "shortdesc": "IAP / Mail",
+   "installed_version": "17.0.1.0",
+   "author": "Odoo S.A.",
+   "category_id": [
+    5,
+    "Tools"
+   ]
+  },
+  {
+   "id": 327,
+   "name": "mail",
+   "shortdesc": "Discuss",
+   "installed_version": "17.0.1.15",
+   "author": "Odoo S.A.",
+   "category_id": [
+    35,
+    "Discuss"
+   ]
+  },
+  {
+   "id": 328,
+   "name": "mail_bot",
+   "shortdesc": "OdooBot",
+   "installed_version": "17.0.1.2",
+   "author": "Odoo S.A.",
+   "category_id": [
+    35,
+    "Discuss"
+   ]
+  },
+  {
+   "id": 360,
+   "name": "onboarding",
+   "shortdesc": "Onboarding Toolbox",
+   "installed_version": "17.0.1.2",
+   "author": "Odoo S.A.",
+   "category_id": [
+    4,
+    "Technical"
+   ]
+  },
+  {
+   "id": 361,
+   "name": "partner_autocomplete",
+   "shortdesc": "Partner Autocomplete",
+   "installed_version": "17.0.1.1",
+   "author": "Odoo S.A.",
+   "category_id": [
+    5,
+    "Tools"
+   ]
+  },
+  {
+   "id": 362,
+   "name": "payment",
+   "shortdesc": "Payment Engine",
+   "installed_version": "17.0.2.0",
+   "author": "Odoo S.A.",
+   "category_id": [
+    4,
+    "Technical"
+   ]
+  },
+  {
+   "id": 384,
+   "name": "phone_validation",
+   "shortdesc": "Phone Numbers Validation",
+   "installed_version": "17.0.2.1",
+   "author": "Odoo S.A.",
+   "category_id": [
+    4,
+    "Technical"
+   ]
+  },
+  {
+   "id": 386,
+   "name": "portal",
+   "shortdesc": "Customer Portal",
+   "installed_version": "17.0.1.0",
+   "author": "Odoo S.A.",
+   "category_id": [
+    4,
+    "Technical"
+   ]
+  },
+  {
+   "id": 417,
+   "name": "privacy_lookup",
+   "shortdesc": "Privacy",
+   "installed_version": "17.0.1.0",
+   "author": "Odoo S.A.",
+   "category_id": [
+    4,
+    "Technical"
+   ]
+  },
+  {
+   "id": 418,
+   "name": "product",
+   "shortdesc": "Products & Pricelists",
+   "installed_version": "17.0.1.2",
+   "author": "Odoo S.A.",
+   "category_id": [
+    9,
+    "Sales"
+   ]
+  },
+  {
+   "id": 434,
+   "name": "purchase",
+   "shortdesc": "Purchase",
+   "installed_version": "17.0.1.2",
+   "author": "Odoo S.A.",
+   "category_id": [
+    54,
+    "Purchase"
+   ]
+  },
+  {
+   "id": 440,
+   "name": "purchase_stock",
+   "shortdesc": "Purchase Stock",
+   "installed_version": "17.0.1.2",
+   "author": "Odoo S.A.",
+   "category_id": [
+    54,
+    "Purchase"
+   ]
+  },
+  {
+   "id": 443,
+   "name": "resource",
+   "shortdesc": "Resource",
+   "installed_version": "17.0.1.1",
+   "author": "Odoo S.A.",
+   "category_id": [
+    4,
+    "Technical"
+   ]
+  },
+  {
+   "id": 444,
+   "name": "sale",
+   "shortdesc": "Sales",
+   "installed_version": "17.0.1.2",
+   "author": "Odoo S.A.",
+   "category_id": [
+    9,
+    "Sales"
+   ]
+  },
+  {
+   "id": 445,
+   "name": "sale_async_emails",
+   "shortdesc": "Sales - Async Emails",
+   "installed_version": "17.0.1.0",
+   "author": "Odoo S.A.",
+   "category_id": [
+    9,
+    "Sales"
+   ]
+  },
+  {
+   "id": 451,
+   "name": "sale_management",
+   "shortdesc": "Sales",
+   "installed_version": "17.0.1.0",
+   "author": "Odoo S.A.",
+   "category_id": [
+    9,
+    "Sales"
+   ]
+  },
+  {
+   "id": 455,
+   "name": "sale_pdf_quote_builder",
+   "shortdesc": "Sales PDF Quotation Builder",
+   "installed_version": "17.0.1.0",
+   "author": "Odoo S.A.",
+   "category_id": [
+    9,
+    "Sales"
+   ]
+  },
+  {
+   "id": 456,
+   "name": "sale_product_configurator",
+   "shortdesc": "Sale Product Configurator",
+   "installed_version": "17.0.1.0",
+   "author": "Odoo S.A.",
+   "category_id": [
+    4,
+    "Technical"
+   ]
+  },
+  {
+   "id": 460,
+   "name": "sale_purchase",
+   "shortdesc": "Sale Purchase",
+   "installed_version": "17.0.1.0",
+   "author": "Odoo S.A.",
+   "category_id": [
+    4,
+    "Technical"
+   ]
+  },
+  {
+   "id": 461,
+   "name": "sale_purchase_stock",
+   "shortdesc": "MTO Sale <-> Purchase",
+   "installed_version": "17.0.1.0",
+   "author": "Odoo S.A.",
+   "category_id": [
+    4,
+    "Technical"
+   ]
+  },
+  {
+   "id": 463,
+   "name": "sale_sms",
+   "shortdesc": "Sale - SMS",
+   "installed_version": "17.0.1.0",
+   "author": "Odoo S.A.",
+   "category_id": [
+    4,
+    "Technical"
+   ]
+  },
+  {
+   "id": 464,
+   "name": "sale_stock",
+   "shortdesc": "Sales and Warehouse Management",
+   "installed_version": "17.0.1.0",
+   "author": "Odoo S.A.",
+   "category_id": [
+    4,
+    "Technical"
+   ]
+  },
+  {
+   "id": 468,
+   "name": "sales_team",
+   "shortdesc": "Sales Teams",
+   "installed_version": "17.0.1.1",
+   "author": "Odoo S.A.",
+   "category_id": [
+    9,
+    "Sales"
+   ]
+  },
+  {
+   "id": 469,
+   "name": "sms",
+   "shortdesc": "SMS gateway",
+   "installed_version": "17.0.3.0",
+   "author": "Odoo S.A.",
+   "category_id": [
+    5,
+    "Tools"
+   ]
+  },
+  {
+   "id": 471,
+   "name": "snailmail",
+   "shortdesc": "Snail Mail",
+   "installed_version": "17.0.0.4",
+   "author": "Odoo S.A.",
+   "category_id": [
+    5,
+    "Tools"
+   ]
+  },
+  {
+   "id": 472,
+   "name": "snailmail_account",
+   "shortdesc": "Snail Mail - Account",
+   "installed_version": "17.0.0.1",
+   "author": "Odoo S.A.",
+   "category_id": [
+    5,
+    "Tools"
+   ]
+  },
+  {
+   "id": 474,
+   "name": "spreadsheet",
+   "shortdesc": "Spreadsheet",
+   "installed_version": "17.0.1.0",
+   "author": "Odoo S.A.",
+   "category_id": [
+    4,
+    "Technical"
+   ]
+  },
+  {
+   "id": 475,
+   "name": "spreadsheet_account",
+   "shortdesc": "Spreadsheet Accounting Formulas",
+   "installed_version": "17.0.1.0",
+   "author": "Odoo S.A.",
+   "category_id": [
+    1,
+    "Accounting"
+   ]
+  },
+  {
+   "id": 476,
+   "name": "spreadsheet_dashboard",
+   "shortdesc": "Spreadsheet dashboard",
+   "installed_version": "17.0.1.0",
+   "author": "Odoo S.A.",
+   "category_id": [
+    4,
+    "Technical"
+   ]
+  },
+  {
+   "id": 477,
+   "name": "spreadsheet_dashboard_account",
+   "shortdesc": "Spreadsheet dashboard for accounting",
+   "installed_version": "17.0.1.0",
+   "author": "Odoo S.A.",
+   "category_id": [
+    4,
+    "Technical"
+   ]
+  },
+  {
+   "id": 483,
+   "name": "spreadsheet_dashboard_purchase",
+   "shortdesc": "Spreadsheet dashboard for purchases",
+   "installed_version": "17.0.1.0",
+   "author": "Odoo S.A.",
+   "category_id": [
+    4,
+    "Technical"
+   ]
+  },
+  {
+   "id": 484,
+   "name": "spreadsheet_dashboard_purchase_stock",
+   "shortdesc": "Spreadsheet dashboard for purchases",
+   "installed_version": "17.0.1.0",
+   "author": "Odoo S.A.",
+   "category_id": [
+    4,
+    "Technical"
+   ]
+  },
+  {
+   "id": 485,
+   "name": "spreadsheet_dashboard_sale",
+   "shortdesc": "Spreadsheet dashboard for sales",
+   "installed_version": "17.0.1.0",
+   "author": "Odoo S.A.",
+   "category_id": [
+    4,
+    "Technical"
+   ]
+  },
+  {
+   "id": 487,
+   "name": "spreadsheet_dashboard_stock_account",
+   "shortdesc": "Spreadsheet dashboard for stock",
+   "installed_version": "17.0.1.0",
+   "author": "Odoo S.A.",
+   "category_id": [
+    4,
+    "Technical"
+   ]
+  },
+  {
+   "id": 490,
+   "name": "stock",
+   "shortdesc": "Inventory",
+   "installed_version": "17.0.1.1",
+   "author": "Odoo S.A.",
+   "category_id": [
+    53,
+    "Inventory"
+   ]
+  },
+  {
+   "id": 491,
+   "name": "stock_account",
+   "shortdesc": "WMS Accounting",
+   "installed_version": "17.0.1.1",
+   "author": "Odoo S.A.",
+   "category_id": [
+    4,
+    "Technical"
+   ]
+  },
+  {
+   "id": 497,
+   "name": "stock_sms",
+   "shortdesc": "Stock - SMS",
+   "installed_version": "17.0.1.0",
+   "author": "Odoo S.A.",
+   "category_id": [
+    4,
+    "Technical"
+   ]
+  },
+  {
+   "id": 577,
+   "name": "uom",
+   "shortdesc": "Units of measure",
+   "installed_version": "17.0.1.0",
+   "author": "Odoo S.A.",
+   "category_id": [
+    9,
+    "Sales"
+   ]
+  },
+  {
+   "id": 578,
+   "name": "utm",
+   "shortdesc": "UTM Trackers",
+   "installed_version": "17.0.1.1",
+   "author": "Odoo S.A.",
+   "category_id": [
+    4,
+    "Technical"
+   ]
+  },
+  {
+   "id": 579,
+   "name": "web",
+   "shortdesc": "Web",
+   "installed_version": "17.0.1.0",
+   "author": "Odoo S.A.",
+   "category_id": [
+    4,
+    "Technical"
+   ]
+  },
+  {
+   "id": 580,
+   "name": "web_editor",
+   "shortdesc": "Web Editor",
+   "installed_version": "17.0.1.0",
+   "author": "Odoo S.A.",
+   "category_id": [
+    4,
+    "Technical"
+   ]
+  },
+  {
+   "id": 582,
+   "name": "web_tour",
+   "shortdesc": "Tours",
+   "installed_version": "17.0.0.1",
+   "author": "Odoo S.A.",
+   "category_id": [
+    4,
+    "Technical"
+   ]
+  },
+  {
+   "id": 583,
+   "name": "web_unsplash",
+   "shortdesc": "Unsplash Image Library",
+   "installed_version": "17.0.1.1",
+   "author": "Odoo S.A.",
+   "category_id": [
+    4,
+    "Technical"
+   ]
+  }
+ ],
+ "models": [
+  {
+   "id": 483,
+   "model": "account.invoice.report",
+   "name": "Invoices Statistics",
+   "transient": false,
+   "modules": "account, sale",
+   "info": " Main super-class for regular database-persisted Odoo models.\n\n    Odoo models are created by inheriting from this class::\n\n        class user(Model):\n            ...\n\n    The system will later instantiate the class once per database (on\n    which the class' module is installed).\n    ",
+   "state": "base",
+   "order": "invoice_date desc"
+  },
+  {
+   "id": 83,
+   "model": "format.address.mixin",
+   "name": "Address Format",
+   "transient": false,
+   "modules": "base",
+   "info": " The base model, which is implicitly inherited by all models. ",
+   "state": "base",
+   "order": "id"
+  },
+  {
+   "id": 175,
+   "model": "mail.followers",
+   "name": "Document Followers",
+   "transient": false,
+   "modules": "mail, sms",
+   "info": " mail_followers holds the data related to the follow mechanism inside\n    Odoo. Partners can choose to follow documents (records) of any kind\n    that inherits from mail.thread. Following documents allow to receive\n    notifications for new messages. A subscription is characterized by:\n\n    :param: res_model: model of the followed objects\n    :param: res_id: ID of resource (may be 0 for every objects)\n    ",
+   "state": "base",
+   "order": "id"
+  },
+  {
+   "id": 162,
+   "model": "mail.thread",
+   "name": "Email Thread",
+   "transient": false,
+   "modules": "mail, mail_bot, portal, sms, snailmail",
+   "info": " mail_thread model is meant to be inherited by any model that needs to\n        act as a discussion topic on which messages can be attached. Public\n        methods are prefixed with ``message_`` in order to avoid name\n        collisions with methods of the models that will inherit from this class.\n\n        ``mail.thread`` defines fields used to handle and display the\n        communication history. ``mail.thread`` also manages followers of\n        inheriting classes. All features and expected behavior are managed\n        by mail.thread. Widgets has been designed for the 7.0 and following\n        versions of Odoo.\n\n        Inheriting classes are not required to implement any method, as the\n        default implementation will work for any model. However it is common\n        to override at least the ``message_new`` and ``message_update``\n        methods (calling ``super``) to add model-specific behavior at\n        creation and update of a thread when processing incoming emails.\n\n        Options:\n            - _mail_flat_thread: if set to True, all messages without parent_id\n                are automatically attached to the first message posted on the\n                resource. If set to False, the display of Chatter is done using\n                threads, and no parent_id is automatically set.\n\n    MailThread features can be somewhat controlled through context keys :\n\n     - ``mail_create_nosubscribe``: at create or message_post, do not subscribe\n       uid to the record thread\n     - ``mail_create_nolog``: at create, do not log the automatic '<Document>\n       created' message\n     - ``mail_notrack``: at create and write, do not perform the value tracking\n       creating messages\n     - ``tracking_disable``: at create and write, perform no MailThread features\n       (auto subscription, tracking, post, ...)\n     - ``mail_notify_force_send``: if less than 50 email notifications to send,\n       send them directly instead of using the queue; True by default\n    ",
+   "state": "base",
+   "order": "id"
+  },
+  {
+   "id": 378,
+   "model": "product.template",
+   "name": "Product",
+   "transient": false,
+   "modules": "account, product, purchase, purchase_stock, sale, sale_product_configurator, sale_purchase, sale_stock, stock, stock_account",
+   "info": " Main super-class for regular database-persisted Odoo models.\n\n    Odoo models are created by inheriting from this class::\n\n        class user(Model):\n            ...\n\n    The system will later instantiate the class once per database (on\n    which the class' module is installed).\n    ",
+   "state": "base",
+   "order": "priority desc, name"
+  },
+  {
+   "id": 79,
+   "model": "res.country",
+   "name": "Country",
+   "transient": false,
+   "modules": "base",
+   "info": " Main super-class for regular database-persisted Odoo models.\n\n    Odoo models are created by inheriting from this class::\n\n        class user(Model):\n            ...\n\n    The system will later instantiate the class once per database (on\n    which the class' module is installed).\n    ",
+   "state": "base",
+   "order": "name"
+  },
+  {
+   "id": 86,
+   "model": "res.partner",
+   "name": "Contact",
+   "transient": false,
+   "modules": "account, account_add_gln, account_edi_ubl_cii, auth_signup, base, bus, mail, partner_autocomplete, payment, phone_validation, portal, privacy_lookup, product, purchase, purchase_stock, sale, sales_team, sms, snailmail, stock, web",
+   "info": " Purpose of this mixin is to offer two services\n\n      * compute a sanitized phone number based on _phone_get_number_fields.\n        It takes first sanitized value, trying each field returned by the\n        method (see ``BaseModel._phone_get_number_fields()´´ for more details\n        about the usage of this method);\n      * compute blacklist state of records. It is based on phone.blacklist\n        model and give an easy-to-use field and API to manipulate blacklisted\n        records;\n\n    Main API methods\n\n      * ``_phone_set_blacklisted``: set recordset as blacklisted;\n      * ``_phone_reset_blacklisted``: reactivate recordset (even if not blacklisted\n        this method can be called safely);\n    ",
+   "state": "base",
+   "order": "complete_name ASC, id DESC"
+  },
+  {
+   "id": 84,
+   "model": "res.partner.category",
+   "name": "Partner Tags",
+   "transient": false,
+   "modules": "base",
+   "info": " Main super-class for regular database-persisted Odoo models.\n\n    Odoo models are created by inheriting from this class::\n\n        class user(Model):\n            ...\n\n    The system will later instantiate the class once per database (on\n    which the class' module is installed).\n    ",
+   "state": "base",
+   "order": "name"
+  }
+ ],
+ "fields": [
+  {
+   "id": 5606,
+   "model": "account.invoice.report",
+   "name": "id",
+   "field_description": "ID",
+   "ttype": "integer",
+   "required": false,
+   "readonly": true,
+   "store": true,
+   "relation": false,
+   "relation_field": false,
+   "help": false,
+   "related": false,
+   "compute": false,
+   "index": false,
+   "modules": "account",
+   "state": "base",
+   "copied": true,
+   "translate": false,
+   "size": 0,
+   "on_delete": false,
+   "relation_table": false,
+   "column1": false,
+   "column2": false,
+   "sanitize": false,
+   "currency_field": false,
+   "group_expand": false,
+   "depends": false
+  },
+  {
+   "id": 5581,
+   "model": "account.invoice.report",
+   "name": "move_id",
+   "field_description": "Move",
+   "ttype": "many2one",
+   "required": false,
+   "readonly": true,
+   "store": true,
+   "relation": "account.move",
+   "relation_field": false,
+   "help": false,
+   "related": false,
+   "compute": false,
+   "index": false,
+   "modules": "account",
+   "state": "base",
+   "copied": true,
+   "translate": false,
+   "size": 0,
+   "on_delete": "set null",
+   "relation_table": false,
+   "column1": false,
+   "column2": false,
+   "sanitize": false,
+   "currency_field": false,
+   "group_expand": false,
+   "depends": false
+  },
+  {
+   "id": 5600,
+   "model": "account.invoice.report",
+   "name": "price_subtotal",
+   "field_description": "Untaxed Total",
+   "ttype": "float",
+   "required": false,
+   "readonly": true,
+   "store": true,
+   "relation": false,
+   "relation_field": false,
+   "help": false,
+   "related": false,
+   "compute": false,
+   "index": false,
+   "modules": "account",
+   "state": "base",
+   "copied": true,
+   "translate": false,
+   "size": 0,
+   "on_delete": false,
+   "relation_table": false,
+   "column1": false,
+   "column2": false,
+   "sanitize": false,
+   "currency_field": false,
+   "group_expand": false,
+   "depends": false
+  },
+  {
+   "id": 2011,
+   "model": "mail.followers",
+   "name": "id",
+   "field_description": "ID",
+   "ttype": "integer",
+   "required": false,
+   "readonly": true,
+   "store": true,
+   "relation": false,
+   "relation_field": false,
+   "help": false,
+   "related": false,
+   "compute": false,
+   "index": false,
+   "modules": "mail",
+   "state": "base",
+   "copied": true,
+   "translate": false,
+   "size": 0,
+   "on_delete": false,
+   "relation_table": false,
+   "column1": false,
+   "column2": false,
+   "sanitize": false,
+   "currency_field": false,
+   "group_expand": false,
+   "depends": false
+  },
+  {
+   "id": 2006,
+   "model": "mail.followers",
+   "name": "partner_id",
+   "field_description": "Related Partner",
+   "ttype": "many2one",
+   "required": true,
+   "readonly": false,
+   "store": true,
+   "relation": "res.partner",
+   "relation_field": false,
+   "help": false,
+   "related": false,
+   "compute": false,
+   "index": true,
+   "modules": "mail",
+   "state": "base",
+   "copied": true,
+   "translate": false,
+   "size": 0,
+   "on_delete": "cascade",
+   "relation_table": false,
+   "column1": false,
+   "column2": false,
+   "sanitize": false,
+   "currency_field": false,
+   "group_expand": false,
+   "depends": false
+  },
+  {
+   "id": 2005,
+   "model": "mail.followers",
+   "name": "res_id",
+   "field_description": "Related Document ID",
+   "ttype": "many2one_reference",
+   "required": false,
+   "readonly": false,
+   "store": true,
+   "relation": false,
+   "relation_field": false,
+   "help": "Id of the followed resource",
+   "related": false,
+   "compute": false,
+   "index": true,
+   "modules": "mail",
+   "state": "base",
+   "copied": true,
+   "translate": false,
+   "size": 0,
+   "on_delete": false,
+   "relation_table": false,
+   "column1": false,
+   "column2": false,
+   "sanitize": false,
+   "currency_field": false,
+   "group_expand": false,
+   "depends": false
+  },
+  {
+   "id": 2004,
+   "model": "mail.followers",
+   "name": "res_model",
+   "field_description": "Related Document Model Name",
+   "ttype": "char",
+   "required": true,
+   "readonly": false,
+   "store": true,
+   "relation": false,
+   "relation_field": false,
+   "help": false,
+   "related": false,
+   "compute": false,
+   "index": true,
+   "modules": "mail",
+   "state": "base",
+   "copied": true,
+   "translate": false,
+   "size": 0,
+   "on_delete": false,
+   "relation_table": false,
+   "column1": false,
+   "column2": false,
+   "sanitize": false,
+   "currency_field": false,
+   "group_expand": false,
+   "depends": false
+  },
+  {
+   "id": 1818,
+   "model": "mail.thread",
+   "name": "message_ids",
+   "field_description": "Messages",
+   "ttype": "one2many",
+   "required": false,
+   "readonly": false,
+   "store": true,
+   "relation": "mail.message",
+   "relation_field": "res_id",
+   "help": false,
+   "related": false,
+   "compute": false,
+   "index": false,
+   "modules": "mail",
+   "state": "base",
+   "copied": false,
+   "translate": false,
+   "size": 0,
+   "on_delete": false,
+   "relation_table": false,
+   "column1": false,
+   "column2": false,
+   "sanitize": false,
+   "currency_field": false,
+   "group_expand": false,
+   "depends": false
+  },
+  {
+   "id": 2960,
+   "model": "product.template",
+   "name": "description",
+   "field_description": "Description",
+   "ttype": "html",
+   "required": false,
+   "readonly": false,
+   "store": true,
+   "relation": false,
+   "relation_field": false,
+   "help": false,
+   "related": false,
+   "compute": false,
+   "index": false,
+   "modules": "product",
+   "state": "base",
+   "copied": true,
+   "translate": true,
+   "size": 0,
+   "on_delete": false,
+   "relation_table": false,
+   "column1": false,
+   "column2": false,
+   "sanitize": true,
+   "currency_field": false,
+   "group_expand": false,
+   "depends": false
+  },
+  {
+   "id": 3002,
+   "model": "product.template",
+   "name": "id",
+   "field_description": "ID",
+   "ttype": "integer",
+   "required": false,
+   "readonly": true,
+   "store": true,
+   "relation": false,
+   "relation_field": false,
+   "help": false,
+   "related": false,
+   "compute": false,
+   "index": false,
+   "modules": "product",
+   "state": "base",
+   "copied": true,
+   "translate": false,
+   "size": 0,
+   "on_delete": false,
+   "relation_table": false,
+   "column1": false,
+   "column2": false,
+   "sanitize": false,
+   "currency_field": false,
+   "group_expand": false,
+   "depends": false
+  },
+  {
+   "id": 2958,
+   "model": "product.template",
+   "name": "name",
+   "field_description": "Name",
+   "ttype": "char",
+   "required": true,
+   "readonly": false,
+   "store": true,
+   "relation": false,
+   "relation_field": false,
+   "help": false,
+   "related": false,
+   "compute": false,
+   "index": true,
+   "modules": "product",
+   "state": "base",
+   "copied": true,
+   "translate": true,
+   "size": 0,
+   "on_delete": false,
+   "relation_table": false,
+   "column1": false,
+   "column2": false,
+   "sanitize": false,
+   "currency_field": false,
+   "group_expand": false,
+   "depends": false
+  },
+  {
+   "id": 5064,
+   "model": "product.template",
+   "name": "property_account_income_id",
+   "field_description": "Income Account",
+   "ttype": "many2one",
+   "required": false,
+   "readonly": false,
+   "store": false,
+   "relation": "account.account",
+   "relation_field": false,
+   "help": "Keep this field empty to use the default value from the product category.",
+   "related": false,
+   "compute": false,
+   "index": false,
+   "modules": "account",
+   "state": "base",
+   "copied": false,
+   "translate": false,
+   "size": 0,
+   "on_delete": "set null",
+   "relation_table": false,
+   "column1": false,
+   "column2": false,
+   "sanitize": false,
+   "currency_field": false,
+   "group_expand": false,
+   "depends": false
+  },
+  {
+   "id": 3007,
+   "model": "product.template",
+   "name": "write_date",
+   "field_description": "Last Updated on",
+   "ttype": "datetime",
+   "required": false,
+   "readonly": true,
+   "store": true,
+   "relation": false,
+   "relation_field": false,
+   "help": false,
+   "related": false,
+   "compute": false,
+   "index": false,
+   "modules": "product",
+   "state": "base",
+   "copied": true,
+   "translate": false,
+   "size": 0,
+   "on_delete": false,
+   "relation_table": false,
+   "column1": false,
+   "column2": false,
+   "sanitize": false,
+   "currency_field": false,
+   "group_expand": false,
+   "depends": false
+  },
+  {
+   "id": 795,
+   "model": "res.country",
+   "name": "id",
+   "field_description": "ID",
+   "ttype": "integer",
+   "required": false,
+   "readonly": true,
+   "store": true,
+   "relation": false,
+   "relation_field": false,
+   "help": false,
+   "related": false,
+   "compute": false,
+   "index": false,
+   "modules": "base",
+   "state": "base",
+   "copied": true,
+   "translate": false,
+   "size": 0,
+   "on_delete": false,
+   "relation_table": false,
+   "column1": false,
+   "column2": false,
+   "sanitize": false,
+   "currency_field": false,
+   "group_expand": false,
+   "depends": false
+  },
+  {
+   "id": 782,
+   "model": "res.country",
+   "name": "name",
+   "field_description": "Country Name",
+   "ttype": "char",
+   "required": true,
+   "readonly": false,
+   "store": true,
+   "relation": false,
+   "relation_field": false,
+   "help": false,
+   "related": false,
+   "compute": false,
+   "index": false,
+   "modules": "base",
+   "state": "base",
+   "copied": true,
+   "translate": true,
+   "size": 0,
+   "on_delete": false,
+   "relation_table": false,
+   "column1": false,
+   "column2": false,
+   "sanitize": false,
+   "currency_field": false,
+   "group_expand": false,
+   "depends": false
+  },
+  {
+   "id": 800,
+   "model": "res.country",
+   "name": "write_date",
+   "field_description": "Last Updated on",
+   "ttype": "datetime",
+   "required": false,
+   "readonly": true,
+   "store": true,
+   "relation": false,
+   "relation_field": false,
+   "help": false,
+   "related": false,
+   "compute": false,
+   "index": false,
+   "modules": "base",
+   "state": "base",
+   "copied": true,
+   "translate": false,
+   "size": 0,
+   "on_delete": false,
+   "relation_table": false,
+   "column1": false,
+   "column2": false,
+   "sanitize": false,
+   "currency_field": false,
+   "group_expand": false,
+   "depends": false
+  },
+  {
+   "id": 875,
+   "model": "res.partner",
+   "name": "child_ids",
+   "field_description": "Contact",
+   "ttype": "one2many",
+   "required": false,
+   "readonly": false,
+   "store": true,
+   "relation": "res.partner",
+   "relation_field": "parent_id",
+   "help": false,
+   "related": false,
+   "compute": false,
+   "index": false,
+   "modules": "base",
+   "state": "base",
+   "copied": false,
+   "translate": false,
+   "size": 0,
+   "on_delete": false,
+   "relation_table": false,
+   "column1": false,
+   "column2": false,
+   "sanitize": false,
+   "currency_field": false,
+   "group_expand": false,
+   "depends": false
+  },
+  {
+   "id": 916,
+   "model": "res.partner",
+   "name": "commercial_partner_id",
+   "field_description": "Commercial Entity",
+   "ttype": "many2one",
+   "required": false,
+   "readonly": true,
+   "store": true,
+   "relation": "res.partner",
+   "relation_field": false,
+   "help": false,
+   "related": false,
+   "compute": false,
+   "index": true,
+   "modules": "base",
+   "state": "base",
+   "copied": false,
+   "translate": false,
+   "size": 0,
+   "on_delete": "set null",
+   "relation_table": false,
+   "column1": false,
+   "column2": false,
+   "sanitize": false,
+   "currency_field": false,
+   "group_expand": false,
+   "depends": false
+  },
+  {
+   "id": 922,
+   "model": "res.partner",
+   "name": "display_name",
+   "field_description": "Display Name",
+   "ttype": "char",
+   "required": false,
+   "readonly": true,
+   "store": false,
+   "relation": false,
+   "relation_field": false,
+   "help": false,
+   "related": false,
+   "compute": false,
+   "index": false,
+   "modules": "base",
+   "state": "base",
+   "copied": false,
+   "translate": false,
+   "size": 0,
+   "on_delete": false,
+   "relation_table": false,
+   "column1": false,
+   "column2": false,
+   "sanitize": false,
+   "currency_field": false,
+   "group_expand": false,
+   "depends": false
+  },
+  {
+   "id": 903,
+   "model": "res.partner",
+   "name": "email",
+   "field_description": "Email",
+   "ttype": "char",
+   "required": false,
+   "readonly": false,
+   "store": true,
+   "relation": false,
+   "relation_field": false,
+   "help": false,
+   "related": false,
+   "compute": false,
+   "index": false,
+   "modules": "base, mail",
+   "state": "base",
+   "copied": true,
+   "translate": false,
+   "size": 0,
+   "on_delete": false,
+   "relation_table": false,
+   "column1": false,
+   "column2": false,
+   "sanitize": false,
+   "currency_field": false,
+   "group_expand": false,
+   "depends": false
+  },
+  {
+   "id": 921,
+   "model": "res.partner",
+   "name": "id",
+   "field_description": "ID",
+   "ttype": "integer",
+   "required": false,
+   "readonly": true,
+   "store": true,
+   "relation": false,
+   "relation_field": false,
+   "help": false,
+   "related": false,
+   "compute": false,
+   "index": false,
+   "modules": "base",
+   "state": "base",
+   "copied": true,
+   "translate": false,
+   "size": 0,
+   "on_delete": false,
+   "relation_table": false,
+   "column1": false,
+   "column2": false,
+   "sanitize": false,
+   "currency_field": false,
+   "group_expand": false,
+   "depends": false
+  },
+  {
+   "id": 869,
+   "model": "res.partner",
+   "name": "name",
+   "field_description": "Name",
+   "ttype": "char",
+   "required": false,
+   "readonly": false,
+   "store": true,
+   "relation": false,
+   "relation_field": false,
+   "help": false,
+   "related": false,
+   "compute": false,
+   "index": true,
+   "modules": "account, base, mail",
+   "state": "base",
+   "copied": true,
+   "translate": false,
+   "size": 0,
+   "on_delete": false,
+   "relation_table": false,
+   "column1": false,
+   "column2": false,
+   "sanitize": false,
+   "currency_field": false,
+   "group_expand": false,
+   "depends": false
+  },
+  {
+   "id": 893,
+   "model": "res.partner",
+   "name": "type",
+   "field_description": "Address Type",
+   "ttype": "selection",
+   "required": false,
+   "readonly": false,
+   "store": true,
+   "relation": false,
+   "relation_field": false,
+   "help": "- Contact: Use this to organize the contact details of employees of a given company (e.g. CEO, CFO, ...).\n- Invoice Address: Preferred address for all invoices. Selected by default when you invoice an order that belongs to this company.\n- Delivery Address: Preferred address for all deliveries. Selected by default when you deliver an order that belongs to this company.\n- Other: Other address for the company (e.g. subsidiary, ...)",
+   "related": false,
+   "compute": false,
+   "index": false,
+   "modules": "base",
+   "state": "base",
+   "copied": true,
+   "translate": false,
+   "size": 0,
+   "on_delete": false,
+   "relation_table": false,
+   "column1": false,
+   "column2": false,
+   "sanitize": false,
+   "currency_field": false,
+   "group_expand": false,
+   "depends": false
+  },
+  {
+   "id": 926,
+   "model": "res.partner",
+   "name": "write_date",
+   "field_description": "Last Updated on",
+   "ttype": "datetime",
+   "required": false,
+   "readonly": true,
+   "store": true,
+   "relation": false,
+   "relation_field": false,
+   "help": false,
+   "related": false,
+   "compute": false,
+   "index": false,
+   "modules": "base",
+   "state": "base",
+   "copied": true,
+   "translate": false,
+   "size": 0,
+   "on_delete": false,
+   "relation_table": false,
+   "column1": false,
+   "column2": false,
+   "sanitize": false,
+   "currency_field": false,
+   "group_expand": false,
+   "depends": false
+  },
+  {
+   "id": 845,
+   "model": "res.partner.category",
+   "name": "id",
+   "field_description": "ID",
+   "ttype": "integer",
+   "required": false,
+   "readonly": true,
+   "store": true,
+   "relation": false,
+   "relation_field": false,
+   "help": false,
+   "related": false,
+   "compute": false,
+   "index": false,
+   "modules": "base",
+   "state": "base",
+   "copied": true,
+   "translate": false,
+   "size": 0,
+   "on_delete": false,
+   "relation_table": false,
+   "column1": false,
+   "column2": false,
+   "sanitize": false,
+   "currency_field": false,
+   "group_expand": false,
+   "depends": false
+  },
+  {
+   "id": 838,
+   "model": "res.partner.category",
+   "name": "name",
+   "field_description": "Tag Name",
+   "ttype": "char",
+   "required": true,
+   "readonly": false,
+   "store": true,
+   "relation": false,
+   "relation_field": false,
+   "help": false,
+   "related": false,
+   "compute": false,
+   "index": false,
+   "modules": "base",
+   "state": "base",
+   "copied": true,
+   "translate": true,
+   "size": 0,
+   "on_delete": false,
+   "relation_table": false,
+   "column1": false,
+   "column2": false,
+   "sanitize": false,
+   "currency_field": false,
+   "group_expand": false,
+   "depends": false
+  },
+  {
+   "id": 850,
+   "model": "res.partner.category",
+   "name": "write_date",
+   "field_description": "Last Updated on",
+   "ttype": "datetime",
+   "required": false,
+   "readonly": true,
+   "store": true,
+   "relation": false,
+   "relation_field": false,
+   "help": false,
+   "related": false,
+   "compute": false,
+   "index": false,
+   "modules": "base",
+   "state": "base",
+   "copied": true,
+   "translate": false,
+   "size": 0,
+   "on_delete": false,
+   "relation_table": false,
+   "column1": false,
+   "column2": false,
+   "sanitize": false,
+   "currency_field": false,
+   "group_expand": false,
+   "depends": false
+  }
+ ],
+ "selections": [
+  {
+   "id": 216,
+   "field_id": [
+    893,
+    "Address Type (Contact)"
+   ],
+   "value": "contact",
+   "name": "Contact",
+   "sequence": 0
+  },
+  {
+   "id": 217,
+   "field_id": [
+    893,
+    "Address Type (Contact)"
+   ],
+   "value": "invoice",
+   "name": "Invoice Address",
+   "sequence": 1
+  },
+  {
+   "id": 218,
+   "field_id": [
+    893,
+    "Address Type (Contact)"
+   ],
+   "value": "delivery",
+   "name": "Delivery Address",
+   "sequence": 2
+  },
+  {
+   "id": 219,
+   "field_id": [
+    893,
+    "Address Type (Contact)"
+   ],
+   "value": "other",
+   "name": "Other Address",
+   "sequence": 3
+  }
+ ],
+ "model_xmlids": [
+  {
+   "id": 803,
+   "module": "base",
+   "res_id": 79
+  },
+  {
+   "id": 807,
+   "module": "base",
+   "res_id": 83
+  },
+  {
+   "id": 808,
+   "module": "base",
+   "res_id": 84
+  },
+  {
+   "id": 810,
+   "module": "base",
+   "res_id": 86
+  },
+  {
+   "id": 5502,
+   "module": "web",
+   "res_id": 86
+  },
+  {
+   "id": 6392,
+   "module": "bus",
+   "res_id": 86
+  },
+  {
+   "id": 6959,
+   "module": "mail",
+   "res_id": 86
+  },
+  {
+   "id": 6976,
+   "module": "mail",
+   "res_id": 162
+  },
+  {
+   "id": 6989,
+   "module": "mail",
+   "res_id": 175
+  },
+  {
+   "id": 9486,
+   "module": "auth_signup",
+   "res_id": 86
+  },
+  {
+   "id": 9683,
+   "module": "mail_bot",
+   "res_id": 162
+  },
+  {
+   "id": 9741,
+   "module": "phone_validation",
+   "res_id": 86
+  },
+  {
+   "id": 10342,
+   "module": "privacy_lookup",
+   "res_id": 86
+  },
+  {
+   "id": 10439,
+   "module": "product",
+   "res_id": 86
+  },
+  {
+   "id": 10444,
+   "module": "product",
+   "res_id": 378
+  },
+  {
+   "id": 11165,
+   "module": "sales_team",
+   "res_id": 86
+  },
+  {
+   "id": 11363,
+   "module": "partner_autocomplete",
+   "res_id": 86
+  },
+  {
+   "id": 11442,
+   "module": "portal",
+   "res_id": 162
+  },
+  {
+   "id": 11447,
+   "module": "portal",
+   "res_id": 86
+  },
+  {
+   "id": 11701,
+   "module": "sms",
+   "res_id": 162
+  },
+  {
+   "id": 11703,
+   "module": "sms",
+   "res_id": 175
+  },
+  {
+   "id": 11708,
+   "module": "sms",
+   "res_id": 86
+  },
+  {
+   "id": 12605,
+   "module": "snailmail",
+   "res_id": 162
+  },
+  {
+   "id": 12611,
+   "module": "snailmail",
+   "res_id": 86
+  },
+  {
+   "id": 13042,
+   "module": "payment",
+   "res_id": 86
+  },
+  {
+   "id": 13623,
+   "module": "account",
+   "res_id": 378
+  },
+  {
+   "id": 13626,
+   "module": "account",
+   "res_id": 86
+  },
+  {
+   "id": 13675,
+   "module": "account",
+   "res_id": 483
+  },
+  {
+   "id": 16450,
+   "module": "stock",
+   "res_id": 378
+  },
+  {
+   "id": 16455,
+   "module": "stock",
+   "res_id": 86
+  },
+  {
+   "id": 18322,
+   "module": "account_add_gln",
+   "res_id": 86
+  },
+  {
+   "id": 18373,
+   "module": "account_edi_ubl_cii",
+   "res_id": 86
+  },
+  {
+   "id": 18955,
+   "module": "purchase",
+   "res_id": 378
+  },
+  {
+   "id": 18959,
+   "module": "purchase",
+   "res_id": 86
+  },
+  {
+   "id": 19938,
+   "module": "stock_account",
+   "res_id": 378
+  },
+  {
+   "id": 20386,
+   "module": "purchase_stock",
+   "res_id": 378
+  },
+  {
+   "id": 20390,
+   "module": "purchase_stock",
+   "res_id": 86
+  },
+  {
+   "id": 20951,
+   "module": "sale",
+   "res_id": 378
+  },
+  {
+   "id": 20959,
+   "module": "sale",
+   "res_id": 86
+  },
+  {
+   "id": 20965,
+   "module": "sale",
+   "res_id": 483
+  },
+  {
+   "id": 22302,
+   "module": "sale_product_configurator",
+   "res_id": 378
+  },
+  {
+   "id": 22370,
+   "module": "sale_purchase",
+   "res_id": 378
+  },
+  {
+   "id": 22511,
+   "module": "sale_stock",
+   "res_id": 378
+  }
+ ],
+ "model_access": [
+  {
+   "id": 44,
+   "model_id": [
+    79,
+    "Country"
+   ]
+  },
+  {
+   "id": 45,
+   "model_id": [
+    79,
+    "Country"
+   ]
+  },
+  {
+   "id": 46,
+   "model_id": [
+    79,
+    "Country"
+   ]
+  },
+  {
+   "id": 53,
+   "model_id": [
+    79,
+    "Country"
+   ]
+  },
+  {
+   "id": 54,
+   "model_id": [
+    79,
+    "Country"
+   ]
+  },
+  {
+   "id": 71,
+   "model_id": [
+    86,
+    "Contact"
+   ]
+  },
+  {
+   "id": 72,
+   "model_id": [
+    86,
+    "Contact"
+   ]
+  },
+  {
+   "id": 73,
+   "model_id": [
+    86,
+    "Contact"
+   ]
+  },
+  {
+   "id": 74,
+   "model_id": [
+    86,
+    "Contact"
+   ]
+  },
+  {
+   "id": 77,
+   "model_id": [
+    84,
+    "Partner Tags"
+   ]
+  },
+  {
+   "id": 78,
+   "model_id": [
+    84,
+    "Partner Tags"
+   ]
+  },
+  {
+   "id": 205,
+   "model_id": [
+    175,
+    "Document Followers"
+   ]
+  },
+  {
+   "id": 206,
+   "model_id": [
+    175,
+    "Document Followers"
+   ]
+  },
+  {
+   "id": 280,
+   "model_id": [
+    378,
+    "Product"
+   ]
+  },
+  {
+   "id": 295,
+   "model_id": [
+    378,
+    "Product"
+   ]
+  },
+  {
+   "id": 361,
+   "model_id": [
+    86,
+    "Contact"
+   ]
+  },
+  {
+   "id": 364,
+   "model_id": [
+    483,
+    "Invoices Statistics"
+   ]
+  },
+  {
+   "id": 365,
+   "model_id": [
+    483,
+    "Invoices Statistics"
+   ]
+  },
+  {
+   "id": 366,
+   "model_id": [
+    483,
+    "Invoices Statistics"
+   ]
+  },
+  {
+   "id": 377,
+   "model_id": [
+    378,
+    "Product"
+   ]
+  },
+  {
+   "id": 499,
+   "model_id": [
+    378,
+    "Product"
+   ]
+  },
+  {
+   "id": 503,
+   "model_id": [
+    378,
+    "Product"
+   ]
+  },
+  {
+   "id": 508,
+   "model_id": [
+    86,
+    "Contact"
+   ]
+  },
+  {
+   "id": 593,
+   "model_id": [
+    378,
+    "Product"
+   ]
+  },
+  {
+   "id": 595,
+   "model_id": [
+    86,
+    "Contact"
+   ]
+  },
+  {
+   "id": 603,
+   "model_id": [
+    86,
+    "Contact"
+   ]
+  },
+  {
+   "id": 607,
+   "model_id": [
+    378,
+    "Product"
+   ]
+  },
+  {
+   "id": 651,
+   "model_id": [
+    86,
+    "Contact"
+   ]
+  },
+  {
+   "id": 652,
+   "model_id": [
+    86,
+    "Contact"
+   ]
+  },
+  {
+   "id": 669,
+   "model_id": [
+    378,
+    "Product"
+   ]
+  },
+  {
+   "id": 670,
+   "model_id": [
+    378,
+    "Product"
+   ]
+  }
+ ],
+ "field_attributes": {
+  "account.invoice.report": {},
+  "mail.followers": {},
+  "mail.thread": {},
+  "product.template": {
+   "property_account_income_id": {
+    "company_dependent": true
+   }
+  },
+  "res.country": {},
+  "res.partner": {
+   "child_ids": {
+    "depends": [
+     "child_ids.active"
+    ]
+   },
+   "commercial_partner_id": {
+    "depends": [
+     "is_company",
+     "parent_id.commercial_partner_id"
+    ]
+   },
+   "display_name": {
+    "depends": [
+     "complete_name",
+     "email",
+     "vat",
+     "state_id",
+     "country_id",
+     "commercial_company_name",
+     "name"
+    ]
+   }
+  },
+  "res.partner.category": {}
+ }
+}

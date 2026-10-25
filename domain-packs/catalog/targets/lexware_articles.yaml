@@ -1,0 +1,76 @@
+# Binding cible : Product CDM → article Lexware Office (API publique), résolu contre le Registry
+# (lexware / public-api / v1 / rest, entité « articles »). Livraison PAR API : une requête par unité vendable.
+#
+# Ce fichier ne lit QUE la vue d'une unité vendable du Product CDM (title, kind, sku, gtin, description, unit,
+# price.*) et des valeurs fournies par UIE (`target.*` : décisions explicites). Il ne connaît aucune source. Il ne
+# cite que des champs du contrat cible (technical_name du Registry) ; libellé, type, obligation, valeurs admises
+# et forme (GTIN) viennent du Registry.
+#
+# Choix de la phase articles 1a (décisions D1-D6, rien d'inventé, rien de deviné) :
+#   - D1 un article par unité vendable : produit sans variante, ou chaque variante (titre « Produit (Couleur :
+#     Rouge) », numéro et prix de la variante) ;
+#   - D2 base des prix = réglage explicite de l'utilisateur (`target.price_basis`), sans valeur par défaut ;
+#     prix directeur = cette base, l'autre prix est calculé par Lexware Office ;
+#   - D3 taux de taxe = correspondance explicite taxe de vente source → taux admis (`TAX_RATE`) ; sans taxe,
+#     plusieurs taxes, ou taxe sans décision : bloqué (préparation) ;
+#   - D4 unité = libellé de la source tel quel ;
+#   - D5 numéro d'article = SKU, obligatoire (sans SKU : bloqué) ;
+#   - D6 biens → PRODUCT, services → SERVICE, autre sorte → bloqué ;
+#   - EUR seulement (la cible n'accepte pas d'autre devise).
+
+binding_version: "1.0.0"
+name: Lexware Office articles
+source: {model: product, version: "1"}
+target:
+  system: lexware
+  product: public-api
+  versions: ["v1"]
+  interface: rest
+  entity: articles
+  display: Lexware Office
+records: single
+delivery: api
+currencies: [EUR]
+
+lookups:
+  - {kind: TAX_RATE, field: price.taxRate, label: Tax rate}
+
+fields:
+  - {field: title, source: title, identity: true}
+  - {field: type, source: kind, identity: true, when: {kind: [GOODS, SERVICE]},
+     map: {GOODS: PRODUCT, SERVICE: SERVICE}}
+  - {field: articleNumber, source: sku, identity: true}
+  - {field: gtin, source: gtin}
+  - {field: description, source: description}
+  - {field: unitName, source: unit}
+  - {field: price.leadingPrice, source: target.price_basis}
+  - {field: price.netPrice, source: target.net_price}
+  - {field: price.grossPrice, source: target.gross_price}
+  - {field: price.taxRate, source: target.tax_rate}
+
+rules:
+  - id: A01
+    kind: required_unless
+    field: articleNumber
+    level: BLOCKING
+    message: Lexware Office articles need an article number, and this product has no SKU in the source
+  - id: A02
+    kind: required_unless
+    field: type
+    when: {kind: [UNKNOWN]}
+    level: BLOCKING
+    message: "Only goods and services can be sent: the type of this product in the source is not supported"
+  - id: A03
+    kind: required_unless
+    field: price.netPrice
+    source: target.price_basis
+    equals: GROSS
+    level: BLOCKING
+    message: The product has no sales price in the source
+  - id: A04
+    kind: required_unless
+    field: price.grossPrice
+    source: target.price_basis
+    equals: NET
+    level: BLOCKING
+    message: The product has no sales price in the source

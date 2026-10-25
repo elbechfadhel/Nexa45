@@ -1,0 +1,13 @@
+{
+  "name": "universal-integration-engine",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter web dev",
+    "build": "pnpm --filter web build",
+    "lint": "pnpm --filter web lint",
+    "typecheck": "pnpm --filter web typecheck",
+    "gen:api": "pnpm --filter web gen:api",
+    "test": "pnpm --filter web test"
+  },
+  "packageManager": "pnpm@10.33.2"
+}

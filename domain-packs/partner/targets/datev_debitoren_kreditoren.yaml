@@ -1,0 +1,126 @@
+# Binding cible : Partner CDM → DATEV Debitoren/Kreditoren (fichier EXTF), résolu contre le Registry
+# (datev / debitoren-kreditoren / <version> / extf). Ce fichier ne contient QUE des positions du format
+# (technical_name du Registry : « 016 ») et leur source CDM : libellé, type, longueur, décimales, obligatoire
+# et motif de chaque colonne viennent du Registry. Toute position doit exister dans le snapshot (vérifié au
+# chargement contre le Registry, et par les tests).
+#
+# Règles tirées des sources officielles DATEV (portail, description des champs) :
+#   - un enregistrement par rôle : la plage du numéro de compte fait le débiteur ou le créancier ;
+#   - longueur des comptes de personne = longueur des comptes généraux (en-tête 14) + 1 (champ 1) ;
+#   - ne transmettre que les champs de nom du type d'adressat (7 : 0 sans indication, 1 personne, 2 entreprise) ;
+#   - USt-IdNr = code pays (9) + numéro (10) ; Land (20) obligatoire hors Allemagne ; Sprache (101) : 1 de,
+#     4 fr, 5 en, 10 es, 19 it ; une seule banque principale (Kennz. Hauptbankverb.).
+# Les plages de numéros débiteurs / créanciers ne figurent pas dans ces sources : paramètres du profil, saisis
+# selon la configuration comptable (cabinet), sans valeur par défaut.
+
+binding_version: "1.1.0"   # 1.1.0 : Ansprechpartner (102), numérotation « décalage + numéro du client »
+name: DATEV Debitoren/Kreditoren (EXTF)
+source: {model: partner, version: "1"}
+target:
+  system: datev
+  product: debitoren-kreditoren
+  versions: ["5"]
+  interface: extf
+  entity: debitoren_kreditoren
+  header_entity: header
+records: per_role
+encodings: [cp1252, utf-8-sig]   # CP1252 par défaut ; UTF-8 avec BOM : import manuel ou API seulement
+
+account:
+  field: "001"
+  length_from: account_length
+  plus: 1
+  ranges: {CUSTOMER: debtor_range, SUPPLIER: creditor_range}
+  reuse_from: {CUSTOMER: identifiers.customer_number, SUPPLIER: identifiers.supplier_number}
+  reuse_param: reuse_partner_numbers
+  offset_param: account_offset
+
+fields:
+  - {field: "001", source: target.account_number, identity: true}
+  - {field: "002", source: organization_name, when: {kind: [ORGANIZATION]}, identity: true}
+  - {field: "004", source: person.last_name, fallback: person.full_name, when: {kind: [PERSON]}, identity: true}
+  - {field: "005", source: person.first_name, when: {kind: [PERSON]}}
+  - {field: "006", source: name, when: {kind: [UNKNOWN]}, identity: true}
+  - {field: "007", source: kind, map: {PERSON: "1", ORGANIZATION: "2", UNKNOWN: "0"}}
+  - {field: "008", source: short_name}
+  - {field: "009", source: tax.vat_id, extract: {regex: '^([A-Z]{2})([0-9A-Z+*.]{2,13})$', group: 1}}
+  - {field: "010", source: tax.vat_id, extract: {regex: '^([A-Z]{2})([0-9A-Z+*.]{2,13})$', group: 2}}
+  - {field: "016", source: address.MAIN.street}
+  - {field: "017", source: address.MAIN.po_box}
+  - {field: "018", source: address.MAIN.postal_code}
+  - {field: "019", source: address.MAIN.city}
+  - {field: "020", source: address.MAIN.country_code}
+  - {field: "022", source: address.MAIN.street2}
+  - {field: "029", source: contact.phone}
+  - {field: "033", source: contact.email}
+  - {field: "035", source: contact.website}
+  - {field: "037", source: contact.fax}
+  - {field: "039", source: contact.mobile}         # « Sonstige » : un seul numéro par média (portail)
+  - {field: "099", source: identifiers.customer_number, when: {role: [CUSTOMER]}}
+  - {field: "099", source: identifiers.supplier_number, when: {role: [SUPPLIER]}}
+  - {field: "100", source: tax.tax_number}
+  - {field: "101", source: language, map: {de: "1", fr: "4", en: "5", es: "10", it: "19"}}
+  - {field: "102", source: contact.contact_person}   # Ansprechpartner (Partner CDM 1.1)
+
+repeat:
+  - source: bank_accounts
+    label: bank accounts
+    require: iban                                 # sans IBAN valide : rien n'est deviné (ni BLZ ni compte)
+    require_label: IBAN
+    slots:                                        # Bankbezeichnung, IBAN, SWIFT, Abw. Kontoinhaber, Hauptbankverb.
+      - {bank_name: "042", iban: "045", bic: "047", holder_name: "048", is_main: "049"}
+      - {bank_name: "053", iban: "056", bic: "058", holder_name: "059", is_main: "060"}
+      - {bank_name: "064", iban: "067", bic: "069", holder_name: "070", is_main: "071"}
+      - {bank_name: "075", iban: "078", bic: "080", holder_name: "081", is_main: "082"}
+      - {bank_name: "086", iban: "089", bic: "091", holder_name: "092", is_main: "093"}
+    map:
+      is_main: {"true": "1", "false": "0"}
+
+rules:
+  - id: D02
+    kind: required_unless
+    field: "020"
+    source: address.MAIN.country_code
+    equals: DE
+    level: WARNING
+    message: Country is missing; DATEV requires it for addresses outside Germany
+
+header:
+  "001": {constant: EXTF}
+  "002": {snapshot: header_version}
+  "003": {snapshot: data_category}
+  "004": {snapshot: product_name}
+  "005": {snapshot: format_version}
+  "006": {generated: timestamp_ms}
+  "008": {profile: origin_code}
+  "011": {profile: advisor_number}
+  "012": {profile: client_number}
+  "013": {profile: fiscal_year_start}
+  "014": {profile: account_length}
+  "027": {profile: chart_of_accounts}
+
+profile:
+  - {name: advisor_number, label: Advisor number (Beraternummer), type: integer, required: true, header_field: "011"}
+  - {name: client_number, label: Client number (Mandantennummer), type: integer, required: true, header_field: "012"}
+  - {name: fiscal_year_start, label: Start of the fiscal year (WJ-Beginn), type: date, required: true,
+     header_field: "013", header_format: "%Y%m%d"}
+  - {name: account_length, label: G/L account number length (Sachkontenlänge), type: integer, required: true,
+     header_field: "014", help: Must match the configuration of the client in DATEV.}
+  - {name: debtor_range, label: Debtor account range (Debitoren), type: range, required: true,
+     help: "First and last account number for customers, as configured in your accounting / by your tax advisor."}
+  - {name: creditor_range, label: Creditor account range (Kreditoren), type: range, required: true,
+     help: "First and last account number for suppliers, as configured in your accounting / by your tax advisor."}
+  # format_help : phrase tirée des exemples officiels ; le motif reste celui du Registry (inchangé)
+  - {name: chart_of_accounts, label: Chart of accounts (Sachkontenrahmen), type: text, header_field: "027",
+     format_help: "Two digits, e.g. 03 for SKR03, 04 for SKR04."}
+  - {name: origin_code, label: Origin code (Herkunft), type: text, header_field: "008",
+     format_help: "Up to 2 letters or digits, e.g. RE."}
+  - {name: encoding, label: File encoding, type: choice, choices: [cp1252, utf-8-sig], default: cp1252,
+     help: "CP1252 works for every DATEV import; UTF-8 (with BOM) only for manual import or the DATEV API."}
+  - {name: reuse_partner_numbers, label: Use the customer / supplier number as account number when it fits,
+     type: boolean, default: false}
+  # numérotation d'usage chez les cabinets : 10000 + numéro du client (1001 → 11001) ; sans valeur, les comptes
+  # sont numérotés dans l'ordre de la plage ; un numéro hors de la plage du rôle prend le premier libre
+  - {name: account_offset, label: Account number = this number + the customer / supplier number, type: integer,
+     help: "For example 10000: customer 1001 gets the account 11001. Leave it empty to number the accounts in
+       order."}

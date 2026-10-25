@@ -1,0 +1,84 @@
+# Développement local : PostgreSQL du Registry + instances Odoo de référence (17/18/19)
+# Lancer :  docker compose -f docker/docker-compose.yml up -d postgres
+# Odoo :    docker compose -f docker/docker-compose.yml --profile odoo up -d
+# Client :  docker compose -f docker/docker-compose.yml --profile customer up -d odoo17-customer
+#           puis (optionnel) : uv run python docker/customer-customize.py
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: uie
+      POSTGRES_PASSWORD: uie
+      POSTGRES_DB: uie
+    ports: ["5433:5432"]
+    volumes: ["uie_pg:/var/lib/postgresql/data"]
+
+  # --- Instances Odoo de référence : servent au Schema Loader et aux tests ---
+  odoo-db:
+    image: postgres:16
+    profiles: ["odoo", "customer", "accounting"]
+    environment:
+      POSTGRES_USER: odoo
+      POSTGRES_PASSWORD: odoo
+      POSTGRES_DB: postgres
+    volumes: ["odoo_pg:/var/lib/postgresql/data"]
+
+  odoo17:
+    image: odoo:17
+    profiles: ["odoo"]
+    depends_on: [odoo-db]
+    environment: { HOST: odoo-db, USER: odoo, PASSWORD: odoo }
+    ports: ["8017:8069"]
+    command: >
+      odoo -d ref17 --db_host=odoo-db --db_user=odoo --db_password=odoo
+      -i base,contacts,product,uom,sale_management,purchase,stock,account --without-demo=all
+
+  odoo18:
+    image: odoo:18
+    profiles: ["odoo"]
+    depends_on: [odoo-db]
+    environment: { HOST: odoo-db, USER: odoo, PASSWORD: odoo }
+    ports: ["8018:8069"]
+    command: >
+      odoo -d ref18 --db_host=odoo-db --db_user=odoo --db_password=odoo
+      -i base,contacts,product,uom,sale_management,purchase,stock,account --without-demo=all
+
+  odoo19:
+    image: odoo:19
+    profiles: ["odoo"]
+    depends_on: [odoo-db]
+    environment: { HOST: odoo-db, USER: odoo, PASSWORD: odoo }
+    ports: ["8019:8069"]
+    command: >
+      odoo -d ref19 --db_host=odoo-db --db_user=odoo --db_password=odoo
+      -i base,contacts,product,uom,sale_management,purchase,stock,account --without-demo=all
+
+  # --- Instance « client » de test (étapes 7-8 : Instance Discovery / Diff) ---
+  # Même image Odoo 17 que la référence ref17, configuration volontairement différente :
+  # modules standard du test + hr + project. Le champ custom x_customer_no est ajouté ensuite
+  # par docker/customer-customize.py (idempotent).
+  odoo17-customer:
+    image: odoo:17
+    profiles: ["customer"]
+    depends_on: [odoo-db]
+    environment: { HOST: odoo-db, USER: odoo, PASSWORD: odoo }
+    ports: ["8027:8069"]
+    command: >
+      odoo -d customer17 --db_host=odoo-db --db_user=odoo --db_password=odoo
+      -i base,contacts,product,uom,sale_management,purchase,stock,account,hr,project --without-demo=all
+
+  # ACCOUNTING (phase 3) : Odoo 17 allemand de test, base « accounting17 » créée et configurée par
+  # docker/accounting17-setup.py (l10n_de, SKR03, EUR) ; même image et même serveur de base que customer17,
+  # conteneur séparé : customer17 (régression PRODUCT / PARTNER) n'est jamais touché.
+  odoo17-accounting:
+    image: odoo:17
+    profiles: ["accounting"]
+    depends_on: [odoo-db]
+    environment: { HOST: odoo-db, USER: odoo, PASSWORD: odoo }
+    ports: ["8037:8069"]
+    command: >
+      odoo --db_host=odoo-db --db_user=odoo --db_password=odoo --without-demo=all
+
+volumes:
+  uie_pg:
+  odoo_pg:

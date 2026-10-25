@@ -1,0 +1,226 @@
+{
+ "format": "uie-llm-replay/1",
+ "provider": "openai",
+ "model": "gpt-5.6-sol",
+ "prompt_version": "1.1.0",
+ "prompt_checksum": "b62c730c5646098c2699c116ad569ad8a694e2735e3892cc52f066d813e7d7c9",
+ "recorded_at": "2026-09-28T14:10:11+00:00",
+ "responses": {
+  "product.attribute.product_tmpl_ids": {
+   "raw": {
+    "outcome": "NO_CONFIDENT_MATCH",
+    "semantic_key": "",
+    "confidence": 0,
+    "justification": "",
+    "reason": "Links the attribute to related product templates; it is not a collection of product images."
+   },
+   "error": null,
+   "meta": {
+    "model": "gpt-5.6-sol",
+    "request_id": "chatcmpl-ET6JTcN4M0ehfghSPkJkaBUaZYKt3",
+    "input_tokens": 1302,
+    "output_tokens": 47,
+    "latency_ms": 4014,
+    "cost_usd": null
+   }
+  },
+  "product.attribute.value.color": {
+   "raw": {
+    "outcome": "NO_CONFIDENT_MATCH",
+    "semantic_key": "",
+    "confidence": 0,
+    "justification": "",
+    "reason": "Color Index is a user-interface colour setting, not display order; display_order is already held by product.attribute.value.sequence."
+   },
+   "error": null,
+   "meta": {
+    "model": "gpt-5.6-sol",
+    "request_id": "chatcmpl-ET6JWfVeEMHm0Y4MztxsP1t3z1szD",
+    "input_tokens": 1302,
+    "output_tokens": 54,
+    "latency_ms": 1937,
+    "cost_usd": null
+   }
+  },
+  "product.attribute.value.image": {
+   "raw": {
+    "outcome": "MATCH",
+    "semantic_key": "attribute_value_image",
+    "confidence": 0.98,
+    "justification": "Image used as the visual colour or swatch for an attribute value.",
+    "reason": ""
+   },
+   "error": null,
+   "meta": {
+    "model": "gpt-5.6-sol",
+    "request_id": "chatcmpl-ET6JYZfG7waGOgI1r0hBvdmLRlaRq",
+    "input_tokens": 1392,
+    "output_tokens": 48,
+    "latency_ms": 1734,
+    "cost_usd": null
+   }
+  },
+  "product.attribute.value.is_used_on_products": {
+   "raw": {
+    "outcome": "NO_CONFIDENT_MATCH",
+    "semantic_key": "",
+    "confidence": 0,
+    "justification": "",
+    "reason": "Indicates whether the attribute value is used on products, not whether customers can enter free text; free_text_value is already held by product.attribute.value.is_custom."
+   },
+   "error": null,
+   "meta": {
+    "model": "gpt-5.6-sol",
+    "request_id": "chatcmpl-ET6JZMk3myGwjbTTJMSIJdJggoPKj",
+    "input_tokens": 1312,
+    "output_tokens": 62,
+    "latency_ms": 8953,
+    "cost_usd": null
+   }
+  },
+  "product.product.code": {
+   "raw": {
+    "outcome": "NO_CONFIDENT_MATCH",
+    "semantic_key": "",
+    "confidence": 0.98,
+    "justification": "",
+    "reason": "Same data as product.product.default_code (sku): computed reference display field."
+   },
+   "error": null,
+   "meta": {
+    "model": "gpt-5.6-sol",
+    "request_id": "chatcmpl-ET6JiVzofjTqTtAHvBorn4EgCzHAD",
+    "input_tokens": 2013,
+    "output_tokens": 47,
+    "latency_ms": 3202,
+    "cost_usd": null
+   }
+  },
+  "product.product.partner_ref": {
+   "raw": {
+    "outcome": "NO_CONFIDENT_MATCH",
+    "semantic_key": "",
+    "confidence": 0,
+    "justification": "",
+    "reason": "Computed, context-dependent customer reference; no customer-specific reference key is offered."
+   },
+   "error": null,
+   "meta": {
+    "model": "gpt-5.6-sol",
+    "request_id": "chatcmpl-ET6JmYZZRcb6b2XmhqwcNpl3HPAXn",
+    "input_tokens": 2015,
+    "output_tokens": 458,
+    "latency_ms": 7188,
+    "cost_usd": null
+   }
+  },
+  "product.product.product_catalog_product_is_in_sale_order": {
+   "raw": {
+    "outcome": "NO_CONFIDENT_MATCH",
+    "semantic_key": "",
+    "confidence": 0,
+    "justification": "",
+    "reason": "Operational catalog UI flag indicating whether the product is already in a sale order; it is not active, sellable, or purchasable status."
+   },
+   "error": null,
+   "meta": {
+    "model": "gpt-5.6-sol",
+    "request_id": "chatcmpl-ET6Jtedk6mfqsipYiJPfIQSKaodHk",
+    "input_tokens": 1594,
+    "output_tokens": 59,
+    "latency_ms": 2484,
+    "cost_usd": null
+   }
+  },
+  "product.supplierinfo.discount": {
+   "raw": {
+    "outcome": "MATCH",
+    "semantic_key": "supplier_discount",
+    "confidence": 0.97,
+    "justification": "Discount percentage applied to the supplier's purchase price.",
+    "reason": ""
+   },
+   "error": null,
+   "meta": {
+    "model": "gpt-5.6-sol",
+    "request_id": "chatcmpl-ET6Jv4DTP73kM6sIDwbFBIEJ0fgZa",
+    "input_tokens": 1600,
+    "output_tokens": 43,
+    "latency_ms": 2312,
+    "cost_usd": null
+   }
+  },
+  "product.supplierinfo.price_discounted": {
+   "raw": {
+    "outcome": "MATCH",
+    "semantic_key": "supplier_net_price",
+    "confidence": 0.96,
+    "justification": "Computed discounted supplier price, meaning the purchase price after the supplier discount.",
+    "reason": ""
+   },
+   "error": null,
+   "meta": {
+    "model": "gpt-5.6-sol",
+    "request_id": "chatcmpl-ET6JyUFJHXYIfscZtgOPdDLAWSeRj",
+    "input_tokens": 1603,
+    "output_tokens": 48,
+    "latency_ms": 3187,
+    "cost_usd": null
+   }
+  },
+  "product.template.product_properties": {
+   "raw": {
+    "outcome": "MATCH",
+    "semantic_key": "property_values",
+    "confidence": 0.95,
+    "justification": "Stores the product's category-defined property values in Odoo's native properties field.",
+    "reason": ""
+   },
+   "error": null,
+   "meta": {
+    "model": "gpt-5.6-sol",
+    "request_id": "chatcmpl-ET6K1g8P3VlZYDHtzRKUt5mdrxZdj",
+    "input_tokens": 1483,
+    "output_tokens": 49,
+    "latency_ms": 2375,
+    "cost_usd": null
+   }
+  },
+  "uom.uom.factor_inv": {
+   "raw": {
+    "outcome": "MATCH",
+    "semantic_key": "uom_ratio",
+    "confidence": 0.99,
+    "justification": "User-facing ratio stating how many reference units equal one of this unit.",
+    "reason": ""
+   },
+   "error": null,
+   "meta": {
+    "model": "gpt-5.6-sol",
+    "request_id": "chatcmpl-ET6K3TewyRPTmkCvwp8tu19AUPgnP",
+    "input_tokens": 1465,
+    "output_tokens": 49,
+    "latency_ms": 2000,
+    "cost_usd": null
+   }
+  },
+  "uom.uom.ratio": {
+   "raw": {
+    "outcome": "MATCH",
+    "semantic_key": "uom_ratio",
+    "confidence": 0.85,
+    "justification": "Computed combined ratio representing the unit-to-reference conversion in the user-facing direction.",
+    "reason": ""
+   },
+   "error": null,
+   "meta": {
+    "model": "gpt-5.6-sol",
+    "request_id": "chatcmpl-ET6K5H10tSGgc5yFCsuoo3EL5qBb3",
+    "input_tokens": 1426,
+    "output_tokens": 178,
+    "latency_ms": 3719,
+    "cost_usd": null
+   }
+  }
+ }
+}

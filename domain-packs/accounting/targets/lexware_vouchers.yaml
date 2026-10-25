@@ -1,0 +1,73 @@
+# Binding cible : Accounting CDM → pièce comptable externe Lexware Office (« voucher » de l'API publique),
+# résolu contre le Registry (lexware / public-api / v1 / rest, entité « vouchers »). Livraison PAR API : une
+# requête par pièce, avec un élément par écriture du modèle générique gross_by_account_and_tax.
+#
+# Ce fichier ne lit QUE l'Accounting CDM (vue de la pièce : document_type, number, dates, montants ; vue de
+# l'écriture : amount, tax_amount, tax_rate) et des valeurs fournies par UIE (`target.*`). Il ne connaît
+# aucune source. Il ne cite que des champs du contrat cible (technical_name du Registry).
+#
+# Choix de la phase 2a (rien d'inventé, rien de deviné) :
+#   - jamais une facture commerciale : une PIÈCE comptable externe (type parmi les 4 types de pièce) ;
+#   - montants TTC (taxType gross), positifs ; un avoir garde des montants positifs et un type d'avoir ;
+#   - catégorie de chaque élément = correspondance EXPLICITE compte source → catégorie de la cible, lue dans
+#     la cible (posting-categories) et de la sorte attendue : recette pour une vente, dépense pour un achat ;
+#   - contact = lien PARTNER existant (contact envoyé ou rapproché) ; sans lien, la pièce est bloquée ;
+#   - EUR seulement (la cible n'accepte pas d'autre devise) ;
+#   - date de la pièce = date du document, sinon date comptable (jamais inventée) ;
+#   - pièces de VENTE : numéro = numéro de la pièce ; remarque = description, sinon référence externe ;
+#   - pièces d'ACHAT (1.1.0) : numéro = référence donnée par le fournisseur (son numéro de facture), à
+#     défaut le numéro interne ; remarque = numéro interne (+ description) : rien n'est écarté. Le contrôle
+#     des doublons d'une pièce d'achat porte sur numéro + contact (connecteur).
+
+binding_version: "1.1.0"   # 1.1.0 : numéro des pièces d'achat = référence du fournisseur
+name: Lexware Office vouchers
+source: {model: accounting, version: "1"}
+target:
+  system: lexware
+  product: public-api
+  versions: ["v1"]
+  interface: rest
+  entity: vouchers
+  display: Lexware Office
+records: per_document
+delivery: api
+booking: {model: gross_by_account_and_tax}
+currencies: [EUR]
+
+lookups:
+  - {kind: ACCOUNT, field: voucherItems.categoryId, label: Lexware Office category,
+     options_resource: posting-categories, option_kind_by_role: {CUSTOMER: income, SUPPLIER: outgo}}
+
+fields:
+  - {field: type, source: document_type, identity: true,
+     map: {CUSTOMER_INVOICE: salesinvoice, CUSTOMER_CREDIT_NOTE: salescreditnote,
+           VENDOR_BILL: purchaseinvoice, VENDOR_CREDIT_NOTE: purchasecreditnote}}
+  - {field: voucherNumber, source: number, identity: true, when: {role: [CUSTOMER]}}
+  - {field: voucherNumber, source: reference, fallback: number, identity: true, when: {role: [SUPPLIER]}}
+  - {field: voucherDate, source: document_date, fallback: accounting_date, identity: true,
+     date_format: "%Y-%m-%dT00:00:00.000+00:00"}
+  - {field: dueDate, source: due_date, date_format: "%Y-%m-%dT00:00:00.000+00:00"}
+  - {field: totalGrossAmount, source: total_amount, identity: true}
+  - {field: totalTaxAmount, source: tax_amount, identity: true}
+  - {field: taxType, constant: gross}
+  - {field: contactId, source: target.contact_id, identity: true}
+  - {field: remark, source: description, fallback: reference, when: {role: [CUSTOMER]}}
+  - {field: remark, source: source_note, when: {role: [SUPPLIER]}}   # numéro interne (+ description)
+
+items:
+  path: voucherItems
+  fields:
+    - {field: voucherItems.amount, source: amount, identity: true}
+    - {field: voucherItems.taxAmount, source: tax_amount, identity: true}
+    - {field: voucherItems.taxRatePercent, source: tax_rate, identity: true}
+    - {field: voucherItems.categoryId, source: target.category_id, identity: true}
+
+rules:
+  - {id: LV01, kind: required_unless, field: type, level: BLOCKING,
+     message: "This kind of document cannot be sent as a Lexware Office voucher"}
+  - {id: LV02, kind: required_unless, field: voucherNumber, level: BLOCKING,
+     message: "The document has no number"}
+  - {id: LV03, kind: required_unless, field: voucherDate, level: BLOCKING,
+     message: "The document has no date"}
+  - {id: LV04, kind: required_unless, field: contactId, level: BLOCKING,
+     message: "Send this customer or supplier to Lexware Office first (or link it to an existing contact)"}

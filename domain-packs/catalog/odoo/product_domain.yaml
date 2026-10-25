@@ -1,0 +1,360 @@
+# Définition standard du domaine PRODUCT pour Odoo (Product Domain V1a).
+#
+# Ce fichier DÉCLARE ; le service RÉSOUT contre un snapshot (standard, puis instance).
+# Règle de version : une entité ou un champ déclaré mais absent du snapshot est marqué
+# present=false, jamais une erreur. On déclare donc l'union des versions 17 / 18 / 19
+# (ex. detailed_type n'existe qu'en 17, uom_ids qu'en 19).
+#
+# Champs d'une entité du scope NON listés ici :
+#   - champ image détecté par la règle media → group media ;
+#   - champ technique (metadata.technical du Registry) → group technical, NOT_RELEVANT ;
+#   - sinon → group other, relevance POSSIBLE (field_defaults).
+# Toute modification du contenu (ou du vocabulaire) impose d'incrémenter definition_version (une
+# définition persistée est immutable ; même version + contenu différent = refus).
+#
+# « key » (V1b) : semantic_key du vocabulaire (catalog/vocabulary.yaml) déclarée pour ce champ ;
+# elle prime sur les alias génériques (confiance 0.98). Absente : le moteur cherche seul.
+
+domain: PRODUCT
+system: odoo
+definition_version: "1.9.0"  # 1.9.0 : import_defaults (prix sans valeur à l'import de fichier)
+versions: ["17", "18", "19"]
+
+entities:
+  - {technical_name: product.template, role: PRIMARY}
+  - {technical_name: product.product, role: VARIANT}
+  - {technical_name: product.category, role: CATEGORY}
+  - {technical_name: product.attribute, role: ATTRIBUTE}
+  - {technical_name: product.attribute.value, role: ATTRIBUTE_VALUE}
+  - {technical_name: product.template.attribute.line, role: ATTRIBUTE_LINE}
+  - {technical_name: product.template.attribute.value, role: VARIANT_VALUE}
+  - {technical_name: uom.uom, role: UOM}
+  - {technical_name: product.supplierinfo, role: SUPPLIER_INFO}
+
+fields:
+  # ------------------------------------------------------ product.template (PRIMARY)
+  - {entity: product.template, field: name, group: identity, key: name}
+  - {entity: product.template, field: default_code, group: identity, key: sku}
+  - {entity: product.template, field: barcode, group: identity, key: ean_gtin}
+  - {entity: product.template, field: active, group: identity, key: active}
+  - {entity: product.template, field: company_id, group: identity, key: company}
+  - {entity: product.template, field: list_price, group: commercial, key: list_price}
+  - {entity: product.template, field: standard_price, group: commercial, key: cost_price}
+  - {entity: product.template, field: sale_ok, group: commercial, key: can_be_sold}
+  - {entity: product.template, field: purchase_ok, group: commercial, key: can_be_purchased}
+  - {entity: product.template, field: currency_id, group: commercial, key: currency}
+  - {entity: product.template, field: taxes_id, group: commercial, key: sales_taxes}
+  - {entity: product.template, field: supplier_taxes_id, group: commercial, key: purchase_taxes}
+  - {entity: product.template, field: description, group: description, key: description_internal}
+  - {entity: product.template, field: description_sale, group: description, key: description_sale}
+  - {entity: product.template, field: description_purchase, group: description, key: description_purchase}
+  - {entity: product.template, field: categ_id, group: classification, key: category}
+  - {entity: product.template, field: type, group: classification}
+  - {entity: product.template, field: detailed_type, group: classification, key: product_type}
+  - {entity: product.template, field: is_storable, group: classification}
+  - {entity: product.template, field: product_tag_ids, group: classification, key: tags}
+  - {entity: product.template, field: uom_id, group: logistics, key: uom}
+  - {entity: product.template, field: uom_po_id, group: logistics, key: uom_purchase}
+  - {entity: product.template, field: uom_ids, group: logistics}
+  - {entity: product.template, field: weight, group: logistics, key: weight}
+  - {entity: product.template, field: volume, group: logistics, key: volume}
+  - {entity: product.template, field: weight_uom_name, group: logistics}
+  - {entity: product.template, field: volume_uom_name, group: logistics}
+  - {entity: product.template, field: packaging_ids, group: logistics, key: packaging}
+  - {entity: product.template, field: tracking, group: logistics, key: tracking}
+  - {entity: product.template, field: attribute_line_ids, group: variants, key: attribute_lines}
+  - {entity: product.template, field: product_variant_ids, group: variants, key: variants}
+  - {entity: product.template, field: product_variant_count, group: variants}
+  - {entity: product.template, field: product_variant_id, group: variants}
+  - {entity: product.template, field: seller_ids, group: supplier, key: supplier_offers}
+  - {entity: product.template, field: variant_seller_ids, group: supplier, key: supplier_offers}
+  - {entity: product.template, field: image_1920, group: media, key: main_image}
+
+  # ------------------------------------------------------- product.product (VARIANT)
+  - {entity: product.product, field: product_tmpl_id, group: identity, key: product_template}
+  - {entity: product.product, field: name, group: identity, key: name}
+  - {entity: product.product, field: default_code, group: identity, key: sku}
+  - {entity: product.product, field: barcode, group: identity, key: ean_gtin}
+  - {entity: product.product, field: active, group: identity, key: active}
+  - {entity: product.product, field: lst_price, group: commercial, key: list_price}
+  - {entity: product.product, field: standard_price, group: commercial, key: cost_price}
+  - {entity: product.product, field: price_extra, group: commercial, key: variant_extra_price}
+  - {entity: product.product, field: weight, group: logistics, key: weight}
+  - {entity: product.product, field: volume, group: logistics, key: volume}
+  - {entity: product.product, field: product_template_attribute_value_ids, group: variants, key: variant_identity}
+  - {entity: product.product, field: product_template_variant_value_ids, group: variants}
+  - {entity: product.product, field: combination_indices, group: variants}
+  - {entity: product.product, field: seller_ids, group: supplier, key: supplier_offers}
+  - {entity: product.product, field: image_variant_1920, group: media, key: variant_image}
+
+  # ------------------------------------------------------ product.category (CATEGORY)
+  - {entity: product.category, field: name, group: classification, key: category_name}
+  - {entity: product.category, field: complete_name, group: classification, key: category_path}
+  - {entity: product.category, field: parent_id, group: classification, key: parent_category}
+  - {entity: product.category, field: child_id, group: classification, key: child_categories}
+
+  # ---------------------------------------------------- product.attribute (ATTRIBUTE)
+  - {entity: product.attribute, field: name, group: variants, key: attribute_name}
+  - {entity: product.attribute, field: create_variant, group: variants, key: variant_creation_mode}
+  - {entity: product.attribute, field: display_type, group: variants, key: attribute_display_type}
+  - {entity: product.attribute, field: value_ids, group: variants, key: attribute_value}
+  - {entity: product.attribute, field: sequence, group: variants, key: display_order}
+
+  # ----------------------------------------- product.attribute.value (ATTRIBUTE_VALUE)
+  - {entity: product.attribute.value, field: name, group: variants, key: attribute_value_name}
+  - {entity: product.attribute.value, field: attribute_id, group: variants, key: attribute}
+  - {entity: product.attribute.value, field: sequence, group: variants, key: display_order}
+  - {entity: product.attribute.value, field: html_color, group: variants, key: color_code}
+  - {entity: product.attribute.value, field: is_custom, group: variants, key: free_text_value}
+  - {entity: product.attribute.value, field: default_extra_price, group: variants, key: variant_extra_price}
+
+  # --------------------------------- product.template.attribute.line (ATTRIBUTE_LINE)
+  - {entity: product.template.attribute.line, field: product_tmpl_id, group: variants, key: product_template}
+  - {entity: product.template.attribute.line, field: attribute_id, group: variants, key: attribute}
+  - {entity: product.template.attribute.line, field: value_ids, group: variants, key: attribute_value}
+  - {entity: product.template.attribute.line, field: product_template_value_ids, group: variants}
+  - {entity: product.template.attribute.line, field: active, group: variants}
+  - {entity: product.template.attribute.line, field: sequence, group: variants}
+
+  # ---------------------------------- product.template.attribute.value (VARIANT_VALUE)
+  - {entity: product.template.attribute.value, field: product_tmpl_id, group: variants, key: product_template}
+  - {entity: product.template.attribute.value, field: attribute_line_id, group: variants, key: attribute_lines}
+  - {entity: product.template.attribute.value, field: product_attribute_value_id, group: variants, key: attribute_value}
+  - {entity: product.template.attribute.value, field: attribute_id, group: variants}
+  - {entity: product.template.attribute.value, field: name, group: variants, key: attribute_value_name}
+  - {entity: product.template.attribute.value, field: price_extra, group: variants, key: variant_extra_price}
+  - {entity: product.template.attribute.value, field: ptav_active, group: variants, key: variant_value_active}
+
+  # ---------------------------------------------------------------- uom.uom (UOM)
+  - {entity: uom.uom, field: name, group: logistics, key: uom_name}
+  - {entity: uom.uom, field: active, group: logistics}
+  - {entity: uom.uom, field: category_id, group: logistics, key: uom_category}
+  - {entity: uom.uom, field: uom_type, group: logistics, key: uom_type}
+  - {entity: uom.uom, field: factor, group: logistics, key: uom_factor}
+  - {entity: uom.uom, field: rounding, group: logistics, key: uom_rounding}
+  - {entity: uom.uom, field: relative_uom_id, group: logistics}
+  - {entity: uom.uom, field: relative_factor, group: logistics}
+
+  # ------------------------------------------- product.supplierinfo (SUPPLIER_INFO)
+  - {entity: product.supplierinfo, field: partner_id, group: supplier, key: supplier_name}
+  - {entity: product.supplierinfo, field: product_name, group: supplier, key: supplier_product_name}
+  - {entity: product.supplierinfo, field: product_code, group: supplier, key: supplier_reference}
+  - {entity: product.supplierinfo, field: price, group: supplier, key: supplier_price}
+  - {entity: product.supplierinfo, field: currency_id, group: supplier, key: currency}
+  - {entity: product.supplierinfo, field: min_qty, group: supplier, key: supplier_min_qty}
+  - {entity: product.supplierinfo, field: delay, group: supplier, key: supplier_lead_time}
+  - {entity: product.supplierinfo, field: date_start, group: supplier, key: supplier_valid_from}
+  - {entity: product.supplierinfo, field: date_end, group: supplier, key: supplier_valid_to}
+  - {entity: product.supplierinfo, field: product_tmpl_id, group: supplier, key: product_template}
+  - {entity: product.supplierinfo, field: product_id, group: supplier, key: product_variant}
+  - {entity: product.supplierinfo, field: product_uom, group: supplier}
+  - {entity: product.supplierinfo, field: product_uom_id, group: supplier}
+
+# Médias détectés dans le schéma réel (jamais supposés) : en Odoo les champs Image ont le type
+# natif « binary » ; seule la convention de nom permet de les reconnaître.
+media:
+  detect:
+    native_types: [image]
+    name_patterns: ['^image_\d+$', '^image_variant_\d+$']
+  # sur une entité non variante : la plus haute résolution (suffixe numérique) = main,
+  # les autres tailles = derivative (pas des images métier distinctes)
+  main: highest_resolution
+  # tous les champs médias des entités de ces rôles = images de variante
+  variant_level_roles: [VARIANT]
+
+field_defaults:
+  listed_field_relevance: RELEVANT
+  unlisted_standard_field_relevance: POSSIBLE
+  unlisted_field_group: other
+  technical_fields_group: technical
+  technical_fields_relevance: NOT_RELEVANT
+
+# --------------------------------------------------------------------------------------------------
+# Semantic Enrichment (V1b) : règles de pertinence DÉTERMINISTES, évaluées dans l'ordre sur chaque champ
+# présent du domaine effectif ; la première qui correspond gagne et son id est tracé. Les conditions
+# d'une règle sont combinées par ET (any_of : OU). Raison affichée au supplier (anglais), variables :
+# {field} {entity} {target} {modules} {key}. Une exclusion (NOT_RELEVANT) reste contestable (include).
+semantics:
+  known_threshold: 0.90
+  # contrôles de structure de la page « Product Catalog Analysis » (MEDIA : au moins un champ image)
+  structure_checks: [PRIMARY, VARIANT, CATEGORY, ATTRIBUTE, MEDIA]
+  rules:
+    - id: R01
+      description: technical fields (id, create_*, write_*, __last_update)
+      when:
+        any_of:
+          - {technical: true}
+          - {name_patterns: ['^id$', '^create_(uid|date)$', '^write_(uid|date)$', '^__last_update$']}
+      relevance: NOT_RELEVANT
+      reason: Technical field managed by the system
+    - id: R02
+      description: field explicitly listed in the pack with a business group
+      when: {listed: true, group_not_in: [other]}
+      relevance: RELEVANT
+      reason: Catalog field declared by the domain pack
+    - id: R03
+      description: media field detected by the media rule
+      when: {is_media: true}
+      relevance: RELEVANT
+      reason: Product image
+    - id: R04
+      description: relation to an entity outside the domain scope (no role)
+      when: {relation_outside_scope: true}
+      relevance: NOT_RELEVANT
+      reason: Link to {target}, which is not part of the product catalog
+    - id: R05
+      description: field added only by non-catalog modules
+      when:
+        modules_all_in: [sale_project, sale_project_stock, sale_service, sale_timesheet, project,
+                         project_account, project_purchase, project_sms, project_todo, rating, portal_rating,
+                         hr, hr_org_chart, hr_skills, hr_timesheet, mail_bot_hr, mail, portal, website,
+                         web_hierarchy]
+      relevance: NOT_RELEVANT
+      reason: Added by module {modules}, which is not part of the product catalog
+    - id: R06
+      description: computed, non-stored helper (counters, has_*, display_name, html, activities, messages)
+      when:
+        computed: true
+        stored: false
+        name_patterns: ['_count$', '^has_', '^display_name$', '_html$', '(^|_)activity_', '^message_']
+      relevance: NOT_RELEVANT
+      reason: Computed helper, not product data
+    - id: R07
+      description: user-interface flag (show_*, *_visible, hide_*...)
+      when:
+        native_types: [selection, boolean]
+        name_patterns: ['^show_', '_visible$', '^hide_', '_invisible$', '^can_image_(variant_)?\d+_be_zoomed$']
+      relevance: NOT_RELEVANT
+      reason: User-interface flag, not product data
+    # ---------------------------------------------------------------- V1b.1
+    # R18 avant R08 : une copie related standard suit la décision FINALE de son champ d'origine (même
+    # donnée, une seule décision ; jamais une exclusion indépendante d'une copie d'un champ du catalogue).
+    # R11-R17 après R08 : un champ qui correspond au vocabulaire reste RELEVANT, les exclusions ne jouent
+    # que sur les champs sans correspondance sûre. Aucune règle ne touche un champ protégé
+    # (protected_fields.yaml) ni un champ listé (R02 passe avant).
+    - id: R18
+      description: standard related copy of a field of another domain entity (follows its decision)
+      when: {origins: [STANDARD], related_copy: true}
+      follow_source: true
+      reason: Reflects {source}
+    - id: R08
+      description: alias or pattern of the vocabulary with a compatible type
+      when: {min_match_confidence: 0.90}
+      relevance: RELEVANT
+      reason: Matches the catalog vocabulary ({key})
+    - id: R11
+      description: technical back-reference (collection whose relation is carried by the target entity)
+      when: {back_reference: true}
+      relevance: NOT_RELEVANT
+      reason: Technical back-reference to {target}; the relation is carried by {inverse}
+    - id: R12
+      description: operational quantity or counter (stock, sales, purchases)
+      when:
+        data_types: [decimal, integer]
+        any_of:
+          # un jeton qty / quantity ET un jeton de mouvement ou de disponibilité (min_qty n'en a pas)
+          - name_patterns: ['^(?=.*(?:^|_)(?:qty|quantity)(?:_|$))(?=.*(?:^|_)(?:available|virtual|incoming|outgoing|forecast|free|reserved|purchased|sold|delivered|received)(?:_|$))']
+          - name_patterns: ['_available$', '^nbr_', '_count$']
+          - {computed: true, stored: false, name_patterns: ['^number_']}
+      relevance: NOT_RELEVANT
+      reason: Operational quantity or counter (stock, sales, purchases), not catalog data
+    - id: R15
+      description: internal ORM mechanics or user-interface helper
+      when:
+        any_of:
+          - name_patterns: ['^parent_path$', '^sequence$', '^priority$', '^is_product_variant$', '^has_configurable_',
+                            '^valid_', '_tooltip$', '^tax_string$', '^fiscal_country_codes$', '_definition$',
+                            '^display_type$', '_indices$']
+          - native_types: [properties_definition]
+      relevance: NOT_RELEVANT
+      reason: Internal Odoo mechanics or user-interface helper, not catalog data
+    - id: R16
+      description: accounting valuation settings (valuation, costing method, stock valuation layers)
+      when:
+        name_patterns: ['(^|_)valuation$', '(^|_)cost_method$', '^property_account_', '_svl$', '^avg_cost$',
+                        '^total_value$']
+      relevance: NOT_RELEVANT
+      reason: Accounting valuation setting, not catalog data
+    - id: R17
+      description: operational default of a category (properties, putaway, reservation, removal)
+      when:
+        entity_roles: [CATEGORY]
+        name_patterns: ['^property_', '_putaway', '_reserve_', '(^|_)removal_']
+      relevance: NOT_RELEVANT
+      reason: Operational default of the category, not catalog data
+    - id: R13
+      description: logistics, replenishment or operations parameter
+      when:
+        any_of:
+          - name_patterns: ['^reordering_', '^(sale|produce)_delay$', '^description_picking', '^route_ids$',
+                            '^responsible_id$', '^property_stock_', 'putaway', '_reserve_method$']
+          # modules d'opérations (liste explicite : pas de joker mrp_* / quality*)
+          - modules_all_in: [stock, stock_account, purchase_stock, sale_stock, mrp, mrp_account, quality,
+                             quality_control, repair, maintenance]
+      relevance: NOT_RELEVANT
+      reason: Logistics, replenishment or operations parameter, not catalog data
+    - id: R14
+      description: sales, purchase or invoicing policy or warning
+      when:
+        any_of:
+          - name_patterns: ['_policy$', '(?<!cost)_method$', '_warn(_msg)?$', '^invoice_', '^expense_', '^visible_',
+                            '^service_']
+          - modules_all_in: [sale_management, purchase, account, sale_expense, sale_service, sale_purchase]
+      relevance: NOT_RELEVANT
+      reason: Sales, purchase or invoicing policy, not catalog data
+    - id: R09
+      description: custom field without vocabulary match (asked to the supplier)
+      when: {origins: [CUSTOM], no_match: true}
+      relevance: POSSIBLE
+      reason: Custom field without a known meaning
+    - id: R10
+      description: default
+      relevance: POSSIBLE
+      reason: Standard field not declared by the domain pack
+
+# Traduction des valeurs de la source en valeurs canoniques (Product CDM : ProductKind), donnée du pack, jamais
+# du Core. Hors de la définition résolue et du checksum des règles : aucune analyse ne change. Valeur absente
+# de la table (kit, combo, module tiers…) = sorte inconnue, jamais devinée. Odoo 17 seulement : en 18 / 19 la
+# sorte est le champ « type », non déclaré avec la clé product_type dans ce pack.
+value_maps:
+  - entity: product.template
+    field: detailed_type
+    key: product_type
+    values: {consu: GOODS, product: GOODS, service: SERVICE}
+
+# Noms des unités de mesure d'une installation STANDARD d'Odoo (uom), par code canonique du Wizard
+# (uie_core.wizard.units) : les valeurs d'unités d'un fichier (« Stück », « St. », « Meter »…) sont écrites avec
+# ces noms. Unités d'emballage (Set, Packung…) : jamais traduites seules (décision de l'utilisateur).
+unit_names:
+  unit: Units
+  dozen: Dozens
+  kg: kg
+  g: g
+  t: t
+  lb: lb
+  oz: oz
+  m: m
+  cm: cm
+  mm: mm
+  km: km
+  in: in
+  ft: ft
+  l: L
+  m2: m²
+  m3: m³
+  h: Hours
+  day: Days
+
+# Unité, dans une installation standard d'Odoo, des champs chiffrés de product.template (réglages par défaut de
+# la société : kilogrammes, mètres cubes) : une valeur d'une autre unité de même nature est convertie.
+field_units:
+  weight: kg
+  volume: m3
+
+# Import de fichier d'Odoo (base_import) sur product.template : valeur écrite par Odoo quand la colonne est
+# ABSENTE (valeur par défaut du champ) et quand la cellule est VIDE. Mesuré le 2026-10-23 : Odoo 17
+# (accounting17, import réel dans une copie) et Odoo 18 (ref18, default_get) ; Odoo 19 non mesuré. Le Wizard le
+# DIT à l'utilisateur, il n'écrit jamais ces valeurs lui-même.
+import_defaults:
+  list_price: {absent: "1.00", empty: "0.00"}
+  standard_price: {absent: "0.00", empty: "0.00"}

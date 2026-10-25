@@ -1,0 +1,282 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+/* Charte Transliate (light) : tokens + classes du pack (.btn-*, .card, .input, .tbl, .badge-*...).
+   Importé dans la couche « components » : les utilitaires Tailwind (couche « utilities ») restent prioritaires,
+   un className passé à un composant l'emporte donc toujours sur la classe du pack. */
+@import "../design-pack/transliate.css" layer(components);
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-brand: var(--brand);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-changed: var(--changed);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+  --color-third-party: var(--third-party);
+  --color-neutral: var(--neutral);
+  --color-nav-bg: var(--nav-bg);
+  --color-nav-border: var(--nav-border);
+  --color-nav-link: var(--nav-link);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-dm-sans), system-ui, sans-serif;
+  --font-mono: var(--font-dm-mono), "Fira Code", monospace;
+  --font-heading: var(--font-sans);
+
+  /* échelle typographique de la charte Transliate : corps 14px, labels / badges / métadonnées 12px */
+  --text-xs: 0.75rem; /* 12px */
+  --text-xs--line-height: 1.5;
+  --text-sm: 0.875rem; /* 14px */
+  --text-sm--line-height: 1.5;
+  --text-base: 0.875rem; /* 14px : texte courant (corps de la charte) */
+  --text-base--line-height: 1.5;
+
+  /* rayons Transliate : 8px boutons / champs (rounded-lg), 12px cartes, 16px menus / modales, 28px panneaux */
+  --radius-card: 12px;
+  --radius-card-sm: 12px;
+  --shadow-card: var(--card-shadow);
+  --color-card-from: var(--card-from);
+  --color-card-to: var(--card-to);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+  --radius-3xl: 28px;
+  --radius-4xl: 28px;
+}
+
+/* Thème clair = charte Transliate : les tokens shadcn / console pointent vers les tokens du pack
+   (design-pack/transliate.css). Fournies par le pack, non redéfinies ici : --card, --border, --primary
+   (encre slate-900). Les statuts reprennent les couleurs de TEXTE des badges du pack (plus foncées que
+   --success / --warning... du pack : contraste AA en 12px). Le thème sombre (.dark, ancienne charte GO45)
+   est conservé mais n'est plus proposé. */
+:root {
+  /* fond de page de la landing GO45 (go45-fe) : slate-50 uni + deux halos en haut de page (voir body) */
+  --background: #f8fafc;
+  --page-gradient:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--brand-500) 16%, transparent), transparent 35%),
+    radial-gradient(circle at top right, color-mix(in srgb, var(--text-2) 8%, transparent), transparent 30%);
+  /* fond de la page de connexion de Transliate (frontend/src/pages/LoginPage.tsx) : halo bleu 8 % en haut à
+     gauche sur le dégradé horizontal d'origine du pack */
+  --login-gradient:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--brand-500) 8%, transparent), transparent 28%),
+    linear-gradient(90deg, #e8effb 0%, #f8fafc 38%, #f1f5f9 100%);
+  --foreground: var(--text-2);
+  --card-foreground: var(--text-2);
+  --popover: var(--card);
+  --popover-foreground: var(--text-2);
+  --primary-foreground: var(--card);
+  --secondary: var(--bg-alt);
+  --secondary-foreground: var(--text-muted);
+  --muted: var(--bg-alt);
+  --muted-foreground: var(--text-soft);
+  --accent: var(--brand-50);
+  --accent-foreground: var(--brand-700);
+  --destructive: var(--danger);
+  --input: var(--input-border);
+  --ring: var(--focus-ring);
+  --brand: var(--brand-600);
+  --success: #047857;
+  --warning: #b45309;
+  --changed: #c2410c;
+  --danger: #b91c1c;
+  --info: #1d4ed8;
+  --third-party: #7e22ce;
+  --neutral: var(--text-soft);
+  --chart-1: var(--brand-600);
+  --chart-2: var(--brand-500);
+  --chart-3: var(--third-party);
+  --chart-4: var(--warning);
+  --chart-5: var(--neutral);
+  --radius: 0.5rem;
+  --card-from: var(--card);
+  --card-to: var(--card);
+  --card-shadow: var(--shadow-card);
+  --nav-bg: rgb(255 255 255 / 80%);
+  --nav-border: rgb(226 232 240 / 80%);
+  --nav-link: var(--text-dim);
+  /* polices servies par next/font (layout.tsx) ; le pack les nomme « DM Sans » / « DM Mono » */
+  --font-sans: var(--font-dm-sans), system-ui, sans-serif;
+  --font-mono: var(--font-dm-mono), "Fira Code", monospace;
+  /* largeur commune du header et de toutes les pages (référence : détail d'instance) */
+  --content-max: 1440px;
+}
+
+.dark {
+  color-scheme: dark;
+  --background: #07111f;
+  --foreground: #f4f7fb;
+  --card: #0f1d30;
+  --card-foreground: #f4f7fb;
+  --popover: #13243a;
+  --popover-foreground: #f4f7fb;
+  --primary: #64e3c3;
+  --primary-foreground: #06251e;
+  --secondary: #13243a;
+  --secondary-foreground: #f4f7fb;
+  --muted: #0b1727;
+  --muted-foreground: #a8b6c8;
+  --accent: rgb(100 227 195 / 11%);
+  --accent-foreground: #f4f7fb;
+  --destructive: #ff8a8a;
+  --border: #263a53;
+  --input: #263a53;
+  --ring: #64e3c3;
+  --brand: #64e3c3;
+  --success: #5fd38a;
+  --warning: #ffd38a;
+  --changed: #ffb27a;
+  --danger: #ff8a8a;
+  --info: #8cbcff;
+  --third-party: #c5a8ff;
+  --neutral: #8e9bb0;
+  --halo-1: rgb(100 227 195 / 12%);
+  --halo-2: rgb(140 188 255 / 10%);
+  --chart-1: #64e3c3;
+  --chart-2: #8cbcff;
+  --chart-3: #c5a8ff;
+  --chart-4: #ffd38a;
+  --chart-5: #8e9bb0;
+  --card-from: rgb(19 36 58 / 92%);
+  --card-to: rgb(11 23 39 / 95%);
+  --card-shadow: 0 18px 50px rgb(0 0 0 / 28%);
+  /* barre de navigation de la maquette GO45 */
+  --nav-bg: rgb(7 17 31 / 82%);
+  --nav-border: rgb(255 255 255 / 7%);
+  --nav-link: #c8d3e0;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    /* corps 14px ; fond : body du pack (--page-gradient), dimensionné plus bas */
+    font-size: 0.875rem;
+  }
+  html {
+    @apply font-sans;
+    font-size: 16px;
+    line-height: 1.5;
+    /* place de la barre de défilement toujours réservée : même grille sur les pages courtes et longues */
+    scrollbar-gutter: stable;
+  }
+}
+
+/* Halos limités au premier écran et qui défilent avec la page (comme le hero de la landing GO45) : en
+   descendant, il ne reste que le fond clair. Hors couche : doit l'emporter sur le raccourci `background` du
+   body du pack (couche components). */
+body {
+  background-size: 100% 100vh;
+  background-repeat: no-repeat;
+  background-attachment: scroll;
+}
+/* page de connexion : fond Transliate sur toute la page (data-page-background="login" sur la racine de la page) */
+body:has([data-page-background="login"]) {
+  background-image: var(--login-gradient);
+  background-size: 100% 100%;
+}
+
+/* Thème sombre conservé (non proposé) : le dégradé clair du pack ne s'y applique pas. */
+.dark body {
+  background-image:
+    radial-gradient(circle at 12% 0%, var(--halo-1), transparent 28rem),
+    radial-gradient(circle at 92% 6%, var(--halo-2), transparent 30rem);
+}
+
+/* ------------------------------------------------------------------ */
+/* Rôles typographiques partagés (à utiliser dans toutes les pages),    */
+/* valeurs de la charte Transliate (.h-page, .h-section, .eyebrow...) :  */
+/* page 30 > section 20 > item 16 > texte 14 > meta / labels 12.         */
+/* ------------------------------------------------------------------ */
+@utility page-title {
+  font-size: 1.875rem; /* 30px : .h-page */
+  line-height: 2.25rem;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  color: var(--text-2);
+  text-wrap: balance;
+}
+@utility page-description {
+  font-size: 0.875rem; /* 14px */
+  line-height: 1.5;
+  color: var(--muted-foreground);
+  max-width: 72ch;
+}
+@utility section-title {
+  font-size: 1.25rem; /* 20px : .h-section */
+  line-height: 1.75rem;
+  font-weight: 600;
+  color: var(--text-2);
+}
+@utility item-title {
+  font-size: 1rem; /* 16px : titre d'une card imbriquée */
+  line-height: 1.5rem;
+  font-weight: 600;
+  color: var(--text-2);
+}
+@utility eyebrow {
+  font-size: 0.75rem; /* .eyebrow du pack */
+  line-height: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--brand);
+}
+/* labels secondaires et métadonnées (dates, compteurs, édition) */
+@utility meta {
+  font-size: 0.75rem; /* 12px */
+  line-height: 1.5;
+  color: var(--muted-foreground);
+}
+/* données techniques uniquement (DM Mono) : versions, hashes, références, identifiants. */
+@utility tech {
+  font-family: var(--font-mono);
+  font-size: 0.9375em;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+/* Container partagé du header et du contenu : même grille pour toutes les pages,
+   width: min(1440px, calc(100% - 40px)) (principe du .wrap de la maquette, largeur de la console).
+   Seule exception prévue : data-content-width="full" sur l'élément racine d'une page très riche en
+   données (toute la largeur, gouttières conservées). */
+@utility app-container {
+  width: min(var(--content-max), calc(100% - 40px));
+  margin-inline: auto;
+}
+body:has([data-content-width="full"]) {
+  --content-max: 100vw;
+}
+
+/* rythme vertical des blocs d'une page (18px, gap principal de la maquette) */
+@utility page-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.125rem;
+}

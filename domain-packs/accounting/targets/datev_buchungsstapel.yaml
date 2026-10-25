@@ -1,0 +1,104 @@
+# Binding cible : Accounting CDM → DATEV Buchungsstapel (fichier EXTF), résolu contre le Registry
+# (datev / buchungsstapel / <version> / extf). Ce fichier ne contient QUE des positions du format (technical_name
+# du Registry : « 001 ») et leur source : libellé, type, longueur, décimales, obligatoire et motif de chaque
+# colonne viennent du Registry (snapshot de la version choisie). Toute position doit exister dans le snapshot.
+#
+# Décisions approuvées (temp/PLAN_ACCOUNTING_BUCHUNGSSTAPEL.md) :
+#   D2  une écriture par (pièce, compte de contrepartie, taxe), montant TTC (modèle générique
+#       gross_by_account_and_tax du Core) ; Konto (7) = compte de personne du tiers, Gegenkonto (8) = compte de
+#       produit / charge, BU-Schlüssel (9) = clé de la taxe ou aucune clé, décidée explicitement (jamais déduite) ;
+#   D3  Gegenkonto par correspondance explicite (une suggestion n'est jamais appliquée seule) ;
+#   D5  Konto = numéro attribué par l'export Debitoren/Kreditoren (jamais attribué ici) ;
+#   D6  réglages du dossier DATEV lus dans le profil Debitoren/Kreditoren (une seule saisie) ;
+#   D7  Belegdatum (10) = date comptable, au format TTMM déclaré par le format (l'année vient du WJ-Beginn) ;
+#   D8  avoir = sens inverse (le sens suit le signe du CDM, pas de Generalumkehr) ;
+#   D15 Belegfeld 1 (11) = numéro de la pièce, champ d'identité.
+# Version : 13 seulement — l'en-tête officiel actuel n'admet que 13 comme Formatversion de Buchungsstapel
+# (motif de l'en-tête 5 dans le Registry) ; les versions 10-12 restent dans le Registry pour Compare.
+# Le sens (2) se rapporte au champ 7 Konto (description officielle) : S = débit du compte du tiers.
+
+binding_version: "1.2.0"   # 1.2.0 : Bezeichnung d'une plage de mois (source fichier)
+name: DATEV Buchungsstapel (EXTF)
+source: {model: accounting, version: "1"}
+target:
+  system: datev
+  product: buchungsstapel
+  versions: ["13"]
+  interface: extf
+  entity: buchungsstapel
+  header_entity: header
+  display: DATEV                 # nom du système cible dans les messages
+records: per_booking
+booking: {model: gross_by_account_and_tax}
+encodings: [cp1252, utf-8-sig]   # CP1252 par défaut, comme Debitoren/Kreditoren
+
+inherit_profile:
+  target: {system: datev, product: debitoren-kreditoren}
+  params: [advisor_number, client_number, fiscal_year_start, account_length, chart_of_accounts, origin_code]
+
+partner_account:
+  field: "007"
+  target: {system: datev, product: debitoren-kreditoren}
+  length_from: account_length
+  plus: 1                        # comptes de personne : Sachkontenlänge + 1 (même règle que Debitoren/Kreditoren)
+
+lookups:
+  - {kind: ACCOUNT, field: "008", label: G/L account, length_from: account_length}
+  # (une catégorie d'une source sans plan comptable s'écrit dans le même champ : Gegenkonto)
+  - {kind: TAX, field: "009", label: Tax key (BU-Schlüssel), allow_none: true, none_label: No tax key}
+
+# Source SANS plan comptable (fichier de factures : catégorie « ventes à X % ») : comptes de produits d'usage
+# par plan comptable du dossier (Sachkontenrahmen, réglage partagé « chart_of_accounts »). Ce sont des
+# réponses PRÉSÉLECTIONNÉES, à confirmer avec le Steuerberater, jamais appliquées sans la réponse de
+# l'utilisateur. Comptes automatiques (« Automatikkonten ») : ils calculent la TVA, aucune clé de taxe.
+# 0 % : livraison intracommunautaire exonérée (§ 4 Nr. 1b UStG), seulement après la décision de l'utilisateur.
+chart_param: chart_of_accounts
+suggestions:
+  "03": {categories: {"sale:19": "8400", "sale:7": "8300", "sale:0": "8125"}, no_tax_key: true}
+  "04": {categories: {"sale:19": "4400", "sale:7": "4300", "sale:0": "4125"}, no_tax_key: true}
+
+fields:
+  - {field: "001", source: amount}                                  # Umsatz : toujours positif
+  - {field: "002", source: partner_side, map: {DEBIT: S, CREDIT: H}}
+  - {field: "003", source: currency}                                # WKZ Umsatz
+  - {field: "007", source: target.partner_account, identity: true}
+  - {field: "008", source: target.counter_account, identity: true}
+  - {field: "009", source: target.tax_key}
+  - {field: "010", source: accounting_date, date_format: "%d%m"}
+  - {field: "011", source: number, identity: true}                  # Belegfeld 1
+  - {field: "014", source: booking_text}                            # Buchungstext : jamais tronqué
+
+# En-tête EXTF (entité « header » du Registry) : mêmes origines que Debitoren/Kreditoren pour 1-14 et 27 ;
+# 15 / 16 Datum von / bis = période exportée (un fichier par période, D7) ; 17 Bezeichnung (motif officiel :
+# lettres, chiffres, « . », « / », espace — pas de tiret) ; 19 Buchungstyp 1 (Finanzbuchführung) et
+# 20 Rechnungslegungszweck 0 (plan approuvé) ; 21 Festschreibung = choix explicite du profil (D10) ; 22 WKZ.
+header:
+  "001": {constant: EXTF}
+  "002": {snapshot: header_version}
+  "003": {snapshot: data_category}
+  "004": {snapshot: product_name}
+  "005": {snapshot: format_version}
+  "006": {generated: timestamp_ms}
+  "008": {profile: origin_code}
+  "011": {profile: advisor_number}
+  "012": {profile: client_number}
+  "013": {profile: fiscal_year_start}
+  "014": {profile: account_length}
+  "015": {context: period_start, date_format: "%Y%m%d"}
+  "016": {context: period_end, date_format: "%Y%m%d"}
+  "017": {template: "Buchungen {period_label}"}   # « 07/2026 », ou « 07/2026 bis 09/2026 »
+  "019": {constant: "1"}
+  "020": {constant: "0"}
+  "021": {profile: lock_bookings}
+  "022": {profile: currency}
+  "027": {profile: chart_of_accounts}
+
+profile:
+  - {name: currency, label: Currency of the DATEV client (WKZ), type: text, required: true, header_field: "022",
+     format_help: "Three capital letters, e.g. EUR."}
+  # Festschreibung : aucun défaut (D10) ; exigée seulement pour créer le fichier, pas pour l'aperçu des écritures
+  - {name: lock_bookings, label: Lock the bookings in DATEV (Festschreibung), type: choice, choices: ["0", "1"],
+     required_for_file: true, header_field: "021",
+     help: "0 = the bookings stay editable in DATEV after import, 1 = they are locked. Ask your tax advisor."}
+  - {name: encoding, label: File encoding, type: choice, choices: [cp1252, utf-8-sig], default: cp1252,
+     help: "CP1252 works for every DATEV import; UTF-8 (with BOM) only for manual import or the DATEV API."}

@@ -1,0 +1,42 @@
+# Binding de SOURCE à schéma fixe : contacts de Lexware Office → semantic keys du domaine PARTNER.
+#
+# Symétrique d'un binding cible : le contrat publié par l'éditeur est dans le Registry (lexware / public-api /
+# v1 / rest) ; ce fichier DÉCLARE le sens de ses champs (aucune découverte, aucune analyse, aucune question).
+# Chaque chemin est contrôlé contre le contrat du Registry avant toute lecture. Rien n'est deviné :
+#   - société → nom de la société ; personne → prénom + nom (séparés par la source, conservés séparés) ;
+#   - rôles client / fournisseur = présence de l'objet de rôle ; leurs numéros = identifiants de la source ;
+#   - adresse = première adresse de facturation, pays = son code ISO (jamais inventé s'il manque) ;
+#   - e-mail / téléphone professionnels d'abord ; les coordonnées PRIVÉES ne sont pas lues ;
+#   - contacts archivés exclus ; aucun compte bancaire dans l'API (le CDM n'en aura pas).
+# Toute modification : incrémenter binding_version.
+
+binding_version: "1.0.0"
+name: Lexware Office contacts (source)
+domain: PARTNER
+source: {system: lexware, product: public-api, interface: rest, versions: ["v1"]}
+
+entities:
+  - role: PRIMARY
+    resource: contacts
+    id: id
+    archived: archived
+    fields:
+      - {key: name, first: [company.name, {join: [person.firstName, person.lastName]}]}
+      - {key: is_organization, present: company.name}
+      - {key: first_name, path: person.firstName}
+      - {key: last_name, path: person.lastName}
+      - {key: customer_rank, present: roles.customer}
+      - {key: supplier_rank, present: roles.vendor}
+      - {key: customer_number, path: roles.customer.number}
+      - {key: supplier_number, path: roles.vendor.number}
+      - {key: street, path: "addresses.billing[0].street"}
+      - {key: street2, path: "addresses.billing[0].supplement"}
+      - {key: postal_code, path: "addresses.billing[0].zip"}
+      - {key: city, path: "addresses.billing[0].city"}
+      - {key: country_code, path: "addresses.billing[0].countryCode"}
+      - {key: email, first: ["emailAddresses.business[0]", "emailAddresses.office[0]", "emailAddresses.other[0]"]}
+      - {key: phone, first: ["phoneNumbers.business[0]", "phoneNumbers.office[0]", "phoneNumbers.other[0]"]}
+      - {key: mobile, path: "phoneNumbers.mobile[0]"}
+      - {key: fax, path: "phoneNumbers.fax[0]"}
+      - {key: vat_id, path: company.vatRegistrationId}
+      - {key: tax_number, path: company.taxNumber}

@@ -1,0 +1,66 @@
+# Tableau de source FICHIER du domaine ACCOUNTING : colonnes d'un journal de factures de sortie (Rechnungs-
+# ausgangsbuch, export d'un logiciel de facturation) et ce qu'elles veulent dire. Une ligne = une facture (ou
+# un avoir) à UN taux de TVA. Aucun système ici ; HORS des vocabulaires des systèmes (aucune analyse ne change).
+# Toute modification : incrémenter table_version.
+#
+# Montants : « Netto », « USt », « Brutto » ; le brut fait foi pour l'écriture (un brut négatif = un avoir),
+# le net et la TVA servent au CONTRÔLE (net + TVA = brut, à 0,01 près ; jamais corrigé).
+# Taux de TVA admis : ceux du pays à la date de la facture (16 % / 5 % : taux temporaires de 2020, plus admis).
+
+table_version: "1.0.0"
+domain: ACCOUNTING
+data_types: ["Invoices"]
+home_country: DE
+
+columns:
+  - key: document_number
+    label: Invoice number
+    description: Number of the invoice or credit note (Belegfeld 1).
+    required: true
+    aliases: [re nr, rechnungsnr, rechnungsnummer, rechnung nr, beleg nr, belegnr, belegnummer, belegfeld 1,
+              invoice no, invoice number, invoice, document number, numéro de facture]
+  - key: document_date
+    label: Invoice date
+    data_type: date
+    group: dates
+    required: true
+    aliases: [re datum, rechnungsdatum, belegdatum, datum, invoice date, document date, date, date de facture]
+  - key: partner_number
+    label: Customer number
+    description: Number of the customer in the source; the same number as in the customer list.
+    required: true
+    aliases: [kd nr, kdnr, kunden nr, kundennr, kundennummer, debitor, debitor nr, debitorennummer,
+              customer no, customer number, numéro client]
+  - key: partner_name
+    label: Customer name
+    description: Name of the customer as written on the invoice (booking text).
+    aliases: [kunde, kundenname, name, firma, empfänger, customer, customer name, client]
+  - key: net_amount
+    label: Net amount
+    data_type: decimal
+    group: amounts
+    aliases: [netto, netto €, nettobetrag, netto eur, net, net amount, montant ht, ht]
+  - key: tax_rate
+    label: VAT rate
+    data_type: decimal
+    group: tax
+    aliases: [ust %, mwst %, ust satz, mwst satz, steuersatz, umsatzsteuersatz, vat %, vat rate, tax rate,
+              taux de tva, tva %]
+  - key: tax_amount
+    label: VAT amount
+    data_type: decimal
+    group: amounts
+    aliases: [ust €, mwst €, ust betrag, mwst betrag, umsatzsteuer, vat amount, tax amount, montant tva]
+  - key: gross_amount
+    label: Gross amount
+    data_type: decimal
+    group: amounts
+    required: true
+    aliases: [brutto, brutto €, bruttobetrag, brutto eur, rechnungsbetrag, gesamtbetrag, gross, gross amount,
+              total, montant ttc, ttc]
+  - key: currency
+    label: Currency
+    aliases: [währung, waehrung, wkz, currency, devise]
+
+tax_rates:
+  - {country: DE, since: 2021-01-01, rates: [19, 7, 0]}

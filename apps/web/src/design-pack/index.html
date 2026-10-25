@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Transliate — Corporate Design Pack</title>
+  <link rel="icon" type="image/svg+xml" href="logos/transliate-icon.svg" />
+  <link rel="stylesheet" href="transliate.css" />
+  <style>
+    /* Style-guide layout only (sg-*) — not part of the design system */
+    .sg-shell   { position: relative; min-height: 100vh; }
+    .sg-layout  { display: grid; grid-template-columns: 220px 1fr; gap: 2.5rem; max-width: 80rem; margin: 0 auto; padding: 2.5rem 1.5rem 6rem; }
+    .sg-toc     { position: sticky; top: 6.5rem; align-self: start; display: flex; flex-direction: column; gap: .125rem; }
+    .sg-toc .eyebrow { margin-bottom: .75rem; }
+    .sg-section { margin-bottom: 4rem; scroll-margin-top: 6.5rem; }
+    .sg-section > .eyebrow { margin-bottom: .5rem; }
+    .sg-section > .h-page  { margin-bottom: .5rem; }
+    .sg-lead    { margin: 0 0 1.75rem; max-width: 46rem; font-size: .9375rem; line-height: 1.6; color: var(--text-soft); }
+    .sg-grid    { display: grid; gap: 1rem; }
+    .sg-g2 { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .sg-g3 { grid-template-columns: repeat(3, minmax(0,1fr)); }
+    .sg-g4 { grid-template-columns: repeat(4, minmax(0,1fr)); }
+    .sg-g6 { grid-template-columns: repeat(6, minmax(0,1fr)); }
+    .sg-row     { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; }
+    .sg-box     { padding: 1.5rem; }
+    .sg-sub     { margin: 0 0 1rem; font-size: .75rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--text-soft); }
+    .sg-note    { margin: 1rem 0 0; font-size: .8125rem; color: var(--text-soft); }
+    .sg-note code, .sg-lead code, td code { font-family: var(--font-mono); font-size: .8em; background: #f1f5f9; padding: .1em .4em; border-radius: 4px; color: var(--text-2); }
+
+    .sg-swatch       { overflow: hidden; cursor: pointer; transition: transform 150ms; }
+    .sg-swatch:hover { transform: translateY(-2px); }
+    .sg-swatch__chip { height: 88px; border-bottom: 1px solid var(--border-lt); }
+    .sg-swatch__meta { padding: .75rem .875rem; }
+    .sg-swatch__name { margin: 0; font-size: .8125rem; font-weight: 600; color: var(--text-2); }
+    .sg-swatch__hex  { margin: .125rem 0 0; font-family: var(--font-mono); font-size: .75rem; color: var(--text-soft); }
+    .sg-swatch__var  { margin: .125rem 0 0; font-family: var(--font-mono); font-size: .6875rem; color: var(--text-faint); }
+
+    .sg-scale        { display: grid; grid-template-columns: repeat(7, 1fr); overflow: hidden; }
+    .sg-scale > div  { padding: 3.25rem .75rem .75rem; cursor: pointer; }
+    .sg-scale p      { margin: 0; font-family: var(--font-mono); font-size: .6875rem; }
+
+    .sg-type-row     { display: grid; grid-template-columns: 180px 1fr; gap: 1.5rem; align-items: baseline; padding: 1.125rem 1.5rem; border-bottom: 1px solid var(--border-lt); }
+    .sg-type-row:last-child { border-bottom: 0; }
+    .sg-type-meta    { font-family: var(--font-mono); font-size: .6875rem; line-height: 1.5; color: var(--text-soft); }
+
+    .sg-radius       { height: 96px; background: #fff; border: 1px solid var(--border-ui); display: flex; align-items: flex-end; padding: .75rem; font-family: var(--font-mono); font-size: .75rem; color: var(--text-soft); }
+    .sg-shadow       { height: 110px; background: #fff; border-radius: 16px; display: flex; align-items: flex-end; padding: .875rem; font-family: var(--font-mono); font-size: .75rem; color: var(--text-soft); }
+
+    .sg-code   { margin: 0; padding: 1.25rem 1.5rem; overflow-x: auto; background: #0f172a; color: #e2e8f0; border-radius: 16px; font-family: var(--font-mono); font-size: .8125rem; line-height: 1.7; }
+    .sg-code .c { color: #64748b; } .sg-code .k { color: #93c5fd; } .sg-code .s { color: #fdba74; }
+
+    .sg-logo-tile { display: flex; align-items: center; justify-content: center; min-height: 200px; }
+    .sg-dont      { position: relative; }
+    .sg-dont::after { content: '✕'; position: absolute; top: .75rem; right: .875rem; color: #dc2626; font-weight: 700; }
+
+    .sg-toast { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%) translateY(20px); opacity: 0; background: var(--primary); color: #fff; padding: .625rem 1rem; border-radius: 12px; font-size: .875rem; font-weight: 600; box-shadow: var(--shadow-menu); transition: all 200ms; pointer-events: none; z-index: 60; }
+    .sg-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    .sg-modal-preview { position: relative; border-radius: 28px; overflow: hidden; padding: 3rem 1rem; display: flex; justify-content: center; background: var(--overlay); }
+    .sg-modal-preview .modal-box { animation: none; }
+
+    @media (max-width: 960px) {
+      .sg-layout { grid-template-columns: 1fr; }
+      .sg-toc { display: none; }
+      .sg-g4, .sg-g6 { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .sg-g3 { grid-template-columns: 1fr; }
+      .sg-type-row { grid-template-columns: 1fr; gap: .5rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="sg-shell">
+  <div class="app-glow"></div>
+
+  <!-- ── App header (live component) ─────────────────────────── -->
+  <header class="app-header">
+    <div class="app-header__inner">
+      <img src="logos/transliate-logo.svg" alt="Transliate" style="height:36px" />
+      <nav class="sg-row" style="gap:.125rem">
+        <a class="nav-pill is-active" href="#brand">Marque</a>
+        <a class="nav-pill" href="#colors">Couleurs</a>
+        <a class="nav-pill" href="#type">Typographie</a>
+        <a class="nav-pill" href="#components">Composants</a>
+        <a class="btn btn-cta" href="#usage" style="margin-left:.25rem">+ Intégrer</a>
+      </nav>
+      <div class="sg-row" style="gap:.5rem">
+        <span class="badge badge-gray">v1.0 · Light</span>
+        <span class="avatar">GO</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="sg-layout">
+    <!-- ── TOC ─────────────────────────────────────────────── -->
+    <aside class="sg-toc">
+      <span class="eyebrow eyebrow-muted">Sommaire</span>
+      <a class="nav-item" href="#brand">Marque &amp; logo</a>
+      <a class="nav-item" href="#colors">Couleurs</a>
+      <a class="nav-item" href="#type">Typographie</a>
+      <a class="nav-item" href="#shape">Rayons &amp; ombres</a>
+      <a class="nav-item" href="#buttons">Boutons</a>
+      <a class="nav-item" href="#forms">Formulaires</a>
+      <a class="nav-item" href="#badges">Badges &amp; statuts</a>
+      <a class="nav-item" href="#cards">Cartes &amp; KPI</a>
+      <a class="nav-item" href="#tables">Tableaux</a>
+      <a class="nav-item" href="#nav">Navigation</a>
+      <a class="nav-item" href="#modal">Modale</a>
+      <a class="nav-item" href="#motion">Mouvement &amp; icônes</a>
+      <a class="nav-item" href="#usage">Intégration React</a>
+    </aside>
+
+    <main>
+      <!-- ── Hero ──────────────────────────────────────────── -->
+      <section class="sg-section">
+        <span class="hero-badge">Corporate Design Pack · Mode light</span>
+        <h1 class="h-hero" style="margin-top:1.5rem;max-width:42rem">Le style Transliate, prêt à réutiliser.</h1>
+        <p class="sg-lead" style="margin-top:1.25rem">
+          Spécifications extraites telles quelles du frontend Transliate (Tailwind + CSS variables).
+          Tout ce qui est affiché sur cette page est rendu avec <code>transliate.css</code> :
+          ce que vous voyez est exactement ce que vous obtenez dans vos projets React.
+          Cliquez sur une couleur pour copier sa valeur.
+        </p>
+        <div class="sg-row">
+          <a class="btn btn-primary btn-lg" href="#usage">Intégrer dans un projet</a>
+          <a class="btn btn-secondary btn-lg" href="transliate.css" download>Télécharger le CSS</a>
+        </div>
+      </section>
+
+      <!-- ── 1. Brand ──────────────────────────────────────── -->
+      <section class="sg-section" id="brand">
+        <span class="eyebrow">01 — Marque</span>
+        <h2 class="h-page">Logo</h2>
+        <p class="sg-lead">Le logo associe un pictogramme « T. » (carré arrondi navy, point bleu) et le wordmark <strong>Transliate</strong>, dont le « i » est mis en avant en bleu.</p>
+
+        <div class="sg-grid sg-g3">
+          <div class="card sg-logo-tile" style="grid-column: span 2"><img src="logos/transliate-logo.svg" alt="Transliate" style="height:72px" /></div>
+          <div class="card sg-logo-tile"><img src="logos/transliate-icon.svg" alt="Icône Transliate" style="height:88px" /></div>
+          <div class="card sg-box">
+            <p class="sg-sub">Navy logo</p>
+            <div style="height:48px;border-radius:11px;background:#0A2540"></div>
+            <p class="sg-swatch__hex" style="margin-top:.5rem">#0A2540</p>
+          </div>
+          <div class="card sg-box">
+            <p class="sg-sub">Bleu accent</p>
+            <div style="height:48px;border-radius:11px;background:#3B82F6"></div>
+            <p class="sg-swatch__hex" style="margin-top:.5rem">#3B82F6</p>
+          </div>
+          <div class="card sg-box">
+            <p class="sg-sub">Zone de protection</p>
+            <p class="text-body" style="margin:0">Espace libre minimum = hauteur du point bleu × 2 autour du logo. Hauteur minimale à l'écran : <strong>24 px</strong> (header de l'app : 36–56 px).</p>
+          </div>
+        </div>
+        <div class="sg-grid sg-g3" style="margin-top:1rem">
+          <div class="card sg-logo-tile sg-dont" style="min-height:120px"><img src="logos/transliate-logo.svg" alt="" style="height:40px;filter:hue-rotate(140deg)" /></div>
+          <div class="card sg-logo-tile sg-dont" style="min-height:120px"><img src="logos/transliate-logo.svg" alt="" style="height:40px;width:240px;object-fit:fill" /></div>
+          <div class="card sg-logo-tile sg-dont" style="min-height:120px;background:#E8820C"><img src="logos/transliate-logo.svg" alt="" style="height:40px" /></div>
+        </div>
+        <p class="sg-note">À éviter : recolorer le logo, le déformer, le poser sur un fond orange ou chargé. Fichiers : <code>logos/transliate-logo.svg</code>, <code>logos/transliate-logo@2x.png</code>, <code>logos/transliate-icon.svg</code>.</p>
+      </section>
+
+      <!-- ── 2. Colors ─────────────────────────────────────── -->
+      <section class="sg-section" id="colors">
+        <span class="eyebrow">02 — Couleurs</span>
+        <h2 class="h-page">Palette</h2>
+        <p class="sg-lead">Une base <strong>slate</strong> sobre (encre très foncée sur fonds gris-bleu clairs), le <strong>bleu brand</strong> pour l'accent, le focus et la navigation active, et l'<strong>orange</strong> réservé au call-to-action principal.</p>
+
+        <p class="sg-sub">Actions</p>
+        <div class="sg-grid sg-g4" id="sw-actions"></div>
+
+        <p class="sg-sub" style="margin-top:2rem">Surfaces &amp; bordures</p>
+        <div class="sg-grid sg-g6" id="sw-surfaces"></div>
+        <div class="card" style="margin-top:1rem;height:64px;background:var(--page-gradient);display:flex;align-items:center;padding:0 1.25rem">
+          <span class="text-mono text-soft" style="font-size:.75rem">--page-gradient · linear-gradient(90deg, #e8effb 0%, #f8fafc 38%, #f1f5f9 100%)</span>
+        </div>
+
+        <p class="sg-sub" style="margin-top:2rem">Texte</p>
+        <div class="sg-grid sg-g6" id="sw-text"></div>
+
+        <p class="sg-sub" style="margin-top:2rem">Brand — échelle bleue</p>
+        <div class="card sg-scale" id="sw-brand"></div>
+
+        <p class="sg-sub" style="margin-top:2rem">Sémantique</p>
+        <div class="sg-grid sg-g4" id="sw-semantic"></div>
+
+        <p class="sg-sub" style="margin-top:2rem">Graphiques (ordre des séries)</p>
+        <div class="card sg-scale" id="sw-chart" style="grid-template-columns:repeat(6,1fr)"></div>
+      </section>
+
+      <!-- ── 3. Typography ─────────────────────────────────── -->
+      <section class="sg-section" id="type">
+        <span class="eyebrow">03 — Typographie</span>
+        <h2 class="h-page">DM Sans &amp; DM Mono</h2>
+        <p class="sg-lead"><strong>DM Sans</strong> pour toute l'interface (400 → 800, le <strong>semibold 600</strong> domine). <strong>DM Mono</strong> pour les références, numéros de commande et valeurs techniques. Corps de texte en <strong>14 px</strong>, labels en <strong>12 px</strong>.</p>
+
+        <div class="card" style="overflow:hidden">
+          <div class="sg-type-row"><div class="sg-type-meta">Hero<br>48 / 60 px · 600<br>tracking −0.025em</div><div class="h-hero">Übersetzungen, zertifiziert.</div></div>
+          <div class="sg-type-row"><div class="sg-type-meta">Titre de page<br>30 px · 600 · tight</div><div class="h-page">Tableau de bord</div></div>
+          <div class="sg-type-row"><div class="sg-type-meta">Valeur KPI<br>36 px · 600 · tight</div><div style="font-size:2.25rem;font-weight:600;letter-spacing:-.025em;color:var(--text-2)">€ 12 480</div></div>
+          <div class="sg-type-row"><div class="sg-type-meta">Titre de section<br>20 px · 600</div><div class="h-section">Commandes récentes</div></div>
+          <div class="sg-type-row"><div class="sg-type-meta">Corps<br>14 px · 400 · #0f172a</div><div class="text-body">Téléchargez votre document, recevez une traduction IA instantanée, puis faites-la certifier par un traducteur qualifié.</div></div>
+          <div class="sg-type-row"><div class="sg-type-meta">Secondaire<br>14 px · 400 · slate-500</div><div class="text-body text-soft">Dernière mise à jour il y a 3 minutes</div></div>
+          <div class="sg-type-row"><div class="sg-type-meta">Label<br>12 px · 600 · UPPERCASE<br>tracking 0.025em</div><div><span class="label" style="margin:0">Langue source</span></div></div>
+          <div class="sg-type-row"><div class="sg-type-meta">Eyebrow<br>12 px · 600 · UPPERCASE<br>tracking 0.18em · blue-700</div><div><span class="eyebrow">Espace traducteur</span></div></div>
+          <div class="sg-type-row"><div class="sg-type-meta">Mono<br>DM Mono 14 px · 500</div><div class="text-mono" style="font-size:.875rem;font-weight:500;color:var(--text-2)">ORD-2026-004812 · SHA-256 9f86d08…</div></div>
+        </div>
+        <p class="sg-note">Échelle utilisée : 10 · 12 · 13 · 14 · 16 · 18 · 20 · 24 · 30 · 36 · 48 · 60 px. Graisses : 400 · 500 · 600 · 700. RTL (arabe) : fallback <code>Noto Sans Arabic</code>.</p>
+      </section>
+
+      <!-- ── 4. Shape ──────────────────────────────────────── -->
+      <section class="sg-section" id="shape">
+        <span class="eyebrow">04 — Formes</span>
+        <h2 class="h-page">Rayons &amp; ombres</h2>
+        <p class="sg-lead">Des angles généreusement arrondis et des ombres très légères. Les grands panneaux d'administration utilisent un rayon signature de <strong>28 px</strong>.</p>
+
+        <div class="sg-grid sg-g6">
+          <div class="sg-radius" style="border-radius:8px">8 px<br>boutons, champs</div>
+          <div class="sg-radius" style="border-radius:12px">12 px<br>cartes, pills nav</div>
+          <div class="sg-radius" style="border-radius:16px">16 px<br>menus, modales</div>
+          <div class="sg-radius" style="border-radius:28px">28 px<br>panneaux</div>
+          <div class="sg-radius" style="border-radius:9999px;justify-content:center;align-items:center">pill</div>
+          <div class="sg-radius" style="border-radius:11px;background:#0A2540;color:#fff">11 px<br>icône logo</div>
+        </div>
+        <div class="sg-grid sg-g4" style="margin-top:1.5rem">
+          <div class="sg-shadow" style="box-shadow:var(--shadow-sm)">--shadow-sm</div>
+          <div class="sg-shadow" style="box-shadow:var(--shadow-card);border:1px solid var(--border)">--shadow-card</div>
+          <div class="sg-shadow" style="box-shadow:var(--shadow-panel);border:1px solid var(--border-ui);border-radius:28px">--shadow-panel</div>
+          <div class="sg-shadow" style="box-shadow:var(--shadow-modal)">--shadow-modal</div>
+        </div>
+      </section>
+
+      <!-- ── 5. Buttons ────────────────────────────────────── -->
+      <section class="sg-section" id="components">
+        <div id="buttons" style="scroll-margin-top:6.5rem"></div>
+        <span class="eyebrow">05 — Boutons</span>
+        <h2 class="h-page">Boutons</h2>
+        <p class="sg-lead">Le bouton primaire est <strong>encre (slate-900)</strong>. L'<strong>orange</strong> est réservé au CTA de création (« + Nouvelle commande »). Au clic, le bouton rétrécit légèrement (scale 0.98) ; le focus clavier affiche un anneau bleu <code>#1A56DB</code> de 2 px.</p>
+
+        <div class="card sg-box">
+          <p class="sg-sub">Variantes</p>
+          <div class="sg-row">
+            <button class="btn btn-primary">Primaire</button>
+            <button class="btn btn-secondary">Secondaire</button>
+            <button class="btn btn-ghost">Ghost</button>
+            <button class="btn btn-danger">Supprimer</button>
+            <button class="btn btn-cta">+ Nouvelle commande</button>
+            <button class="btn btn-icon" aria-label="Paramètres">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </button>
+          </div>
+          <p class="sg-sub" style="margin-top:1.75rem">Tailles &amp; états</p>
+          <div class="sg-row">
+            <button class="btn btn-primary btn-sm">Small</button>
+            <button class="btn btn-primary">Medium</button>
+            <button class="btn btn-primary btn-lg">Large</button>
+            <button class="btn btn-primary" disabled>Désactivé</button>
+            <button class="btn btn-secondary btn-sm">Small</button>
+            <button class="btn btn-secondary btn-lg">Large</button>
+          </div>
+        </div>
+        <table class="tbl card" style="margin-top:1rem;overflow:hidden;border-collapse:separate;border-spacing:0">
+          <thead><tr><th>Classe</th><th>Fond</th><th>Texte</th><th>Padding</th><th>Hover</th></tr></thead>
+          <tbody>
+            <tr><td><code>.btn-primary</code></td><td>#0f172a</td><td>#ffffff</td><td>10 × 20 px</td><td>#1e293b</td></tr>
+            <tr><td><code>.btn-secondary</code></td><td>#ffffff + bordure #c5ccd6</td><td>#1e293b</td><td>10 × 20 px</td><td>opacité 80 %</td></tr>
+            <tr><td><code>.btn-ghost</code></td><td>transparent</td><td>#1e293b</td><td>8 × 12 px</td><td>#f4f6fa</td></tr>
+            <tr><td><code>.btn-danger</code></td><td>#dc2626</td><td>#ffffff</td><td>10 × 20 px</td><td>#b91c1c</td></tr>
+            <tr><td><code>.btn-cta</code></td><td>#E8820C</td><td>#ffffff</td><td>6 × 10 px · 13 px</td><td>#c96a00</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ── 6. Forms ──────────────────────────────────────── -->
+      <section class="sg-section" id="forms">
+        <span class="eyebrow">06 — Formulaires</span>
+        <h2 class="h-page">Champs de saisie</h2>
+        <p class="sg-lead">Fond blanc, bordure <code>#c5ccd6</code>, rayon de 8 px. Au focus, la bordure disparaît au profit d'un anneau bleu de 2 px. Labels en majuscules de 12 px. Les selects ont un chevron personnalisé.</p>
+
+        <div class="card sg-box">
+          <div class="sg-grid sg-g3">
+            <div><label class="label" for="f1">Nom complet</label><input id="f1" class="input" placeholder="Max Mustermann" /></div>
+            <div>
+              <label class="label" for="f2">Langue cible</label>
+              <select id="f2" class="input"><option>Allemand (DE)</option><option>Japonais (JA)</option><option>Arabe (AR)</option></select>
+            </div>
+            <div><label class="label" for="f3">Désactivé</label><input id="f3" class="input" value="Non modifiable" disabled /></div>
+            <div><label class="label" for="f4">E-mail</label><input id="f4" class="input input-error" value="max@" /><p class="field-error">Adresse e-mail invalide</p></div>
+            <div><label class="label label-soft" for="f5">Recherche (variante admin)</label><input id="f5" class="input input-soft" placeholder="Rechercher une commande…" /></div>
+            <div>
+              <span class="label">Mode de livraison</span>
+              <div class="segmented"><button class="is-active">En ligne</button><button>Postal</button></div>
+            </div>
+          </div>
+          <div style="margin-top:1rem"><label class="label" for="f6">Remarques</label><textarea id="f6" class="input" placeholder="Instructions pour le traducteur…"></textarea></div>
+        </div>
+      </section>
+
+      <!-- ── 7. Badges ─────────────────────────────────────── -->
+      <section class="sg-section" id="badges">
+        <span class="eyebrow">07 — Statuts</span>
+        <h2 class="h-page">Badges &amp; pills</h2>
+        <p class="sg-lead">Les <strong>badges</strong> (fond -50, texte -700) servent aux rôles et étiquettes dans les tableaux. Les <strong>pills</strong>, avec un point coloré et un anneau d'un pixel, indiquent le statut des commandes.</p>
+        <div class="card sg-box">
+          <p class="sg-sub">Badges</p>
+          <div class="sg-row">
+            <span class="badge badge-blue">Payée</span>
+            <span class="badge badge-green">Terminée</span>
+            <span class="badge badge-amber">En révision</span>
+            <span class="badge badge-red">Annulée</span>
+            <span class="badge badge-gray">Brouillon</span>
+            <span class="badge badge-purple">Manager</span>
+          </div>
+          <p class="sg-sub" style="margin-top:1.75rem">Status pills</p>
+          <div class="sg-row">
+            <span class="pill pill-success pill-dot">Livrée</span>
+            <span class="pill pill-warning pill-dot">Délai proche</span>
+            <span class="pill pill-neutral pill-dot">Dans le pool</span>
+            <span class="pill pill-info pill-dot">Nouveau</span>
+          </div>
+          <p class="sg-sub" style="margin-top:1.75rem">Hero badge</p>
+          <span class="hero-badge">Accès sécurisé · eIDAS</span>
+        </div>
+      </section>
+
+      <!-- ── 8. Cards ──────────────────────────────────────── -->
+      <section class="sg-section" id="cards">
+        <span class="eyebrow">08 — Surfaces</span>
+        <h2 class="h-page">Cartes &amp; KPI</h2>
+        <p class="sg-lead"><code>.card</code> (12 px) pour les contenus courants, <code>.panel</code> et <code>.stat-card</code> (28 px) pour les tableaux de bord. Au survol, la stat-card se soulève, se teinte légèrement de bleu et son icône passe en encre.</p>
+
+        <div class="sg-grid sg-g3">
+          <div class="stat-card">
+            <div class="stat-card__head">
+              <div><p class="stat-card__label">Commandes ce mois</p><p class="stat-card__value">248</p></div>
+              <div class="stat-card__icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div>
+            </div>
+            <div class="stat-card__bar"><span></span></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card__head">
+              <div><p class="stat-card__label">Chiffre d'affaires</p><p class="stat-card__value">€ 12 480</p></div>
+              <div class="stat-card__icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg></div>
+            </div>
+            <div class="stat-card__bar"><span></span></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card__head">
+              <div><p class="stat-card__label">Traducteurs actifs</p><p class="stat-card__value">17</p></div>
+              <div class="stat-card__icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+            </div>
+            <div class="stat-card__bar"><span></span></div>
+          </div>
+        </div>
+        <div class="sg-grid sg-g4" style="margin-top:1rem">
+          <div class="kpi-card"><p class="kpi-label">En attente</p><p class="kpi-value">12</p><p class="kpi-sub">+3 depuis hier</p></div>
+          <div class="kpi-card"><p class="kpi-label">Dans le pool</p><p class="kpi-value">8</p><p class="kpi-sub">2 urgentes</p></div>
+          <div class="kpi-card"><p class="kpi-label">Pages traduites</p><p class="kpi-value">1 342</p><p class="kpi-sub">30 derniers jours</p></div>
+          <div class="kpi-card"><p class="kpi-label">Délai moyen</p><p class="kpi-value">26 h</p><p class="kpi-sub">objectif 48 h</p></div>
+        </div>
+        <div class="card sg-box" style="margin-top:1rem">
+          <h3 class="h-section">Carte standard</h3>
+          <p class="text-body text-soft" style="margin:.5rem 0 1.25rem">Fond blanc, bordure #c5ccd6, rayon 12 px, ombre très légère.</p>
+          <div class="sg-row"><button class="btn btn-primary btn-sm">Action</button><button class="btn btn-ghost btn-sm">Annuler</button></div>
+        </div>
+      </section>
+
+      <!-- ── 9. Tables ─────────────────────────────────────── -->
+      <section class="sg-section" id="tables">
+        <span class="eyebrow">09 — Données</span>
+        <h2 class="h-page">Tableaux</h2>
+        <p class="sg-lead">En-tête <code>#eef2f7</code> en majuscules de 12 px, cellules de 12 × 16 px, séparateurs <code>#dde2ea</code>, survol de ligne très léger. Les tableaux sont posés dans un <code>.panel</code> (28 px).</p>
+        <div class="panel" style="overflow:hidden">
+          <table class="tbl">
+            <thead><tr><th>Commande</th><th>Client</th><th>Langues</th><th>Pages</th><th>Statut</th><th style="text-align:right">Montant</th></tr></thead>
+            <tbody>
+              <tr><td class="text-mono">ORD-004812</td><td>Müller GmbH</td><td>DE → JA</td><td>5</td><td><span class="pill pill-success pill-dot">Livrée</span></td><td style="text-align:right;font-weight:600">€ 260,02</td></tr>
+              <tr><td class="text-mono">ORD-004811</td><td>Anna Schmidt</td><td>FR → DE</td><td>1</td><td><span class="pill pill-warning pill-dot">En révision</span></td><td style="text-align:right;font-weight:600">€ 41,65</td></tr>
+              <tr><td class="text-mono">ORD-004810</td><td>Rossi S.r.l.</td><td>IT → EN</td><td>24</td><td><span class="pill pill-neutral pill-dot">Dans le pool</span></td><td style="text-align:right;font-weight:600">€ 514,08</td></tr>
+              <tr><td class="text-mono">ORD-004809</td><td>Karim Haddad</td><td>AR → DE</td><td>3</td><td><span class="pill pill-info pill-dot">Nouveau</span></td><td style="text-align:right;font-weight:600">€ 128,52</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="sg-note">Variante <code>.tbl-blue</code> (pool traducteur) : en-tête bleu clair, texte <code>#2563eb</code>, tracking 0.14em.</p>
+      </section>
+
+      <!-- ── 10. Navigation ────────────────────────────────── -->
+      <section class="sg-section" id="nav">
+        <span class="eyebrow">10 — Navigation</span>
+        <h2 class="h-page">Header, menus &amp; liens</h2>
+        <p class="sg-lead">Le header est sticky, en blanc translucide à 80 % avec un flou d'arrière-plan. Les liens de navigation sont des <strong>pills bordées</strong> ; le lien actif est plein, en encre. Les menus déroulants ont un rayon de 16 px.</p>
+        <div class="sg-grid sg-g3">
+          <div class="card sg-box" style="grid-column: span 2">
+            <p class="sg-sub">Nav pills (header)</p>
+            <div class="sg-row" style="gap:.25rem">
+              <a class="nav-pill is-active" href="#nav">Dashboard</a>
+              <a class="nav-pill" href="#nav">Commandes</a>
+              <a class="nav-pill" href="#nav">Finances
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg></a>
+              <a class="btn btn-cta" href="#nav">+ Nouvelle commande</a>
+            </div>
+            <p class="sg-sub" style="margin-top:1.75rem">Nav items (sidebar)</p>
+            <div style="max-width:240px">
+              <a class="nav-item is-active" href="#nav">Pool de missions</a>
+              <a class="nav-item" href="#nav">Mes traductions</a>
+              <a class="nav-item" href="#nav">Signatures</a>
+            </div>
+          </div>
+          <div>
+            <p class="sg-sub">Menu déroulant</p>
+            <div class="menu">
+              <div style="padding:.75rem 1rem;border-bottom:1px solid #f1f5f9;margin:-.375rem -.375rem .375rem">
+                <p style="margin:0;font-size:.875rem;font-weight:600;color:var(--text-2)">Max Mustermann</p>
+                <p style="margin:0;font-size:.75rem;color:var(--text-soft)">max@go45.de</p>
+                <span class="badge badge-purple" style="margin-top:.375rem;border-radius:4px;font-size:10px;padding:.125rem .375rem">ADMIN</span>
+              </div>
+              <a class="menu-item is-active" href="#nav">Profil</a>
+              <a class="menu-item" href="#nav">Paramètres</a>
+              <a class="menu-item menu-item-danger" href="#nav">Déconnexion</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── 11. Modal ─────────────────────────────────────── -->
+      <section class="sg-section" id="modal">
+        <span class="eyebrow">11 — Superpositions</span>
+        <h2 class="h-page">Modale</h2>
+        <p class="sg-lead">Overlay <code>rgba(10,22,40,.45)</code> avec un flou de 4 px. La boîte fait 448 px de large au maximum, avec un rayon de 16 px, et entre avec une animation <em>slide-up</em> de 200 ms.</p>
+        <div class="sg-modal-preview">
+          <div class="modal-box">
+            <div style="padding:1.25rem 1.5rem;border-bottom:1px solid var(--border-lt)"><h3 class="h-section">Libérer la mission ?</h3></div>
+            <div style="padding:1.5rem" class="text-body text-soft">La mission retournera dans le pool sans modification et pourra être revendiquée par un autre traducteur.</div>
+            <div style="padding:1rem 1.5rem;border-top:1px solid var(--border-lt);display:flex;justify-content:flex-end;gap:.5rem">
+              <button class="btn btn-secondary btn-sm">Annuler</button>
+              <button class="btn btn-danger btn-sm">Libérer</button>
+            </div>
+          </div>
+        </div>
+        <div class="sg-row" style="margin-top:1rem"><button class="btn btn-secondary" id="open-modal">Ouvrir la modale (démo animée)</button></div>
+      </section>
+
+      <!-- ── 12. Motion & icons ────────────────────────────── -->
+      <section class="sg-section" id="motion">
+        <span class="eyebrow">12 — Détails</span>
+        <h2 class="h-page">Mouvement &amp; iconographie</h2>
+        <div class="sg-grid sg-g2">
+          <div class="card sg-box">
+            <p class="sg-sub">Mouvement</p>
+            <table class="tbl">
+              <tbody>
+                <tr><td>Transitions UI</td><td class="text-mono">150 ms · ease</td></tr>
+                <tr><td>Fade-in (overlay)</td><td class="text-mono">150 ms ease-out</td></tr>
+                <tr><td>Slide-up (modale)</td><td class="text-mono">200 ms · 8 px</td></tr>
+                <tr><td>Hover stat-card</td><td class="text-mono">300 ms · −4 px</td></tr>
+                <tr><td>Press</td><td class="text-mono">scale(0.98)</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="card sg-box">
+            <p class="sg-sub">Icônes</p>
+            <p class="text-body" style="margin-top:0">Style <strong>outline</strong> avec un trait de 2 px et des extrémités arrondies, en 16 px dans les boutons et 24 px dans les cartes. Bibliothèques utilisées : <code>@phosphor-icons/react</code> et <code>lucide-react</code>.</p>
+            <div class="sg-row" style="color:var(--text-2);gap:1.25rem;margin-top:1rem">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/></svg>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/></svg>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── 13. Usage ─────────────────────────────────────── -->
+      <section class="sg-section" id="usage">
+        <span class="eyebrow">13 — Intégration</span>
+        <h2 class="h-page">Utiliser le pack dans un projet React</h2>
+        <p class="sg-lead">Copiez le dossier <code>design-pack/</code> dans votre projet (par exemple dans <code>src/design-pack/</code>), puis choisissez l'option qui correspond à votre stack.</p>
+
+        <div class="sg-grid sg-g2">
+          <div>
+            <p class="sg-sub">A · CSS seul (toute stack)</p>
+<pre class="sg-code"><span class="c">// main.tsx</span>
+<span class="k">import</span> <span class="s">'./design-pack/transliate.css'</span>;
+
+<span class="c">// n'importe quel composant</span>
+&lt;button className=<span class="s">"btn btn-primary"</span>&gt;Valider&lt;/button&gt;
+&lt;span className=<span class="s">"badge badge-green"</span>&gt;Terminée&lt;/span&gt;
+&lt;div className=<span class="s">"card"</span>&gt;…&lt;/div&gt;</pre>
+          </div>
+          <div>
+            <p class="sg-sub">B · Composants React prêts</p>
+<pre class="sg-code"><span class="k">import</span> { Button, Badge, Field, Input, StatCard }
+  <span class="k">from</span> <span class="s">'./design-pack/react'</span>;
+
+&lt;Field label=<span class="s">"E-mail"</span> error={err}&gt;
+  &lt;Input type=<span class="s">"email"</span> invalid={!!err} /&gt;
+&lt;/Field&gt;
+&lt;Button variant=<span class="s">"cta"</span>&gt;+ Nouvelle commande&lt;/Button&gt;</pre>
+          </div>
+          <div>
+            <p class="sg-sub">C · Tailwind CSS v3</p>
+<pre class="sg-code"><span class="c">// tailwind.config.js</span>
+<span class="k">import</span> transliate <span class="k">from</span> <span class="s">'./src/design-pack/tailwind-preset.js'</span>;
+<span class="k">export default</span> {
+  presets: [transliate],
+  content: [<span class="s">'./index.html'</span>, <span class="s">'./src/**/*.{ts,tsx}'</span>],
+};
+
+<span class="c">/* index.css — import EN PREMIER */</span>
+<span class="k">@import</span> <span class="s">'./design-pack/transliate.css'</span>;
+<span class="k">@tailwind</span> base; <span class="k">@tailwind</span> components; <span class="k">@tailwind</span> utilities;</pre>
+          </div>
+          <div>
+            <p class="sg-sub">D · Tokens JS (graphiques, inline)</p>
+<pre class="sg-code"><span class="k">import</span> { colors, chartPalette } <span class="k">from</span> <span class="s">'./design-pack/tokens'</span>;
+
+&lt;Bar dataKey=<span class="s">"revenue"</span> fill={colors.primary} /&gt;
+&lt;Line stroke={chartPalette[1]} /&gt;
+
+<span class="c">// ou via CSS variables</span>
+style={{ color: <span class="s">'var(--text-soft)'</span> }}</pre>
+          </div>
+        </div>
+
+        <div class="card sg-box" style="margin-top:1rem">
+          <p class="sg-sub">Contenu du pack</p>
+          <table class="tbl">
+            <tbody>
+              <tr><td><code>transliate.css</code></td><td>Tokens (CSS variables), base et toutes les classes de composants. Sans dépendance.</td></tr>
+              <tr><td><code>tailwind-preset.js</code></td><td>Couleurs brand/cta, polices, rayons, ombres et animations pour Tailwind v3.</td></tr>
+              <tr><td><code>tokens.ts</code></td><td>Mêmes valeurs en TypeScript (Recharts, canvas, PDF, e-mails).</td></tr>
+              <tr><td><code>react/index.tsx</code></td><td>Logo, Button, Input, Select, Textarea, Field, Badge, StatusPill, Card, KpiCard, StatCard, Modal.</td></tr>
+              <tr><td><code>logos/</code></td><td>Logo Transliate SVG et PNG @2x, icône seule en SVG.</td></tr>
+              <tr><td><code>index.html</code></td><td>Cette page de référence.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <p class="text-soft" style="font-size:.75rem;border-top:1px solid var(--border-lt);padding-top:1.5rem">Transliate · Corporate Design Pack v1.0 · Mode light · © GO45 GmbH — Usage interne / client.</p>
+    </main>
+  </div>
+</div>
+
+<div class="sg-toast" id="toast"></div>
+
+<script>
+  // ── Swatch data ─────────────────────────────────────────────
+  const S = {
+    'sw-actions': [
+      ['Primaire (encre)', '#0f172a', '--primary'],
+      ['Primaire hover', '#1e293b', '--primary-hover'],
+      ['CTA orange', '#E8820C', '--cta'],
+      ['CTA hover', '#c96a00', '--cta-hover'],
+    ],
+    'sw-surfaces': [
+      ['Page', '#ebeff5', '--bg'],
+      ['Surface alt', '#f4f6fa', '--bg-alt'],
+      ['Carte', '#ffffff', '--card'],
+      ['En-tête tableau', '#eef2f7', '--tbl-header'],
+      ['Bordure', '#c5ccd6', '--border'],
+      ['Bordure UI', '#e2e8f0', '--border-ui'],
+    ],
+    'sw-text': [
+      ['Texte', '#000000', '--text'],
+      ['Texte 2', '#0f172a', '--text-2'],
+      ['Muted', '#1e293b', '--text-muted'],
+      ['Dim', '#334155', '--text-dim'],
+      ['Soft', '#64748b', '--text-soft'],
+      ['Faint', '#94a3b8', '--text-faint'],
+    ],
+    'sw-semantic': [
+      ['Succès', '#059669', '--success'],
+      ['Avertissement', '#d97706', '--warning'],
+      ['Danger', '#dc2626', '--danger'],
+      ['Info', '#3b82f6', '--info'],
+    ],
+  };
+  const brand = [['50','#EFF6FF'],['100','#DBEAFE'],['200','#BFDBFE'],['500','#3B82F6'],['600','#1A56DB'],['700','#1040B0'],['900','#1E3A5F']];
+  const chart = ['#0f172a','#E8820C','#059669','#6366f1','#ec4899','#8b5cf6'];
+
+  const toast = document.getElementById('toast');
+  let t;
+  function copy(v) {
+    navigator.clipboard?.writeText(v);
+    toast.textContent = 'Copié : ' + v;
+    toast.classList.add('show');
+    clearTimeout(t); t = setTimeout(() => toast.classList.remove('show'), 1400);
+  }
+  const isDark = hex => { const n = parseInt(hex.slice(1), 16); return ((n>>16)*299 + ((n>>8)&255)*587 + (n&255)*114) / 1000 < 150; };
+
+  for (const [id, list] of Object.entries(S)) {
+    document.getElementById(id).innerHTML = list.map(([n, h, v]) => `
+      <div class="card sg-swatch" data-copy="${h}">
+        <div class="sg-swatch__chip" style="background:${h}"></div>
+        <div class="sg-swatch__meta"><p class="sg-swatch__name">${n}</p><p class="sg-swatch__hex">${h}</p><p class="sg-swatch__var">var(${v})</p></div>
+      </div>`).join('');
+  }
+  document.getElementById('sw-brand').innerHTML = brand.map(([k, h]) =>
+    `<div data-copy="${h}" style="background:${h};color:${isDark(h) ? '#fff' : '#0f172a'}"><p style="font-weight:600">brand-${k}</p><p>${h}</p></div>`).join('');
+  document.getElementById('sw-chart').innerHTML = chart.map((h, i) =>
+    `<div data-copy="${h}" style="background:${h};color:#fff"><p style="font-weight:600">Série ${i + 1}</p><p>${h}</p></div>`).join('');
+
+  document.addEventListener('click', e => {
+    const el = e.target.closest('[data-copy]');
+    if (el) copy(el.dataset.copy);
+  });
+
+  // ── Header nav active state on scroll ───────────────────────
+  const pills = [...document.querySelectorAll('.app-header .nav-pill')];
+  const targets = pills.map(p => document.querySelector(p.getAttribute('href')));
+  addEventListener('scroll', () => {
+    let idx = 0;
+    targets.forEach((s, i) => { if (s && s.getBoundingClientRect().top < 160) idx = i; });
+    pills.forEach((p, i) => p.classList.toggle('is-active', i === idx));
+  }, { passive: true });
+
+  // ── Animated modal demo ─────────────────────────────────────
+  document.getElementById('open-modal').addEventListener('click', () => {
+    const o = document.createElement('div');
+    o.className = 'modal-overlay';
+    o.innerHTML = `<div class="modal-box">
+      <div style="padding:1.25rem 1.5rem;border-bottom:1px solid var(--border-lt)"><h3 class="h-section">Signer la traduction</h3></div>
+      <div style="padding:1.5rem"><label class="label">Code de confirmation</label><input class="input" placeholder="••••••" /></div>
+      <div style="padding:1rem 1.5rem;border-top:1px solid var(--border-lt);display:flex;justify-content:flex-end;gap:.5rem">
+        <button class="btn btn-secondary btn-sm" data-close>Annuler</button><button class="btn btn-primary btn-sm" data-close>Signer</button>
+      </div></div>`;
+    o.addEventListener('click', e => { if (e.target === o || e.target.hasAttribute('data-close')) o.remove(); });
+    document.body.appendChild(o);
+  });
+</script>
+</body>
+</html>

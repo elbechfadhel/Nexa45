@@ -1,0 +1,19 @@
+# Champs protégés du domaine PARTNER pour Odoo : LISTE DE SÛRETÉ, pas une règle.
+#
+# Données de partenaire par nature : aucune règle ne peut les rendre NOT_RELEVANT ; seul un humain peut les
+# ignorer. Union des versions 17 / 18 / 19. Entre dans le checksum des règles : toute modification impose
+# d'incrémenter definition_version dans partner_domain.yaml.
+
+domain: PARTNER
+system: odoo
+
+# toute extension custom (x_*) est posée ou proposée, jamais exclue par une règle
+origins: [CUSTOM]
+
+fields:
+  res.partner: [name, is_company, ref, company_registry, active, parent_id, type, customer_rank, supplier_rank,
+                street, street2, zip, city, state_id, country_id, email, phone, mobile, website, lang, vat,
+                bank_ids]
+  res.partner.bank: [acc_number, acc_holder_name, sequence, bank_id, partner_id]
+  res.bank: [bic, name]
+  res.country: [code, name]

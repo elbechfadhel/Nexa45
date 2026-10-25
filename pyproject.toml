@@ -1,0 +1,54 @@
+[project]
+name = "universal-integration-engine"
+version = "0.1.0"
+description = "Universal Integration / Interface Engine — monorepo racine (uv workspace)"
+requires-python = ">=3.12"
+dependencies = [
+    "uie-core",
+    "uie-cdm",
+    "uie-connectors",
+    "uie-ai",
+    "uie-cli",
+    "uie-api",
+    "uie-domain-packs",
+]
+
+[tool.uv.workspace]
+members = ["packages/*", "apps/cli", "apps/api", "domain-packs"]
+
+[tool.uv.sources]
+uie-core = { workspace = true }
+uie-cdm = { workspace = true }
+uie-connectors = { workspace = true }
+uie-ai = { workspace = true }
+uie-cli = { workspace = true }
+uie-api = { workspace = true }
+uie-domain-packs = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "httpx2>=2.13.1",
+]
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = [
+    "packages/core/tests",
+    "packages/connectors/tests",
+    "packages/ai/tests",
+    "packages/cdm/tests",
+    "domain-packs/tests",
+    "apps/api/tests",
+    "tests",
+]
+asyncio_mode = "auto"

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 48" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif">
+  <!-- Icon -->
+  <g transform="translate(0, 0)">
+    <rect x="0" y="0" width="48" height="48" rx="11" fill="#0A2540"/>
+    <path d="M 12 15 L 36 15" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round"/>
+    <path d="M 24 15 L 24 36" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round"/>
+    <circle cx="36" cy="36" r="3.5" fill="#3B82F6"/>
+  </g>
+  <!-- Wordmark -->
+  <text x="60" y="33" font-size="26" font-weight="700" fill="#0A2540" letter-spacing="-0.7">
+    Transl<tspan fill="#3B82F6">i</tspan>ate
+  </text>
+</svg>

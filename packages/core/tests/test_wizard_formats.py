@@ -1,0 +1,282 @@
+"""Source FICHIER vers un format (DATEV) : tableau de source, constructeurs du CDM (partenaires, factures),
+période d'un fichier, numérotation « décalage + numéro du client ». Données INVENTÉES."""
+
+from __future__ import annotations
+
+from datetime import date
+from decimal import Decimal
+from types import SimpleNamespace
+
+import uie_domain_packs  # noqa: F401 - enregistre les tableaux de source et les bindings
+from uie_cdm import DocumentType, PartnerKind, PartnerRole
+from uie_core.accounting.target import PeriodSpan
+from uie_core.domains.model import DomainKey
+from uie_core.exports.service import plan_accounts
+from uie_core.mapping import TargetBindingRegistry
+from uie_core.sources.table import FileTableRegistry
+from uie_core.wizard.cdm_accounting import ZERO_RATE_KEY, documents_from_rows
+from uie_core.wizard.cdm_partners import (
+    DUPLICATES_KEY,
+    KINDS_KEY,
+    NUMBER_KEY,
+    POSTAL_KEY,
+    partners_from_rows,
+)
+from uie_core.wizard.formats import matched_keys
+
+PARTNERS = FileTableRegistry.get(DomainKey.PARTNER)
+INVOICES = FileTableRegistry.get(DomainKey.ACCOUNTING)
+
+
+def test_german_headers_are_known_columns_of_the_file_tables():
+    assert PARTNERS and INVOICES
+    headers = [
+        "Kd-Nr.",
+        "Firma",
+        "Ansprechpartner",
+        "Straße",
+        "PLZ",
+        "Ort",
+        "Land",
+        "USt-IdNr.",
+        "E-Mail",
+        "Telefon",
+        "IBAN",
+        "Zahlungsziel",
+    ]
+    assert matched_keys(PARTNERS, headers) == {
+        "customer_number",
+        "name",
+        "contact_person",
+        "street",
+        "postal_code",
+        "city",
+        "country",
+        "vat_id",
+        "email",
+        "phone",
+        "iban",
+    }
+    headers = ["Re-Nr.", "Re-Datum", "Kd-Nr.", "Kunde", "Netto €", "USt %", "USt €", "Brutto €", "Bemerkung"]
+    assert matched_keys(INVOICES, headers) == {
+        "document_number",
+        "document_date",
+        "partner_number",
+        "partner_name",
+        "net_amount",
+        "tax_rate",
+        "tax_amount",
+        "gross_amount",
+    }
+
+
+def _p(number: str, name: str, **kw: str) -> dict[str, str]:
+    return {"customer_number": number, "name": name, **kw}
+
+
+def test_customers_are_built_without_guessing_and_every_trap_is_a_decision_or_a_signal():
+    rows = [
+        _p(
+            "1001",
+            "Muster GmbH & Co. KG",
+            postal_code="01067",
+            country="Deutschland",
+            vat_id="DE123456789",
+            iban="DE89 3704 0044 0532 0130 00",
+            email="a@b.de",
+            contact_person="Herr Muster",
+        ),
+        _p("1002", "Becker Medien UG (haftungsbeschränkt)", postal_code="1307", country="D"),
+        _p("1003", "Bäckerei Groß e.K.", country="DE", vat_id="DE 135 792 468"),
+        _p("1004", "Lefèvre SARL", country="Frankreich", vat_id="FR123", email="compta@lefevre"),
+        _p("1005", "Krüger IT-Service", postal_code="1060", country="Österreich"),
+        {"name": "Neumann Consulting"},
+        _p("1007", "Mueller GmbH", vat_id="DE123456789"),
+        {"customer_number": "1008"},
+    ]
+    t = partners_from_rows(PARTNERS, rows, {"name": "Firma"}, PartnerRole.CUSTOMER, {})
+    by = {p.source_ref: p for p in t.partners}
+    assert by["file:1001"].kind == PartnerKind.ORGANIZATION  # « GmbH & Co. KG »
+    assert by["file:1002"].kind == PartnerKind.ORGANIZATION  # « UG (haftungsbeschränkt) »
+    assert by["file:1003"].kind == PartnerKind.ORGANIZATION  # « e.K. »
+    assert by["file:1004"].kind == PartnerKind.ORGANIZATION  # « SARL »
+    # aucune forme juridique : question posée, « Companies » présélectionné (toujours modifiable)
+    assert by["file:1005"].kind == PartnerKind.ORGANIZATION
+    q = {x.key: x for x in t.questions}
+    assert q[KINDS_KEY].count == 2 and q[KINDS_KEY].answer == "ORGANIZATION"  # présélection ; Krüger, Neumann
+    assert (
+        q[POSTAL_KEY].answer == "add"
+        and q[DUPLICATES_KEY].answer == "first"
+        and q[NUMBER_KEY].answer == "assign"
+    )
+    assert by["file:1002"].addresses[0].postal_code == "01307"  # zéro initial ajouté (présélection)
+    assert by["file:1005"].addresses[0].postal_code == "1060"  # code autrichien : 4 chiffres
+    assert by["file:1005"].addresses[0].country_code == "AT"
+    assert by["file:1003"].tax.vat_id == "DE135792468"  # espaces retirés (transformation listée)
+    assert (
+        by["file:1004"].tax.vat_id is None and by["file:1004"].contact.email is None
+    )  # signalés, non écrits
+    assert by["file:1001"].contact.contact_person == "Herr Muster"
+    assert by["file:1001"].bank_accounts[0].iban == "DE89370400440532013000"
+    assert "file:row-6" in by  # sans numéro : numéro de compte libre (présélection), jamais en silence
+    assert "file:1007" not in by  # même USt-IdNr que 1001 : doublon probable, non exporté
+    # même USt-IdNr : doublon PROBABLE, distinct des lignes identiques
+    assert [(e.row, e.kind) for e in t.skipped] == [(7, "probable_duplicate"), (8, "no_name")]
+    assert t.skipped[0].reason == "Probable duplicate (same VAT ID as row 1): not exported."
+    assert {i.kind for i in t.issues} == {"vat_invalid", "email_invalid"}
+
+    answered = partners_from_rows(
+        PARTNERS,
+        rows,
+        {},
+        PartnerRole.CUSTOMER,
+        {KINDS_KEY: "PERSON", POSTAL_KEY: "empty", DUPLICATES_KEY: "both", NUMBER_KEY: "skip"},
+    )
+    by = {p.source_ref: p for p in answered.partners}
+    assert (
+        by["file:1005"].kind == PartnerKind.PERSON and by["file:1005"].person.full_name == "Krüger IT-Service"
+    )
+    assert by["file:1002"].addresses[0].postal_code is None
+    assert "file:1007" in by and "file:row-6" not in by
+
+
+def _i(
+    number: str, day: str, net: str, rate: str, tax: str, gross: str, partner: str = "1001"
+) -> dict[str, str]:
+    return {
+        "document_number": number,
+        "document_date": day,
+        "partner_number": partner,
+        "partner_name": "Muster",
+        "net_amount": net,
+        "tax_rate": rate,
+        "tax_amount": tax,
+        "gross_amount": gross,
+    }
+
+
+def test_invoices_are_built_without_correction_and_every_trap_is_listed():
+    rows = [
+        _i("RE-1", "2026-09-28", "1299", "19", "246.81", "1545.81"),
+        _i("RE-2", "2026-09-24", "-250", "19", "-47.5", "-297.5"),
+        _i("RE-3", "2026-09-12", "2500", "16", "400", "2900"),
+        _i("RE-4", "2026-09-20", "1000", "19", "190", "1180"),
+        _i("RE-5", "2026-07-14", "100", "19", "19", "119"),
+        _i("RE-5", "2026-07-14", "100", "19", "19", "119"),
+        _i("RE-6", "2026-07-15", "100", "19", "19", "119"),
+        _i("RE-6", "2026-07-16", "200", "19", "38", "238"),
+        _i("", "2026-09-25", "640", "19", "121.6", "761.6"),
+        _i("RE-7", "2026-09-15", "3200", "0", "0", "3200"),
+        _i("RE-8", "2026-09-21", "333.33", "19", "63.33", "396.67"),
+    ]
+    t = documents_from_rows(INVOICES, rows, {}, "EUR", {})
+    docs = {d.number: d for d in t.documents}
+    assert docs["RE-1"].document_type == DocumentType.CUSTOMER_INVOICE
+    assert docs["RE-1"].lines[0].amount == Decimal("-1299")  # vente au crédit
+    assert docs["RE-2"].document_type == DocumentType.CUSTOMER_CREDIT_NOTE and docs[
+        "RE-2"
+    ].total_amount == Decimal("297.5")
+    assert docs["RE-1"].partner.source_ref == "file:1001" and docs["RE-1"].source_ref == "file:RE-1"
+    assert "RE-8" in docs  # écart d'un centime : toléré (arrondi)
+    reasons = {e.row: (e.kind, e.reason) for e in t.skipped}
+    assert reasons[3][0] == "rate" and "16 %" in reasons[3][1]
+    assert reasons[4][0] == "inconsistent"
+    assert reasons[6][0] == "duplicate" and "entered twice" in reasons[6][1]  # identique : écrite une fois
+    assert reasons[7][0] == reasons[8][0] == "probable_duplicate"  # même numéro, contenu différent : aucune
+    assert reasons[9][0] == "missing_number"
+    assert reasons[10][0] == "zero_rate"  # 0 % : en attente de la décision
+    (q,) = t.questions
+    assert q.key == ZERO_RATE_KEY and q.answer is None
+    assert set(t.categories) == {"sale:19", "sale:0"}  # 0 % compris : son compte est demandé d'avance
+    exported = documents_from_rows(INVOICES, rows, {}, "EUR", {ZERO_RATE_KEY: "export"})
+    assert "RE-7" in {d.number for d in exported.documents}
+
+
+def test_the_period_of_a_file_covers_whole_months():
+    span = PeriodSpan.covering([date(2026, 7, 5), date(2026, 9, 28), date(2026, 8, 1)])
+    assert (span.first_day, span.last_day) == (date(2026, 7, 1), date(2026, 9, 30))
+    assert span.label == "07/2026 bis 09/2026" and str(span) == "2026-07" and span.slug == "2026-07_2026-09"
+    assert PeriodSpan.covering([date(2026, 7, 5)]).label == "07/2026"
+
+
+def test_account_numbers_follow_offset_plus_customer_number_when_it_fits(session):  # noqa: ANN001
+    binding = TargetBindingRegistry.find("datev", "debitoren-kreditoren")
+    profile = SimpleNamespace(
+        id=None,
+        values={
+            "account_length": 4,
+            "debtor_range": {"start": 10000, "end": 69999},
+            "creditor_range": {"start": 70000, "end": 99999},
+            "account_offset": 10000,
+        },
+    )
+    rows = [
+        _p("1001", "Muster GmbH"),
+        _p("1002", "Beispiel GmbH"),
+        _p("99999", "Hors plage GmbH"),
+        {"name": "Neu GmbH"},
+    ]
+    built = partners_from_rows(PARTNERS, rows, {}, PartnerRole.CUSTOMER, {})
+    needs = [(p, PartnerRole.CUSTOMER) for p in built.partners]
+    plan = plan_accounts(session, profile, binding, None, needs)  # type: ignore[arg-type]
+    numbers = {ref: (n, plan.origin[(ref, role)]) for (ref, role), n in plan.numbers.items()}
+    assert numbers["file:1001"] == ("11001", "OFFSET")
+    assert numbers["file:1002"] == ("11002", "OFFSET")
+    assert numbers["file:99999"] == ("10000", "ASSIGNED")  # 109999 hors de la plage : premier libre
+    assert numbers["file:row-4"] == ("10001", "ASSIGNED")
+
+
+def test_invoice_headers_name_the_data_type_only_when_the_target_takes_invoices():
+    from uie_core.wizard.quick import infer_data_type
+
+    invoices = ["Re-Nr.", "Re-Datum", "Kd-Nr.", "Kunde", "Netto €", "USt %", "USt €", "Brutto €", "Bemerkung"]
+    assert infer_data_type(invoices) == "Invoices"
+    assert infer_data_type(
+        ["Rechnungsnummer", "Rechnungsdatum", "Kunde", "Netto", "Brutto", "USt"], ["Invoices"]
+    ) == ("Invoices")
+    assert infer_data_type(invoices, ["Products", "Customers"]) is None  # cible sans factures : jamais imposé
+    # une liste d'articles avec « VK netto », « MwSt » reste une liste d'articles
+    articles = [
+        "Art.-Nr.",
+        "Artikelbezeichnung",
+        "EAN",
+        "Einheit",
+        "VK netto",
+        "VK brutto",
+        "MwSt",
+        "Bestand",
+    ]
+    assert infer_data_type(articles) == "Products"
+
+
+def test_a_zero_rate_invoice_follows_the_vat_id_kept_from_the_customer_export():
+    rows = [
+        _i("RE-1", "2026-09-15", "3200", "0", "0", "3200", partner="1008"),  # Autriche, ATU valide
+        _i("RE-2", "2026-09-18", "1850", "0", "0", "1850", partner="1009"),  # France, FR123 invalide
+        _i("RE-3", "2026-09-19", "100", "0", "0", "100", partner="1003"),  # Allemagne, sans USt-IdNr
+        _i("RE-4", "2026-09-20", "100", "0", "0", "100", partner="1099"),  # client inconnu
+    ]
+    vat = {"1008": ("valid", "AT"), "1009": ("invalid", "FR"), "1003": ("missing", "DE")}
+    t = documents_from_rows(INVOICES, rows, {}, "EUR", {}, partner_vat=vat)
+    assert [d.number for d in t.documents] == ["RE-1"]  # justifiée : écrite sans question
+    reasons = {e.row: (e.kind, e.reason) for e in t.skipped}
+    assert reasons[2][0] == "zero_rate_vat" and "is not valid in your customer list (FR)" in reasons[2][1]
+    assert (
+        reasons[3][0] == reasons[4][0] == "zero_rate"
+    )  # client allemand sans numéro, client inconnu : décision
+    (q,) = t.questions
+    assert q.count == 2
+
+
+def test_the_customer_export_keeps_the_state_of_each_vat_id():
+    rows = [
+        _p("1001", "A GmbH", vat_id="DE123456789", country="Deutschland"),
+        _p("1002", "B SARL", vat_id="FR123", country="Frankreich"),
+        _p("1003", "C GmbH", country="Österreich"),
+    ]
+    t = partners_from_rows(PARTNERS, rows, {}, PartnerRole.CUSTOMER, {})
+    assert t.vat == {
+        "file:1001": ("valid", "DE"),
+        "file:1002": ("invalid", "FR"),
+        "file:1003": ("missing", "AT"),
+    }

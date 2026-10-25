@@ -1,0 +1,53 @@
+# Binding de SOURCE à schéma fixe : pièces de comptabilité de Lexware Office → clés du domaine ACCOUNTING.
+#
+# Contrat du Registry : lexware / public-api / v1 / rest. Liste `voucherlist` (filtre de dates de l'API sur
+# voucherDate) + détail `vouchers` de chaque pièce, fusionnés (le détail prime). Lecture seule.
+# Ce que la source permet, sans rien inventer :
+#   - type et statut traduits par des listes FERMÉES (valeur hors liste = non prise en charge, signalée) ;
+#   - statut : `overdue` (état de PAIEMENT d'une pièce ouverte, rendu par la liste) et les autres états de
+#     paiement = pièce comptabilisée ; `unchecked` (à vérifier dans la source) = non définitive ;
+#   - date comptable = date de la pièce (la source n'a pas de date de comptabilisation distincte) ;
+#   - lignes : montant, TVA, taux, CATÉGORIE (pas un compte) → contrôlées, jamais transformées en lignes
+#     du CDM (aucun compte de grand livre dans la source).
+# Toute modification : incrémenter binding_version.
+
+binding_version: "1.0.0"
+name: Lexware Office vouchers (source)
+domain: ACCOUNTING
+source: {system: lexware, product: public-api, interface: rest, versions: ["v1"]}
+
+entities:
+  - role: DOCUMENT
+    resource: voucherlist
+    detail: vouchers
+    id: id
+    period: voucherDate
+    fields:
+      - {key: document_number, path: voucherNumber}
+      - key: document_type
+        first: [type, voucherType]
+        map: {salesinvoice: CUSTOMER_INVOICE, salescreditnote: CUSTOMER_CREDIT_NOTE,
+              purchaseinvoice: VENDOR_BILL, purchasecreditnote: VENDOR_CREDIT_NOTE}
+      - key: document_status
+        path: voucherStatus
+        map: {open: POSTED, overdue: POSTED, paid: POSTED, paidoff: POSTED, transferred: POSTED,
+              sepadebit: POSTED, draft: DRAFT, unchecked: DRAFT, voided: CANCELLED}
+      - {key: partner, path: contactId}
+      - {key: partner_name, path: contactName}
+      - {key: description, path: remark}
+      - {key: accounting_date, path: voucherDate}
+      - {key: document_date, path: voucherDate}
+      - {key: due_date, path: dueDate}
+      - {key: currency_code, path: currency}
+      - {key: total_amount, path: totalGrossAmount}
+      - {key: tax_amount, path: totalTaxAmount}
+      - {key: amounts_include_tax, path: taxType, map: {gross: "true", net: "false"}}
+    items:
+      role: DOCUMENT_LINE
+      path: voucherItems
+      fields:
+        - {key: line_amount, path: amount}
+        - {key: line_tax_amount, path: taxAmount}
+        - {key: line_tax_rate, path: taxRatePercent}
+        # nom de la catégorie lu dans posting-categories (affichage) ; l'identifiant reste la référence décidée
+        - {key: line_category, path: categoryId, label: {resource: posting-categories, id: id, name: name}}

@@ -1,0 +1,21 @@
+﻿Product Name,SKU,Sales Price,Category,Sales Description,Cost Price,Tags,Image URL,SEO Title,Published
+Ergo Office Chair,UIE-CHAIR-001,189.90,Office Furniture,Ergonomic office chair with adjustable back support.,112.50,"office,chair,ergonomic",https://example.com/images/ergo-chair.jpg,Ergo Office Chair | Demo Shop,yes
+Standing Desk 140,UIE-DESK-001,349.00,Office Furniture,"Height-adjustable desk, 140 cm.",220.00,"office,desk,standing",https://example.com/images/standing-desk.jpg,Standing Desk 140 | Demo Shop,yes
+LED Desk Lamp,UIE-LAMP-001,49.90,Lighting,Dimmable LED desk lamp.,27.40,"lighting,office,led",https://example.com/images/desk-lamp.jpg,LED Desk Lamp | Demo Shop,yes
+Wireless Keyboard,UIE-KEYB-001,59.99,Electronics,Compact wireless keyboard.,31.25,"electronics,keyboard,wireless",https://example.com/images/keyboard.jpg,Wireless Keyboard | Demo Shop,yes
+Wireless Mouse,UIE-MOUSE-001,34.50,Electronics,Ergonomic wireless mouse.,18.10,"electronics,mouse,wireless",https://example.com/images/mouse.jpg,Wireless Mouse | Demo Shop,yes
+USB-C Docking Station,UIE-DOCK-001,129.00,Electronics,USB-C docking station with HDMI and Ethernet.,78.00,"electronics,usb-c,docking",https://example.com/images/docking-station.jpg,USB-C Docking Station | Demo Shop,yes
+Laptop Stand,UIE-STAND-001,42.00,Office Accessories,Aluminium laptop stand.,21.60,"office,laptop,stand",https://example.com/images/laptop-stand.jpg,Laptop Stand | Demo Shop,yes
+A4 Notebook Premium,UIE-NOTE-001,12.90,Stationery,Hard-cover A4 notebook.,5.20,"stationery,notebook",https://example.com/images/notebook.jpg,A4 Notebook Premium | Demo Shop,yes
+Gel Pen Set,UIE-PEN-001,8.50,Stationery,Set of five gel pens.,3.10,"stationery,pens",https://example.com/images/gel-pens.jpg,Gel Pen Set | Demo Shop,yes
+Whiteboard 90x60,UIE-WHITE-001,64.90,Office Accessories,"Magnetic whiteboard, 90 x 60 cm.",39.00,"office,whiteboard",https://example.com/images/whiteboard.jpg,Whiteboard 90x60 | Demo Shop,yes
+Noise Cancelling Headset,UIE-HEAD-001,159.00,Electronics,USB headset with active noise cancellation.,96.00,"electronics,headset,audio",https://example.com/images/headset.jpg,Noise Cancelling Headset | Demo Shop,yes
+Webcam Full HD,UIE-CAM-001,74.90,Electronics,1080p USB webcam.,41.50,"electronics,webcam",https://example.com/images/webcam.jpg,Webcam Full HD | Demo Shop,yes
+Monitor 27 Inch,UIE-MON-001,249.00,Electronics,27-inch IPS office monitor.,168.00,"electronics,monitor,office",https://example.com/images/monitor.jpg,Monitor 27 Inch | Demo Shop,yes
+Cable Organizer,UIE-CABLE-001,15.90,Office Accessories,Under-desk cable organizer.,7.80,"office,cable,organizer",https://example.com/images/cable-organizer.jpg,Cable Organizer | Demo Shop,yes
+Document Tray,UIE-TRAY-001,24.90,Office Accessories,Three-level document tray.,11.70,"office,documents",https://example.com/images/document-tray.jpg,Document Tray | Demo Shop,yes
+Desk Mat XL,,29.90,Office Accessories,Large desk mat; intentionally missing SKU.,13.20,"office,desk,mat",https://example.com/images/desk-mat.jpg,Desk Mat XL | Demo Shop,yes
+Office Footrest,UIE-FOOT-001,,Office Furniture,Adjustable office footrest; intentionally missing sales price.,22.00,"office,ergonomic,footrest",https://example.com/images/footrest.jpg,Office Footrest | Demo Shop,yes
+Portable SSD 1TB,UIE-SSD-001,89.90 EUR,Electronics,Portable 1 TB SSD; intentionally invalid sales-price format.,55.00,"electronics,storage,ssd",https://example.com/images/ssd.jpg,Portable SSD 1TB | Demo Shop,yes
+Meeting Timer,UIE-TIMER-001,39.90,Office Accessories,Digital meeting timer; intentionally invalid image URL.,19.00,"office,timer,meeting",not-a-valid-url,Meeting Timer | Demo Shop,yes
+Paper Shredder,UIE-SHRED-001,119.00,Office Equipment,Compact paper shredder; intentionally missing cost price.,,"office,shredder,security",https://example.com/images/shredder.jpg,Paper Shredder | Demo Shop,no

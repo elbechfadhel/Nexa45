@@ -1,0 +1,342 @@
+# Vocabulaire contrôlé du domaine PARTNER (partenaire commercial : client et / ou fournisseur).
+#
+# Liste fermée des semantic_key : les attributs du Partner CDM (uie_cdm.partner) s'y réfèrent. Mêmes règles que
+# le vocabulaire du catalogue (catalog/vocabulary.yaml) : ajouter une clé = éditer ce fichier ; toute
+# modification change le checksum des règles sémantiques → incrémenter definition_version des packs
+# (partner/<système>/partner_domain.yaml).
+#
+# Prudence (mesuré sur les snapshots standard et sur customer17) : alias SPÉCIFIQUES et entity_roles au plus
+# juste, sinon un recouvrement de mots crée une proposition (donc une question) sur un champ standard.
+
+domain: PARTNER
+vocabulary_version: "1.0.0"
+
+keys:
+  # ---------------------------------------------------------------- identity
+  - key: name
+    group: identity
+    label: Partner name
+    description: Name of the company or of the person.
+    data_type: string
+    cardinality: single
+    required_for_catalog: true
+    aliases: [name, partner name]
+    entity_roles: [PRIMARY]
+  - key: is_organization
+    group: identity
+    label: Is an organization
+    description: The partner is a company or organization (not an individual person).
+    data_type: boolean
+    cardinality: single
+    required_for_catalog: true
+    aliases: [is company, is a company, is organization]
+    entity_roles: [PRIMARY]
+  - key: short_name
+    group: identity
+    label: Short name
+    description: Short name or abbreviation of the partner.
+    data_type: string
+    cardinality: single
+    required_for_catalog: false
+    aliases: [short name, abbreviation]
+    entity_roles: [PRIMARY]
+  - key: partner_reference
+    group: identity
+    label: Internal reference
+    description: Free internal reference of the partner.
+    data_type: string
+    cardinality: single
+    required_for_catalog: false
+    aliases: [internal reference, partner reference]
+    entity_roles: [PRIMARY]
+  - key: customer_number
+    group: identity
+    label: Customer number
+    description: Number under which the partner is known as a customer.
+    data_type: string
+    expected_types: [string, integer]
+    cardinality: single
+    required_for_catalog: false
+    aliases: [customer no, customer number, customer id, kundennummer, debitor number]
+    patterns: ['^x_?(customer|cust|debitor)_?(no|nr|num|number|id)$']
+    entity_roles: [PRIMARY]
+  - key: supplier_number
+    group: identity
+    label: Supplier number
+    description: Number under which the partner is known as a supplier.
+    data_type: string
+    expected_types: [string, integer]
+    cardinality: single
+    required_for_catalog: false
+    aliases: [supplier no, supplier number, vendor no, vendor number, lieferantennummer, creditor number]
+    patterns: ['^x_?(supplier|vendor|creditor)_?(no|nr|num|number|id)$']
+    entity_roles: [PRIMARY]
+  - key: company_registry
+    group: identity
+    label: Company registry
+    description: Registration number of the company in the trade register.
+    data_type: string
+    cardinality: single
+    required_for_catalog: false
+    aliases: [company registry, trade register, handelsregister]
+    entity_roles: [PRIMARY]
+  - key: active
+    group: identity
+    label: Active
+    description: Whether the partner is active (not archived).
+    data_type: boolean
+    cardinality: single
+    required_for_catalog: false
+    aliases: [active]
+    entity_roles: [PRIMARY]
+  - key: parent_partner
+    group: identity
+    label: Parent company
+    description: Company this contact or address belongs to.
+    data_type: reference
+    cardinality: single
+    required_for_catalog: false
+    relation_target_roles: [PRIMARY]
+    entity_roles: [PRIMARY]
+  - key: address_type
+    group: identity
+    label: Contact or address type
+    description: Whether the record is the partner itself or one of its contacts / addresses.
+    data_type: enum
+    cardinality: single
+    required_for_catalog: false
+    entity_roles: [PRIMARY]
+
+  # ---------------------------------------------------------------- commercial (rôles)
+  - key: customer_rank
+    group: commercial
+    label: Customer activity
+    description: Indicates that the partner is used as a customer (greater than zero).
+    data_type: integer
+    cardinality: single
+    required_for_catalog: true
+    entity_roles: [PRIMARY]
+  - key: supplier_rank
+    group: commercial
+    label: Supplier activity
+    description: Indicates that the partner is used as a supplier (greater than zero).
+    data_type: integer
+    cardinality: single
+    required_for_catalog: true
+    entity_roles: [PRIMARY]
+
+  # ---------------------------------------------------------------- address
+  - key: street
+    group: address
+    label: Street
+    description: Street and house number.
+    data_type: string
+    cardinality: single
+    required_for_catalog: false
+    aliases: [street, strasse]
+    entity_roles: [PRIMARY]
+  - key: street2
+    group: address
+    label: Address line 2
+    description: Additional address line.
+    data_type: string
+    cardinality: single
+    required_for_catalog: false
+    aliases: [street2, address line 2, adresszusatz]
+    entity_roles: [PRIMARY]
+  - key: po_box
+    group: address
+    label: P.O. box
+    description: Post office box.
+    data_type: string
+    cardinality: single
+    required_for_catalog: false
+    aliases: [po box, p o box, postfach]
+    entity_roles: [PRIMARY]
+  - key: postal_code
+    group: address
+    label: Postal code
+    description: Postal / ZIP code.
+    data_type: string
+    cardinality: single
+    required_for_catalog: false
+    aliases: [zip, postal code, postcode, plz]
+    entity_roles: [PRIMARY]
+  - key: city
+    group: address
+    label: City
+    description: City or town.
+    data_type: string
+    cardinality: single
+    required_for_catalog: false
+    aliases: [city, town, ort]
+    entity_roles: [PRIMARY]
+  - key: region
+    group: address
+    label: State / region
+    description: State, province or region of the address.
+    data_type: reference
+    expected_types: [reference, string]
+    cardinality: single
+    required_for_catalog: false
+    entity_roles: [PRIMARY]
+  - key: country
+    group: address
+    label: Country
+    description: Country of the address.
+    data_type: reference
+    cardinality: single
+    required_for_catalog: false
+    relation_target_roles: [COUNTRY]
+    entity_roles: [PRIMARY]
+  - key: country_code
+    group: address
+    label: Country code
+    description: ISO 3166-1 alpha-2 code of the country.
+    data_type: string
+    cardinality: single
+    required_for_catalog: false
+    aliases: [country code, iso code]
+    entity_roles: [COUNTRY]
+
+  # ---------------------------------------------------------------- contact
+  - key: email
+    group: contact
+    label: Email
+    description: Main email address.
+    data_type: string
+    cardinality: single
+    required_for_catalog: false
+    aliases: [email, e mail]
+    entity_roles: [PRIMARY]
+  - key: phone
+    group: contact
+    label: Phone
+    description: Main phone number.
+    data_type: string
+    cardinality: single
+    required_for_catalog: false
+    aliases: [phone, telephone, telefon]
+    entity_roles: [PRIMARY]
+  - key: mobile
+    group: contact
+    label: Mobile
+    description: Mobile phone number.
+    data_type: string
+    cardinality: single
+    required_for_catalog: false
+    aliases: [mobile, mobile phone]
+    entity_roles: [PRIMARY]
+  - key: fax
+    group: contact
+    label: Fax
+    description: Fax number.
+    data_type: string
+    cardinality: single
+    required_for_catalog: false
+    aliases: [fax, telefax]
+    entity_roles: [PRIMARY]
+  - key: website
+    group: contact
+    label: Website
+    description: Website address.
+    data_type: string
+    cardinality: single
+    required_for_catalog: false
+    aliases: [website, web site, homepage]
+    entity_roles: [PRIMARY]
+  - key: language
+    group: contact
+    label: Language
+    description: Language used to communicate with the partner.
+    data_type: enum
+    expected_types: [enum, string]
+    cardinality: single
+    required_for_catalog: false
+    aliases: [language]
+    entity_roles: [PRIMARY]
+
+  # ---------------------------------------------------------------- tax
+  - key: vat_id
+    group: tax
+    label: VAT ID
+    description: Intra-community VAT identification number, with its country prefix.
+    data_type: string
+    cardinality: single
+    required_for_catalog: false
+    aliases: [vat, vat id, vat number, ust id, ustid]
+    entity_roles: [PRIMARY]
+  - key: tax_number
+    group: tax
+    label: Tax number
+    description: National tax number (not the VAT ID).
+    data_type: string
+    cardinality: single
+    required_for_catalog: false
+    aliases: [tax number, steuernummer]
+    patterns: ['^x_?(tax_?(no|nr|number)|steuernummer|stnr)$']
+    entity_roles: [PRIMARY]
+
+  # ---------------------------------------------------------------- banking
+  - key: bank_accounts
+    group: banking
+    label: Bank accounts
+    description: Bank accounts of the partner.
+    data_type: collection
+    cardinality: single
+    required_for_catalog: false
+    relation_target_roles: [BANK_ACCOUNT]
+    entity_roles: [PRIMARY]
+  - key: bank_account_number
+    group: banking
+    label: Account number / IBAN
+    description: Bank account number, usually an IBAN.
+    data_type: string
+    cardinality: single
+    required_for_catalog: true
+    aliases: [account number, iban]
+    entity_roles: [BANK_ACCOUNT]
+  - key: account_holder
+    group: banking
+    label: Account holder
+    description: Name of the account holder when different from the partner.
+    data_type: string
+    cardinality: single
+    required_for_catalog: false
+    aliases: [account holder, account holder name]
+    entity_roles: [BANK_ACCOUNT]
+  - key: bank_priority
+    group: banking
+    label: Order of the account
+    description: Order of the bank accounts of a partner (the first one is the main account).
+    data_type: integer
+    cardinality: single
+    required_for_catalog: false
+    entity_roles: [BANK_ACCOUNT]
+  - key: bank
+    group: banking
+    label: Bank
+    description: Bank of the account.
+    data_type: reference
+    cardinality: single
+    required_for_catalog: false
+    relation_target_roles: [BANK]
+    entity_roles: [BANK_ACCOUNT]
+  - key: bic
+    group: banking
+    label: BIC / SWIFT
+    description: Bank identifier code (BIC / SWIFT).
+    data_type: string
+    cardinality: single
+    required_for_catalog: false
+    aliases: [bic, swift, swift code, bank identifier code]
+    entity_roles: [BANK]
+  - key: bank_name
+    group: banking
+    label: Bank name
+    description: Name of the bank.
+    data_type: string
+    cardinality: single
+    required_for_catalog: false
+    aliases: [bank name]
+    entity_roles: [BANK]

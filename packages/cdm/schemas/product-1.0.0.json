@@ -1,0 +1,284 @@
+{
+  "$defs": {
+    "Price": {
+      "additionalProperties": false,
+      "properties": {
+        "amount": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Amount"
+        },
+        "currency": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Currency"
+        }
+      },
+      "required": [
+        "amount"
+      ],
+      "title": "Price",
+      "type": "object"
+    },
+    "ProductKind": {
+      "enum": [
+        "GOODS",
+        "SERVICE",
+        "UNKNOWN"
+      ],
+      "title": "ProductKind",
+      "type": "string"
+    },
+    "ProductTaxRef": {
+      "additionalProperties": false,
+      "description": "Taxe de vente telle que la source la nomme : sa référence opaque et son libellé (jamais un taux).",
+      "properties": {
+        "ref": {
+          "title": "Ref",
+          "type": "string"
+        },
+        "label": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Label"
+        }
+      },
+      "required": [
+        "ref"
+      ],
+      "title": "ProductTaxRef",
+      "type": "object"
+    },
+    "ProductVariant": {
+      "additionalProperties": false,
+      "properties": {
+        "source_ref": {
+          "title": "Source Ref",
+          "type": "string"
+        },
+        "sku": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sku"
+        },
+        "gtin": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Gtin"
+        },
+        "price": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Price"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "active": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Active"
+        },
+        "attributes": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/VariantAttribute"
+          },
+          "title": "Attributes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "source_ref"
+      ],
+      "title": "ProductVariant",
+      "type": "object"
+    },
+    "VariantAttribute": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "value": {
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "value"
+      ],
+      "title": "VariantAttribute",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "model_version": {
+      "default": "1.0.0",
+      "title": "Model Version",
+      "type": "string"
+    },
+    "source_ref": {
+      "title": "Source Ref",
+      "type": "string"
+    },
+    "name": {
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+    },
+    "kind": {
+      "$ref": "#/$defs/ProductKind",
+      "default": "UNKNOWN"
+    },
+    "sku": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Sku"
+    },
+    "gtin": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Gtin"
+    },
+    "description": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Description"
+    },
+    "unit": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Unit"
+    },
+    "price": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Price"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "sales_taxes": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ProductTaxRef"
+      },
+      "title": "Sales Taxes",
+      "type": "array"
+    },
+    "active": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Active"
+    },
+    "variants": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ProductVariant"
+      },
+      "title": "Variants",
+      "type": "array"
+    }
+  },
+  "required": [
+    "source_ref",
+    "name"
+  ],
+  "title": "Product",
+  "type": "object",
+  "$id": "https://go45.io/uie/cdm/product-1.0.0.json"
+}
