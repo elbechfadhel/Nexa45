@@ -53,6 +53,7 @@ export function StartScreen({
   const tiles = groups.flatMap((g) => targetTiles(g.items));
   const open = openTile(tiles, openSystem, target);
   const sole = soleSystem(tiles);
+  const heading = entry.targetHeading ?? L.targetHeading;
 
   // votre système connecté est présélectionné (jamais un système au hasard)
   useEffect(() => {
@@ -73,7 +74,7 @@ export function StartScreen({
 
       <Card className="bg-transparent shadow-none">
         <CardContent className="space-y-4">
-          <h2 className="item-title">{L.targetHeading}</h2>
+          <h2 className="item-title">{heading}</h2>
           {all.length > SEARCH_FROM && (
             <label className="relative block max-w-sm">
               <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -94,9 +95,9 @@ export function StartScreen({
           {targets.isSuccess && groups.length === 0 && <p className="meta text-muted-foreground">{L.targetNone}</p>}
           {sole ? (
             // un seul système à l'écran (point d'entrée d'un système) : ses choix directement, sans groupe ni tuile
-            <Choices tile={sole} target={target} onTarget={onTarget} />
+            <Choices tile={sole} target={target} onTarget={onTarget} label={heading} />
           ) : (
-          <div className="space-y-5" role="radiogroup" aria-label={L.targetHeading}>
+          <div className="space-y-5" role="radiogroup" aria-label={heading}>
             {groups.map((g) => (
               <section key={g.group} className="space-y-2">
                 <div>
@@ -179,20 +180,21 @@ function Choices({
   target,
   onTarget,
   framed = false,
+  label,
 }: {
   tile: SystemTile;
   target: string;
   onTarget: (value: string) => void;
   framed?: boolean;
+  /** Choix seuls à l'écran : la question est déjà l'intitulé de la carte (pas de second titre). */
+  label?: string;
 }) {
   const { main, others } = formatChoices(tile.formats);
   return (
     <div className={cn("space-y-2", framed && "rounded-lg border border-border p-3")}>
-      <div>
-        <h4 className="font-medium">{choiceHeading(tile)}</h4>
-        <p className="meta text-muted-foreground">{tile.choose === "version" ? L.versionHelp : L.formatHelp}</p>
-      </div>
-      <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={choiceHeading(tile)}>
+      {label === undefined && <h4 className="font-medium">{choiceHeading(tile)}</h4>}
+      <p className="meta text-muted-foreground">{tile.choose === "version" ? L.versionHelp : L.formatHelp}</p>
+      <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={label ?? choiceHeading(tile)}>
         {main.map((f) => (
           <FormatButton key={f.value} label={f.label} selected={f.value === target} onClick={() => onTarget(f.value)} />
         ))}

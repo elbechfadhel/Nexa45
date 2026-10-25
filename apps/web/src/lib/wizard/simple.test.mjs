@@ -469,6 +469,10 @@ test("an entry point reuses the Simple screens: only its title, introduction and
     assert.match(entry.intro, /Nothing is written to your systems\./);
   }
   assert.equal(WIZARD_ENTRIES.datev.title, "Prepare data for DATEV");
+  // la question de l'étape 2 : propre au parcours ; le Wizard garde la sienne
+  assert.equal(WIZARD_ENTRIES.datev.targetHeading, "2. What do you want to prepare?");
+  assert.equal(WIZARD_ENTRIES.general.targetHeading, undefined);
+  assert.equal(SIMPLE_LABELS.targetHeading, "2. Where should your data go?");
   // parcours DATEV : les formats DATEV du Registry seulement, une tuile ouverte d'office sur ses deux choix
   /** @type {any[]} */
   const all = [

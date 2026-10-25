@@ -12,9 +12,11 @@ import { SIMPLE_LABELS as L } from "./simple-labels.mjs";
  * @typedef {{
  *   title: string,
  *   intro: string,
+ *   targetHeading?: string,
  *   systems?: string[],
  *   groups?: TargetChoice["group"][],
  * }} WizardEntry
+ * `targetHeading` : intitulé du choix de la cible (absent : celui du Wizard, « 2. Where should your data go? ») ;
  * `systems` : codes des systèmes du Registry affichés (tous si absent) ; `groups` : groupes de cibles affichés
  * (tous si absent).
  */
@@ -29,6 +31,7 @@ export const WIZARD_ENTRIES = {
     title: "Prepare data for DATEV",
     intro:
       "Add your customer list or your invoices, choose what DATEV should receive, and download the file prepared for DATEV. Nothing is written to your systems.",
+    targetHeading: "2. What do you want to prepare?",
     systems: ["datev"],
     groups: ["registry"],
   },
