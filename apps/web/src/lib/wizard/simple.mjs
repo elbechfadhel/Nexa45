@@ -89,6 +89,14 @@ export function targetTiles(items) {
   return tiles;
 }
 
+/** Sous-titre d'une tuile de système : ses versions, ou ses FORMATS (un format compte une fois, quel que soit
+ * son nombre de versions : « 2 formats », jamais une version comptée comme un format).
+ * @param {SystemTile} tile */
+export function systemTileDetail(tile) {
+  if (tile.choose === "version") return L.versionCount(tile.formats.length);
+  return L.formatCount(new Set(tile.formats.map((f) => f.product ?? f.value)).size);
+}
+
 /** Tuile de système ouverte : celle choisie, ou celle dont un format est la cible actuelle ; une tuile de
  * système SEULE à l'écran (point d'entrée d'un seul système) est ouverte d'office ; sinon undefined.
  * @param {TargetTile[]} tiles @param {string} openSystem @param {string} target

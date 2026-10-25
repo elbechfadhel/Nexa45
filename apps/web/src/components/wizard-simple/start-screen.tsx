@@ -15,6 +15,7 @@ import {
   defaultTarget,
   formatChoices,
   openTile,
+  systemTileDetail,
   targetGroups,
   targetSubtitle,
   targetTiles,
@@ -116,9 +117,7 @@ export function StartScreen({
                         >
                           <span className="w-full truncate font-medium">{tile.label}</span>
                           <span className="meta w-full truncate text-muted-foreground">
-                            {tile.choose === "version"
-                              ? L.versionCount(tile.formats.length)
-                              : L.formatCount(tile.formats.length)}
+                            {systemTileDetail(tile)}
                           </span>
                         </button>
                       );

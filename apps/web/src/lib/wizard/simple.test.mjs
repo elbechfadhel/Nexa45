@@ -20,6 +20,7 @@ import {
   fillsOf,
   formatChoices,
   openTile,
+  systemTileDetail,
   ignoredColumns,
   importSteps,
   initialEdits,
@@ -478,12 +479,15 @@ test("an entry point reuses the Simple screens: only its title, introduction and
     { value: "registry:odoo:odoo:17", label: "Odoo 17", group: "registry", system: "odoo", system_name: "Odoo" },
     { value: "known:sevdesk", label: "sevdesk", group: "known" },
   ];
+  all.forEach((t) => (t.product = t.value.split(":")[2]));
   const datev = entryTargets(all, WIZARD_ENTRIES.datev);
   assert.deepEqual(datev.map((t) => t.value), all.slice(1, 4).map((t) => t.value));
   assert.deepEqual(targetGroups(datev).map((g) => g.group), ["registry"]); // ni « proposés par l'IA », ni vos systèmes
   const tiles = targetTiles(datev);
   const open = openTile(tiles, "", "");
   assert.equal(open?.system, "datev");
+  // deux formats (Buchungsstapel en deux versions, Debitoren/Kreditoren) : « 2 formats », pas « 3 formats »
+  assert.equal(open && systemTileDetail(open), "2 formats");
   assert.deepEqual(formatChoices(open?.formats ?? []).main.map((c) => c.label), [
     "Bookings (Buchungsstapel)",
     "Customers and suppliers (Debitoren/Kreditoren)",
