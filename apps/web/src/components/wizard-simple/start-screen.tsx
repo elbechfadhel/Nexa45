@@ -186,14 +186,19 @@ function Choices({
   target: string;
   onTarget: (value: string) => void;
   framed?: boolean;
-  /** Choix seuls à l'écran : la question est déjà l'intitulé de la carte (pas de second titre). */
+  /** Choix seuls à l'écran : la question est déjà l'intitulé de la carte (ni second titre, ni aide : aucun choix
+   *  n'y est présélectionné). */
   label?: string;
 }) {
   const { main, others } = formatChoices(tile.formats);
   return (
     <div className={cn("space-y-2", framed && "rounded-lg border border-border p-3")}>
-      {label === undefined && <h4 className="font-medium">{choiceHeading(tile)}</h4>}
-      <p className="meta text-muted-foreground">{tile.choose === "version" ? L.versionHelp : L.formatHelp}</p>
+      {label === undefined && (
+        <div>
+          <h4 className="font-medium">{choiceHeading(tile)}</h4>
+          <p className="meta text-muted-foreground">{tile.choose === "version" ? L.versionHelp : L.formatHelp}</p>
+        </div>
+      )}
       <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={label ?? choiceHeading(tile)}>
         {main.map((f) => (
           <FormatButton key={f.value} label={f.label} selected={f.value === target} onClick={() => onTarget(f.value)} />

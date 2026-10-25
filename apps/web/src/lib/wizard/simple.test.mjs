@@ -509,6 +509,10 @@ test("an entry point reuses the Simple screens: only its title, introduction and
   // écran 1 : le système seul n'a ni groupe ni tuile, ses choix sont rendus directement
   const screen = readFileSync(join(here, "..", "..", "components", "wizard-simple", "start-screen.tsx"), "utf8");
   assert.match(screen, /\{sole \? \([^]*?<Choices tile=\{sole\}/);
+  // choix seuls : ni second titre ni « The most recent version is preselected » (rien n'est présélectionné)
+  assert.match(screen, /<Choices tile=\{sole\} [^>]*label=\{heading\}/);
+  assert.match(screen, /\{label === undefined && \([^)]*?<h4[^]*?L\.formatHelp[^]*?<\/div>\s*\)\}/);
+  assert.equal(SIMPLE_LABELS.formatHelp, "The most recent version is preselected."); // Wizard général inchangé
   // la page du parcours ne fait que passer sa configuration aux composants du mode Simple : aucune copie
   const app = join(here, "..", "..", "app", "portal");
   const page = readFileSync(join(app, "prepare-datev", "page.tsx"), "utf8");
