@@ -89,14 +89,16 @@ export function targetTiles(items) {
   return tiles;
 }
 
-/** Tuile de système ouverte : celle choisie, ou celle dont un format est la cible actuelle ; sinon undefined.
+/** Tuile de système ouverte : celle choisie, ou celle dont un format est la cible actuelle ; une tuile de
+ * système SEULE à l'écran (point d'entrée d'un seul système) est ouverte d'office ; sinon undefined.
  * @param {TargetTile[]} tiles @param {string} openSystem @param {string} target
  * @returns {SystemTile | undefined} */
 export function openTile(tiles, openSystem, target) {
   for (const t of tiles) {
     if (t.kind === "system" && (t.system === openSystem || t.formats.some((f) => f.value === target))) return t;
   }
-  return undefined;
+  const only = tiles.length === 1 ? tiles[0] : undefined;
+  return only?.kind === "system" ? only : undefined;
 }
 
 /** Choix simples d'un système à plusieurs formats : un par format (sa version la plus récente, nommée par ce

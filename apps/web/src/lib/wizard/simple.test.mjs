@@ -467,6 +467,33 @@ test("an entry point reuses the Simple screens: only its title, introduction and
     assert.match(entry.intro, /Nothing is written to your systems\./);
   }
   assert.equal(WIZARD_ENTRIES.datev.title, "Prepare data for DATEV");
+  // parcours DATEV : les formats DATEV du Registry seulement, une tuile ouverte d'office sur ses deux choix
+  /** @type {any[]} */
+  const all = [
+    { value: "instance:1", label: "Odoo 17", group: "instance", detail: "accounting17", connected: true },
+    { value: "registry:datev:buchungsstapel:12", label: "DATEV Buchungsstapel 12", group: "registry", system: "datev", system_name: "DATEV", format: "Buchungsstapel 12", product_name: "Buchungsstapel", version: "12" },
+    { value: "registry:datev:buchungsstapel:13", label: "DATEV Buchungsstapel 13", group: "registry", system: "datev", system_name: "DATEV", format: "Buchungsstapel 13", product_name: "Buchungsstapel", version: "13", latest: true, receives: ["Invoices"] },
+    { value: "registry:datev:debitoren-kreditoren:5", label: "DATEV Debitoren/Kreditoren 5", group: "registry", system: "datev", system_name: "DATEV", format: "Debitoren/Kreditoren 5", product_name: "Debitoren/Kreditoren", version: "5", latest: true, receives: ["Customers & suppliers"] },
+    { value: "registry:lexware:public-api:v1", label: "Lexware Office", group: "registry", system: "lexware", system_name: "Lexware Office" },
+    { value: "registry:odoo:odoo:17", label: "Odoo 17", group: "registry", system: "odoo", system_name: "Odoo" },
+    { value: "known:sevdesk", label: "sevdesk", group: "known" },
+  ];
+  const datev = entryTargets(all, WIZARD_ENTRIES.datev);
+  assert.deepEqual(datev.map((t) => t.value), all.slice(1, 4).map((t) => t.value));
+  assert.deepEqual(targetGroups(datev).map((g) => g.group), ["registry"]); // ni « proposés par l'IA », ni vos systèmes
+  const tiles = targetTiles(datev);
+  const open = openTile(tiles, "", "");
+  assert.equal(open?.system, "datev");
+  assert.deepEqual(formatChoices(open?.formats ?? []).main.map((c) => c.label), [
+    "Bookings (Buchungsstapel)",
+    "Customers and suppliers (Debitoren/Kreditoren)",
+  ]);
+  assert.equal(defaultTarget(datev), ""); // l'utilisateur choisit ce que DATEV reçoit
+  // Wizard général inchangé : tous les groupes et tous les systèmes ; aucune tuile ouverte d'office
+  const general = entryTargets(all, WIZARD_ENTRIES.general);
+  assert.deepEqual(general, all);
+  assert.deepEqual(targetGroups(general).map((g) => g.group), ["instance", "registry", "known"]);
+  assert.equal(openTile(targetGroups(general).flatMap((g) => targetTiles(g.items)), "", ""), undefined);
   // la page du parcours ne fait que passer sa configuration aux composants du mode Simple : aucune copie
   const app = join(here, "..", "..", "app", "portal");
   const page = readFileSync(join(app, "prepare-datev", "page.tsx"), "utf8");

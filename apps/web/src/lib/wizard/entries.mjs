@@ -23,11 +23,14 @@ import { SIMPLE_LABELS as L } from "./simple-labels.mjs";
 export const WIZARD_ENTRIES = {
   // Wizard général : tous les systèmes
   general: { title: L.title, intro: L.intro },
-  // parcours des cabinets (Steuerberater)
+  // parcours des cabinets (Steuerberater) : les seuls formats DATEV du Registry (Bookings, Customers and
+  // suppliers) ; ni vos systèmes connectés, ni les systèmes dont la structure serait proposée par l'IA
   datev: {
     title: "Prepare data for DATEV",
     intro:
       "Add your customer list or your invoices, choose what DATEV should receive, and download the file prepared for DATEV. Nothing is written to your systems.",
+    systems: ["datev"],
+    groups: ["registry"],
   },
 };
 

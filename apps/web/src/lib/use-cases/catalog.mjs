@@ -275,6 +275,7 @@ export const USE_CASES = [
       "Enter the advisor and client numbers when asked, then download the DATEV file",
     ],
     expected: [
+      "Only the DATEV formats are offered: no AI-proposed system and no Expert mode on this page",
       "The same screens as the AI Migration Wizard: only the title, the introduction and the targets differ",
       "Nothing is written to your systems and nothing is sent to DATEV",
     ],
