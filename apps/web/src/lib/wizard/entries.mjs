@@ -15,10 +15,11 @@ import { SIMPLE_LABELS as L } from "./simple-labels.mjs";
  *   targetHeading?: string,
  *   systems?: string[],
  *   groups?: TargetChoice["group"][],
+ *   detect?: boolean,
  * }} WizardEntry
  * `targetHeading` : intitulé du choix de la cible (absent : celui du Wizard, « 2. Where should your data go? ») ;
  * `systems` : codes des systèmes du Registry affichés (tous si absent) ; `groups` : groupes de cibles affichés
- * (tous si absent).
+ * (tous si absent) ; `detect` : dès le dépôt du fichier, le format est choisi d'après le type reconnu.
  */
 
 /** @type {{ general: WizardEntry, datev: WizardEntry }} */
@@ -34,6 +35,7 @@ export const WIZARD_ENTRIES = {
     targetHeading: "2. What do you want to prepare?",
     systems: ["datev"],
     groups: ["registry"],
+    detect: true,
   },
 };
 

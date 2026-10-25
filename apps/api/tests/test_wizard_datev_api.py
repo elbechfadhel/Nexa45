@@ -396,3 +396,24 @@ def test_a_file_of_another_kind_is_never_forced_into_the_only_kind_a_target_take
     target = _target(c, "Debitoren/Kreditoren 5")
     res = c.post("/api/wizard/quick-start", files=files, data={"payload": json.dumps({"target": target})})
     assert res.status_code == 422 and "looks like a list of invoices" in res.json()["detail"]["message"]
+
+
+def test_the_format_is_chosen_from_the_file_as_soon_as_it_is_dropped(world):
+    """Prepare data for DATEV : dès le dépôt, la liste de clients choisit Customers and suppliers et les
+    factures choisissent Bookings, par les règles (aucun LLM) ; un fichier dont le type ne mène à aucun des
+    deux formats ne présélectionne rien."""
+    c = world["client"]
+    bookings, partners = _target(c, "Buchungsstapel 13"), _target(c, "Debitoren/Kreditoren 5")
+    payload = {"payload": json.dumps({"targets": [bookings, partners]})}
+
+    def detect(name: str, content: str) -> dict[str, Any]:
+        files = {"file": (name, content.encode("cp1252"), "text/csv")}
+        res = c.post("/api/wizard/detect-target", files=files, data=payload)
+        assert res.status_code == 200, res.text
+        return res.json()
+
+    assert detect("Kundenliste.csv", CUSTOMERS)["target"] == partners
+    assert detect("Rechnungen.csv", INVOICES) == {"target": bookings, "data_type": "Invoices"}
+    articles = "Art.-Nr.;Artikelbezeichnung;EAN;VK netto;Warengruppe\nA-1;Tisch;4006381333931;99,00;Möbel\n"
+    assert detect("Artikel.csv", articles) == {"target": None, "data_type": "Products"}
+    assert detect("Notizen.csv", "Spalte A;Spalte B\nx;y\n") == {"target": None, "data_type": None}

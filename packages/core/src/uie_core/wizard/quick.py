@@ -124,6 +124,18 @@ def data_type_mismatch(headers: list[str], options: list[str], target: str) -> s
     )
 
 
+def target_for_data_type(looks: str | None, receives: dict[str, list[str]]) -> str | None:
+    """Cible choisie d'après le type de données du fichier, parmi les cibles proposées (valeur → types
+    reçus) : la SEULE qui reçoit ce type (les types de partenaires entre eux comptent comme un même type) ;
+    None si le type n'est pas sûr, ou si aucune ou plusieurs cibles le reçoivent (rien de présélectionné)."""
+    if looks is None:
+        return None
+    partners = {k for k, d in DATA_TYPES.items() if d == DomainKey.PARTNER}
+    family = partners if looks in partners else {looks}
+    found = [value for value, types in receives.items() if family & set(types)]
+    return found[0] if len(found) == 1 else None
+
+
 def data_type_options(domains: list[DomainKey]) -> list[str]:
     """Types de données qu'une cible sait recevoir (domain packs du système) ; tous si aucun pack."""
     return [label for label, d in DATA_TYPES.items() if not domains or d in domains]

@@ -32,6 +32,8 @@ from uie_api.supplier_wizard import (
     QuickTargetChoiceOut,
     TargetProposalOut,
     WizardAnswersIn,
+    WizardDetectIn,
+    WizardDetectOut,
     WizardEarlyIn,
     WizardExcelIn,
     WizardFileIn,
@@ -105,6 +107,24 @@ def _read(file: UploadFile) -> tuple[bytes, str]:
 )
 def quick_targets(svc: TenantMigrationWizard) -> list[QuickTargetChoiceOut]:
     return [QuickTargetChoiceOut.model_validate(t.model_dump()) for t in svc.quick_targets()]
+
+
+@router.post(
+    "/detect-target",
+    summary="Format choisi dès le dépôt du fichier : la seule cible proposée qui reçoit le type reconnu "
+    "(règles, sans LLM) ; rien sinon",
+)
+def detect_target(svc: TenantMigrationWizard, file: Upload, payload: Payload) -> WizardDetectOut:
+    try:
+        body = WizardDetectIn.model_validate_json(payload)
+    except ValidationError:
+        raise HTTPException(422, "Invalid wizard data") from None
+    data, name = _read(file)
+    try:
+        target, data_type = svc.detect_target(data, name, body.targets)
+    except ImportFileError as exc:
+        raise HTTPException(400, str(exc)) from None
+    return WizardDetectOut(target=target, data_type=data_type)
 
 
 @router.post(

@@ -108,6 +108,21 @@ export function openTile(tiles, openSystem, target) {
   return soleSystem(tiles);
 }
 
+/** Cibles entre lesquelles le serveur choisit d'après le fichier : les choix visibles du système seul.
+ * @param {SystemTile} tile */
+export function detectCandidates(tile) {
+  return formatChoices(tile.formats).main.map((c) => c.value);
+}
+
+/** Cible après la détection du fichier déposé : celle trouvée (choisie d'après le fichier) ; sinon, un choix
+ * fait d'après le fichier PRÉCÉDENT est retiré (rien n'est présélectionné), un choix de l'utilisateur est gardé.
+ * @param {string} current @param {boolean} auto @param {{ target?: string | null }} result
+ * @returns {{ target: string, auto: boolean }} */
+export function afterDetect(current, auto, result) {
+  if (result.target) return { target: result.target, auto: true };
+  return { target: auto ? "" : current, auto: false };
+}
+
 /** Tuile de système SEULE à l'écran (point d'entrée d'un seul système) : ses choix s'affichent directement,
  * sans groupe ni tuile ; undefined dès qu'il y a une autre tuile (Wizard général).
  * @param {TargetTile[]} tiles

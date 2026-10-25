@@ -23,6 +23,7 @@ from uie_core.wizard.cdm_partners import (
     partners_from_rows,
 )
 from uie_core.wizard.formats import matched_keys
+from uie_core.wizard.quick import target_for_data_type
 
 PARTNERS = FileTableRegistry.get(DomainKey.PARTNER)
 INVOICES = FileTableRegistry.get(DomainKey.ACCOUNTING)
@@ -280,3 +281,15 @@ def test_the_customer_export_keeps_the_state_of_each_vat_id():
         "file:1002": ("invalid", "FR"),
         "file:1003": ("missing", "AT"),
     }
+
+
+def test_the_target_follows_the_kind_of_file_only_when_exactly_one_takes_it():
+    receives = {"journal": ["Invoices"], "people": ["Customers & suppliers", "Customers", "Suppliers"]}
+    assert target_for_data_type("Invoices", receives) == "journal"
+    # les types de partenaires entre eux : une liste de clients va au fichier des partenaires
+    assert target_for_data_type("Customers", receives) == "people"
+    assert target_for_data_type("Customers & suppliers", receives) == "people"
+    # type pas sûr, aucune cible ou plusieurs : rien n'est présélectionné
+    assert target_for_data_type(None, receives) is None
+    assert target_for_data_type("Products", receives) is None
+    assert target_for_data_type("Invoices", receives | {"ledger": ["Invoices"]}) is None

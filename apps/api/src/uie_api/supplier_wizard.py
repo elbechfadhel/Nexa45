@@ -479,6 +479,20 @@ class MissingInfoOut(_Out):
     row_count: int
 
 
+class WizardDetectIn(_Out):
+    """Cibles du Registry entre lesquelles choisir d'après le fichier (valeurs de /targets)."""
+
+    targets: list[str] = Field(max_length=20)
+
+
+class WizardDetectOut(_Out):
+    """Cible choisie d'après le type de données du fichier (règles seulement) ; None : rien n'est
+    présélectionné."""
+
+    target: str | None = None
+    data_type: str | None = None
+
+
 class WizardQuickIn(_Out):
     """Démarrage par le fichier : cible (« instance:<id> », « registry:<système>[:<produit>:<version>] »,
     « known:<système> ») ; le fichier est la pièce jointe."""

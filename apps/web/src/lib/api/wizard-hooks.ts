@@ -209,6 +209,25 @@ export function useWizardQuickStart() {
   });
 }
 
+/** Format choisi dès le dépôt du fichier, parmi `targets` (valeurs de /targets) : la seule cible qui reçoit le
+ * type reconnu par les règles du serveur (aucun LLM) ; `target` null : rien à présélectionner. */
+export function useWizardDetect() {
+  return useMutation({
+    mutationFn: async ({ file, targets }: { file: File; targets: string[] }) => {
+      const data = new FormData();
+      data.append("file", file);
+      data.append("payload", JSON.stringify({ targets }));
+      const res = await fetch(`${API_URL}/api/wizard/detect-target`, {
+        method: "POST",
+        credentials: "include",
+        body: data,
+      });
+      if (!res.ok) throw await failure(res, "The file could not be read");
+      return (await res.json()) as Schemas["WizardDetectOut"];
+    },
+  });
+}
+
 /** Questions PRÉVISIBLES avant le fichier (valeurs admises, unités, catégories…) ; avec `fills` : réponses validées
  * par le serveur (422 si une valeur sort des contraintes du Registry). */
 export function useWizardEarly() {

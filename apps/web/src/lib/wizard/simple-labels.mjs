@@ -89,6 +89,8 @@ export const SIMPLE_LABELS = {
     registry: "Fields, types and allowed values come from the official structure.",
     known: "We know the system, not its fields: the structure is an AI proposal to check.",
   },
+  detecting: "Reading the columns of your file…",
+  autoChosen: "Chosen from the columns of your file. You can change it.",
   start: "Analyze my file",
   startHint: "Choose a file and a target system to continue.",
 

@@ -2296,6 +2296,27 @@
         "title": "BindingView",
         "type": "object"
       },
+      "Body_detect_target_api_wizard_detect_target_post": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "description": "Your data file (.xlsx or .csv)",
+            "title": "File",
+            "type": "string"
+          },
+          "payload": {
+            "description": "JSON : answers, proposal, decisions, fills, previous",
+            "title": "Payload",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file",
+          "payload"
+        ],
+        "title": "Body_detect_target_api_wizard_detect_target_post",
+        "type": "object"
+      },
       "Body_file_mapping_api_wizard_file_mapping_post": {
         "properties": {
           "file": {
@@ -13612,6 +13633,36 @@
         "title": "WizardChoiceOut",
         "type": "object"
       },
+      "WizardDetectOut": {
+        "additionalProperties": false,
+        "description": "Cible choisie d'après le type de données du fichier (règles seulement) ; None : rien n'est\nprésélectionné.",
+        "properties": {
+          "data_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Type"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target"
+          }
+        },
+        "title": "WizardDetectOut",
+        "type": "object"
+      },
       "WizardEarlyIn": {
         "additionalProperties": false,
         "description": "Questions prévisibles avant le fichier : structure + réponses déjà données (validées).",
@@ -22738,6 +22789,47 @@
         "summary": "Test the connection to your system",
         "tags": [
           "supplier"
+        ]
+      }
+    },
+    "/api/wizard/detect-target": {
+      "post": {
+        "operationId": "detect_target_api_wizard_detect_target_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_detect_target_api_wizard_detect_target_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WizardDetectOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Format choisi dès le dépôt du fichier : la seule cible proposée qui reçoit le type reconnu (règles, sans LLM) ; rien sinon",
+        "tags": [
+          "supplier-wizard"
         ]
       }
     },

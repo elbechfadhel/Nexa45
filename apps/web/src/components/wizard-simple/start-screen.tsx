@@ -8,11 +8,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useWizardTargets } from "@/lib/api/wizard-hooks";
+import { useWizardDetect, useWizardTargets } from "@/lib/api/wizard-hooks";
 import { cn } from "@/lib/utils";
 import { entryTargets, type WizardEntry } from "@/lib/wizard/entries.mjs";
 import {
+  afterDetect,
   defaultTarget,
+  detectCandidates,
   formatChoices,
   openTile,
   soleSystem,
@@ -54,6 +56,30 @@ export function StartScreen({
   const open = openTile(tiles, openSystem, target);
   const sole = soleSystem(tiles);
   const heading = entry.targetHeading ?? L.targetHeading;
+  // point d'entrée d'un système : le format est choisi dès le dépôt du fichier (règles du serveur, sans LLM)
+  const detect = useWizardDetect();
+  const [auto, setAuto] = useState(false);
+  const picked = useRef<File | null>(null);
+  function pick(f: File) {
+    onFile(f);
+    picked.current = f;
+    if (!entry.detect || !sole) return;
+    detect.mutate(
+      { file: f, targets: detectCandidates(sole) },
+      {
+        onSuccess: (result) => {
+          if (picked.current !== f) return; // un autre fichier a été déposé entre-temps
+          const next = afterDetect(target, auto, result);
+          setAuto(next.auto);
+          if (next.target !== target) onTarget(next.target);
+        },
+      },
+    );
+  }
+  function choose(value: string) {
+    setAuto(false);
+    onTarget(value);
+  }
 
   // votre système connecté est présélectionné (jamais un système au hasard)
   useEffect(() => {
@@ -68,7 +94,7 @@ export function StartScreen({
       <Card className="bg-transparent shadow-none">
         <CardContent className="space-y-3">
           <h2 className="item-title">{L.fileHeading}</h2>
-          <FileDrop file={file} onPick={onFile} />
+          <FileDrop file={file} onPick={pick} />
         </CardContent>
       </Card>
 
@@ -95,7 +121,15 @@ export function StartScreen({
           {targets.isSuccess && groups.length === 0 && <p className="meta text-muted-foreground">{L.targetNone}</p>}
           {sole ? (
             // un seul système à l'écran (point d'entrée d'un système) : ses choix directement, sans groupe ni tuile
-            <Choices tile={sole} target={target} onTarget={onTarget} label={heading} />
+            <div className="space-y-2">
+              <Choices tile={sole} target={target} onTarget={choose} label={heading} />
+              {detect.isPending && (
+                <p className="meta flex items-center gap-2 text-muted-foreground">
+                  <Loader2 className="size-4 animate-spin" /> {L.detecting}
+                </p>
+              )}
+              {auto && target && !detect.isPending && <p className="meta text-muted-foreground">{L.autoChosen}</p>}
+            </div>
           ) : (
           <div className="space-y-5" role="radiogroup" aria-label={heading}>
             {groups.map((g) => (

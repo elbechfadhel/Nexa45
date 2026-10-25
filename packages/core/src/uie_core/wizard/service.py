@@ -131,6 +131,7 @@ from uie_core.wizard.quick import (
     records_question,
     registry_structure,
     target_default_question,
+    target_for_data_type,
     units_question,
     with_created_count,
     with_default,
@@ -1192,6 +1193,21 @@ class MigrationWizardService:
             for f in sorted((f for f in facts if not f.has_schema), key=lambda f: f.name.casefold())
         ]
         return out
+
+    def detect_target(self, data: bytes, file_name: str, targets: list[str]) -> tuple[str | None, str | None]:
+        """Format choisi dès le dépôt du fichier, parmi les cibles du Registry proposées à l'écran
+        (« registry:<système>:<produit>:<version> ») : (cible, type de données reconnu). Type d'après
+        les en-têtes, par les RÈGLES seulement (aucun appel au LLM) ; cible = la seule qui reçoit ce type.
+        Type pas sûr, ou plusieurs cibles possibles : (None, type ou None), rien n'est présélectionné. Rien
+        n'est stocké."""
+        _, df = read_table(data, file_name)
+        looks = infer_data_type([str(c) for c in df.columns])
+        receives = {}
+        for value in targets:
+            parts = value[len(REGISTRY_PREFIX) :].split(":") if value.startswith(REGISTRY_PREFIX) else []
+            if len(parts) == 3:
+                receives[value] = self._receives(*parts)
+        return target_for_data_type(looks, receives), looks
 
     def _receives(self, system: str, product: str, version: str) -> list[str]:
         """Types de données qu'une cible reçoit : ceux du tableau de source pour un format de fichier, sinon

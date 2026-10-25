@@ -19,6 +19,8 @@ import {
   fieldLabel,
   fillsOf,
   formatChoices,
+  afterDetect,
+  detectCandidates,
   openTile,
   soleSystem,
   systemTileDetail,
@@ -493,6 +495,19 @@ test("an entry point reuses the Simple screens: only its title, introduction and
   assert.equal(open?.system, "datev");
   // un seul système à l'écran : ses choix directement, sans titre de groupe ni tuile
   assert.equal(soleSystem(tiles), open);
+  // dès le dépôt du fichier : le serveur choisit parmi les deux choix visibles (règles, sans LLM)
+  assert.equal(WIZARD_ENTRIES.datev.detect, true);
+  assert.equal(WIZARD_ENTRIES.general.detect, undefined); // Wizard général inchangé
+  assert.deepEqual(open && detectCandidates(open), [
+    "registry:datev:buchungsstapel:13",
+    "registry:datev:debitoren-kreditoren:5",
+  ]);
+  const partners = "registry:datev:debitoren-kreditoren:5";
+  assert.deepEqual(afterDetect("", false, { target: partners }), { target: partners, auto: true });
+  // type pas sûr : un choix fait d'après le fichier précédent est retiré, celui de l'utilisateur est gardé
+  assert.deepEqual(afterDetect(partners, true, { target: null }), { target: "", auto: false });
+  assert.deepEqual(afterDetect(partners, false, { target: null }), { target: partners, auto: false });
+  assert.deepEqual(afterDetect("", false, {}), { target: "", auto: false });
   // deux formats (Buchungsstapel en deux versions, Debitoren/Kreditoren) : « 2 formats », pas « 3 formats »
   assert.equal(open && systemTileDetail(open), "2 formats");
   assert.deepEqual(formatChoices(open?.formats ?? []).main.map((c) => c.label), [

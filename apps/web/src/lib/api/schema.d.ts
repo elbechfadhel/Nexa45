@@ -2254,6 +2254,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/wizard/detect-target": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Format choisi dès le dépôt du fichier : la seule cible proposée qui reçoit le type reconnu (règles, sans LLM) ; rien sinon */
+        post: operations["detect_target_api_wizard_detect_target_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/wizard/early": {
         parameters: {
             query?: never;
@@ -3220,6 +3237,19 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+        };
+        /** Body_detect_target_api_wizard_detect_target_post */
+        Body_detect_target_api_wizard_detect_target_post: {
+            /**
+             * File
+             * @description Your data file (.xlsx or .csv)
+             */
+            file: string;
+            /**
+             * Payload
+             * @description JSON : answers, proposal, decisions, fills, previous
+             */
+            payload: string;
         };
         /** Body_file_mapping_api_wizard_file_mapping_post */
         Body_file_mapping_api_wizard_file_mapping_post: {
@@ -7296,6 +7326,17 @@ export interface components {
             source: "registry" | "known" | "ai" | "user";
             /** Value */
             value: string;
+        };
+        /**
+         * WizardDetectOut
+         * @description Cible choisie d'après le type de données du fichier (règles seulement) ; None : rien n'est
+         *     présélectionné.
+         */
+        WizardDetectOut: {
+            /** Data Type */
+            data_type?: string | null;
+            /** Target */
+            target?: string | null;
         };
         /**
          * WizardEarlyIn
@@ -12452,6 +12493,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ConnectionStatusOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    detect_target_api_wizard_detect_target_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_detect_target_api_wizard_detect_target_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WizardDetectOut"];
                 };
             };
             /** @description Validation Error */
