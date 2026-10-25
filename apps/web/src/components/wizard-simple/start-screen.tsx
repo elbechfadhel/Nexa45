@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useWizardTargets } from "@/lib/api/wizard-hooks";
 import { cn } from "@/lib/utils";
+import { entryTargets, type WizardEntry } from "@/lib/wizard/entries.mjs";
 import {
   defaultTarget,
   formatChoices,
@@ -25,12 +26,14 @@ import { SIMPLE_LABELS as L } from "@/lib/wizard/simple-labels.mjs";
 const SEARCH_FROM = 8;
 
 export function StartScreen({
+  entry,
   file,
   onFile,
   target,
   onTarget,
   onStart,
 }: {
+  entry: WizardEntry;
   file: File | null;
   onFile: (file: File) => void;
   target: string;
@@ -39,7 +42,8 @@ export function StartScreen({
 }) {
   const targets = useWizardTargets();
   const [search, setSearch] = useState("");
-  const all = useMemo(() => targets.data ?? [], [targets.data]);
+  // cibles du point d'entrée seulement (Wizard général : toutes)
+  const all = useMemo(() => entryTargets(targets.data ?? [], entry), [targets.data, entry]);
   const groups = targetGroups(all, search);
   // système à plusieurs formats ouvert : son format se choisit sous les tuiles
   const [openSystem, setOpenSystem] = useState("");

@@ -3,7 +3,9 @@
 /** AI Migration Wizard — mode Simple « fichier d'abord » (défaut) : 1. fichier et cible, 2. progression pendant
  *  l'analyse, 3. synthèse (résultat, décisions appliquées, au plus 3 questions présélectionnées, colonnes à
  *  confirmer, téléchargement). Un appel /quick-start, puis l'aperçu à chaque changement ; le fichier n'est jamais
- *  stocké. Logique pure : `lib/wizard/simple.mjs` ; textes : `lib/wizard/simple-labels.mjs`. */
+ *  stocké. Logique pure : `lib/wizard/simple.mjs` ; textes : `lib/wizard/simple-labels.mjs`. Le point d'entrée
+ *  (`lib/wizard/entries.mjs` : Wizard général, parcours propre à un système…) ne change que le titre,
+ *  l'introduction et les cibles affichées ; le sélecteur Simple / Expert n'existe que si la page le passe. */
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 
 import {
@@ -16,6 +18,7 @@ import {
   useWizardTargets,
 } from "@/lib/api/wizard-hooks";
 import { cn } from "@/lib/utils";
+import { WIZARD_ENTRIES, type WizardEntry } from "@/lib/wizard/entries.mjs";
 import { type Edits, initialEdits, requestOf } from "@/lib/wizard/simple.mjs";
 import { SIMPLE_LABELS as L } from "@/lib/wizard/simple-labels.mjs";
 
@@ -25,7 +28,13 @@ import { StartScreen } from "./start-screen";
 
 type Screen = "start" | "working" | "result";
 
-export function SimpleWizard({ toggle }: { toggle: ReactNode }) {
+export function SimpleWizard({
+  entry = WIZARD_ENTRIES.general,
+  toggle,
+}: {
+  entry?: WizardEntry;
+  toggle?: ReactNode;
+}) {
   const [screen, setScreen] = useState<Screen>("start");
   const [file, setFile] = useState<File | null>(null);
   const [target, setTarget] = useState("");
@@ -120,8 +129,8 @@ export function SimpleWizard({ toggle }: { toggle: ReactNode }) {
     <div className="page-stack">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-1.5">
-          <h1 className="hero-badge">{L.title}</h1>
-          <p className="page-description text-muted-foreground">{L.intro}</p>
+          <h1 className="hero-badge">{entry.title}</h1>
+          <p className="page-description text-muted-foreground">{entry.intro}</p>
         </div>
         {toggle}
       </div>
@@ -149,7 +158,14 @@ export function SimpleWizard({ toggle }: { toggle: ReactNode }) {
       </ol>
 
       {screen === "start" && (
-        <StartScreen file={file} onFile={setFile} target={target} onTarget={setTarget} onStart={() => analyze()} />
+        <StartScreen
+          entry={entry}
+          file={file}
+          onFile={setFile}
+          target={target}
+          onTarget={setTarget}
+          onStart={() => analyze()}
+        />
       )}
       {screen === "working" && (
         <ProgressScreen

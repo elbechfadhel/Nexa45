@@ -33,6 +33,7 @@ import {
   targetTitle,
   unanswered,
 } from "./simple.mjs";
+import { entryTargets, WIZARD_ENTRIES } from "./entries.mjs";
 import { SIMPLE_LABELS } from "./simple-labels.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -456,4 +457,23 @@ test("rows not written for other reasons are listed one by one with their reason
   assert.equal(SIMPLE_LABELS.questionsHelp(2, 0), "2 decisions to answer.");
   assert.equal(SIMPLE_LABELS.questionsHelp(3, 1), "3 decisions, 1 already preselected.");
   assert.equal(SIMPLE_LABELS.questionsHelp(2), "2 decisions, each already preselected.");
+});
+
+test("an entry point reuses the Simple screens: only its title, introduction and targets change", () => {
+  // Wizard général : toutes les cibles, dans l'ordre de l'API
+  assert.deepEqual(entryTargets(TARGETS, WIZARD_ENTRIES.general), TARGETS);
+  assert.equal(WIZARD_ENTRIES.general.title, SIMPLE_LABELS.title);
+  for (const entry of Object.values(WIZARD_ENTRIES)) {
+    assert.match(entry.intro, /Nothing is written to your systems\./);
+  }
+  assert.equal(WIZARD_ENTRIES.datev.title, "Prepare data for DATEV");
+  // la page du parcours ne fait que passer sa configuration aux composants du mode Simple : aucune copie
+  const app = join(here, "..", "..", "app", "portal");
+  const page = readFileSync(join(app, "prepare-datev", "page.tsx"), "utf8");
+  assert.match(page, /<SimpleWizard entry=\{WIZARD_ENTRIES\.datev\} \/>/);
+  assert.doesNotMatch(page, /StartScreen|ResultScreen|useWizard|toggle=|ModeToggle/);
+  // le Wizard général garde le sélecteur Simple / Expert
+  assert.match(readFileSync(join(app, "wizard", "page.tsx"), "utf8"), /<SimpleWizard toggle=/);
+  const header = readFileSync(join(here, "..", "..", "components", "app-header.tsx"), "utf8");
+  assert.match(header, /href: "\/portal\/prepare-datev", label: "Prepare data for DATEV"/);
 });

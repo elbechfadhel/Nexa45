@@ -36,6 +36,7 @@ const ADMIN_NAV: NavItem[] = [
 
 const PORTAL_NAV: NavItem[] = [
   { href: "/portal/wizard", label: "Smart export", match: ["/portal/wizard"] },
+  { href: "/portal/prepare-datev", label: "Prepare data for DATEV", match: ["/portal/prepare-datev"] },
   {
     href: "/portal",
     label: "Overview",
