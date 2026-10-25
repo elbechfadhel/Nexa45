@@ -105,6 +105,14 @@ export function openTile(tiles, openSystem, target) {
   for (const t of tiles) {
     if (t.kind === "system" && (t.system === openSystem || t.formats.some((f) => f.value === target))) return t;
   }
+  return soleSystem(tiles);
+}
+
+/** Tuile de système SEULE à l'écran (point d'entrée d'un seul système) : ses choix s'affichent directement,
+ * sans groupe ni tuile ; undefined dès qu'il y a une autre tuile (Wizard général).
+ * @param {TargetTile[]} tiles
+ * @returns {SystemTile | undefined} */
+export function soleSystem(tiles) {
   const only = tiles.length === 1 ? tiles[0] : undefined;
   return only?.kind === "system" ? only : undefined;
 }

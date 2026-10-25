@@ -20,6 +20,7 @@ import {
   fillsOf,
   formatChoices,
   openTile,
+  soleSystem,
   systemTileDetail,
   ignoredColumns,
   importSteps,
@@ -486,6 +487,8 @@ test("an entry point reuses the Simple screens: only its title, introduction and
   const tiles = targetTiles(datev);
   const open = openTile(tiles, "", "");
   assert.equal(open?.system, "datev");
+  // un seul système à l'écran : ses choix directement, sans titre de groupe ni tuile
+  assert.equal(soleSystem(tiles), open);
   // deux formats (Buchungsstapel en deux versions, Debitoren/Kreditoren) : « 2 formats », pas « 3 formats »
   assert.equal(open && systemTileDetail(open), "2 formats");
   assert.deepEqual(formatChoices(open?.formats ?? []).main.map((c) => c.label), [
@@ -498,6 +501,10 @@ test("an entry point reuses the Simple screens: only its title, introduction and
   assert.deepEqual(general, all);
   assert.deepEqual(targetGroups(general).map((g) => g.group), ["instance", "registry", "known"]);
   assert.equal(openTile(targetGroups(general).flatMap((g) => targetTiles(g.items)), "", ""), undefined);
+  assert.equal(soleSystem(targetGroups(general).flatMap((g) => targetTiles(g.items))), undefined);
+  // écran 1 : le système seul n'a ni groupe ni tuile, ses choix sont rendus directement
+  const screen = readFileSync(join(here, "..", "..", "components", "wizard-simple", "start-screen.tsx"), "utf8");
+  assert.match(screen, /\{sole \? \([^]*?<Choices tile=\{sole\}/);
   // la page du parcours ne fait que passer sa configuration aux composants du mode Simple : aucune copie
   const app = join(here, "..", "..", "app", "portal");
   const page = readFileSync(join(app, "prepare-datev", "page.tsx"), "utf8");

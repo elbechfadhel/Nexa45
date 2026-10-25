@@ -15,6 +15,8 @@ import {
   defaultTarget,
   formatChoices,
   openTile,
+  soleSystem,
+  type SystemTile,
   systemTileDetail,
   targetGroups,
   targetSubtitle,
@@ -48,11 +50,9 @@ export function StartScreen({
   const groups = targetGroups(all, search);
   // système à plusieurs formats ouvert : son format se choisit sous les tuiles
   const [openSystem, setOpenSystem] = useState("");
-  const open = openTile(
-    groups.flatMap((g) => targetTiles(g.items)),
-    openSystem,
-    target,
-  );
+  const tiles = groups.flatMap((g) => targetTiles(g.items));
+  const open = openTile(tiles, openSystem, target);
+  const sole = soleSystem(tiles);
 
   // votre système connecté est présélectionné (jamais un système au hasard)
   useEffect(() => {
@@ -92,6 +92,10 @@ export function StartScreen({
             </p>
           )}
           {targets.isSuccess && groups.length === 0 && <p className="meta text-muted-foreground">{L.targetNone}</p>}
+          {sole ? (
+            // un seul système à l'écran (point d'entrée d'un système) : ses choix directement, sans groupe ni tuile
+            <Choices tile={sole} target={target} onTarget={onTarget} />
+          ) : (
           <div className="space-y-5" role="radiogroup" aria-label={L.targetHeading}>
             {groups.map((g) => (
               <section key={g.group} className="space-y-2">
@@ -150,38 +154,12 @@ export function StartScreen({
                   })}
                 </div>
                 {open && g.items.some((t) => open.formats.includes(t)) && (
-                  <div className="space-y-2 rounded-lg border border-border p-3">
-                    <div>
-                      <h4 className="font-medium">{choiceHeading(open)}</h4>
-                      <p className="meta text-muted-foreground">
-                        {open.choose === "version" ? L.versionHelp : L.formatHelp}
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={choiceHeading(open)}>
-                      {formatChoices(open.formats).main.map((f) => (
-                        <FormatButton key={f.value} label={f.label} selected={f.value === target} onClick={() => onTarget(f.value)} />
-                      ))}
-                    </div>
-                    {formatChoices(open.formats).others.length > 0 && (
-                      <details className="meta" open={formatChoices(open.formats).others.some((f) => f.value === target)}>
-                        <summary className="cursor-pointer text-muted-foreground">{L.otherVersions}</summary>
-                        <div className="mt-2 flex flex-wrap gap-2" role="radiogroup" aria-label={L.otherVersions}>
-                          {formatChoices(open.formats).others.map((f) => (
-                            <FormatButton
-                              key={f.value}
-                              label={f.label}
-                              selected={f.value === target}
-                              onClick={() => onTarget(f.value)}
-                            />
-                          ))}
-                        </div>
-                      </details>
-                    )}
-                  </div>
+                  <Choices tile={open} target={target} onTarget={onTarget} framed />
                 )}
               </section>
             ))}
           </div>
+          )}
         </CardContent>
       </Card>
 
@@ -191,6 +169,44 @@ export function StartScreen({
           {L.start}
         </Button>
       </div>
+    </div>
+  );
+}
+
+/** Formats ou versions d'un système : sous sa tuile (`framed`), ou seuls quand le système est le seul à l'écran. */
+function Choices({
+  tile,
+  target,
+  onTarget,
+  framed = false,
+}: {
+  tile: SystemTile;
+  target: string;
+  onTarget: (value: string) => void;
+  framed?: boolean;
+}) {
+  const { main, others } = formatChoices(tile.formats);
+  return (
+    <div className={cn("space-y-2", framed && "rounded-lg border border-border p-3")}>
+      <div>
+        <h4 className="font-medium">{choiceHeading(tile)}</h4>
+        <p className="meta text-muted-foreground">{tile.choose === "version" ? L.versionHelp : L.formatHelp}</p>
+      </div>
+      <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={choiceHeading(tile)}>
+        {main.map((f) => (
+          <FormatButton key={f.value} label={f.label} selected={f.value === target} onClick={() => onTarget(f.value)} />
+        ))}
+      </div>
+      {others.length > 0 && (
+        <details className="meta" open={others.some((f) => f.value === target)}>
+          <summary className="cursor-pointer text-muted-foreground">{L.otherVersions}</summary>
+          <div className="mt-2 flex flex-wrap gap-2" role="radiogroup" aria-label={L.otherVersions}>
+            {others.map((f) => (
+              <FormatButton key={f.value} label={f.label} selected={f.value === target} onClick={() => onTarget(f.value)} />
+            ))}
+          </div>
+        </details>
+      )}
     </div>
   );
 }
