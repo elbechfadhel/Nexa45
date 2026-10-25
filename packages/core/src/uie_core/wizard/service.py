@@ -234,7 +234,7 @@ class MigrationWizardService:
                     product = next(
                         (c.label for c in self._version_choices(parts[0]) if c.value == a.value), ""
                     )
-                    return format_target(parts[0], parts[1], parts[2], f"{name} {product}".strip())
+                    return format_target(parts[0], parts[1], parts[2], _target_label(name, product))
         return None
 
     @property
@@ -253,9 +253,7 @@ class MigrationWizardService:
                 for v in sorted(product.versions, key=lambda x: _version_key(x.version)):
                     if not any(i.snapshots for i in v.interfaces):
                         continue
-                    versions.append(
-                        v.version if product.code == system.code else f"{product.name} {v.version}"
-                    )
+                    versions.append(_version_label(system, product, v))
                     interfaces |= {i.type for i in v.interfaces}
             meta = system.metadata_ or {}
             description = meta.get("description")
@@ -275,6 +273,10 @@ class MigrationWizardService:
         return sorted(out, key=lambda f: (not f.has_schema, f.name.casefold()))
 
     def _version_choices(self, code: str) -> list[WizardChoice]:
+        return [c for c, _ in self._registry_versions(code)]
+
+    def _registry_versions(self, code: str) -> list[tuple[WizardChoice, bool]]:
+        """Versions publiées d'un système du Registry : (choix, est un FORMAT de fichier du système)."""
         for system in self.registry.list_systems():
             if system.code != code:
                 continue
@@ -283,14 +285,12 @@ class MigrationWizardService:
                 for v in sorted(product.versions, key=lambda x: _version_key(x.version)):
                     if not any(i.snapshots for i in v.interfaces):
                         continue
-                    label = v.version if product.code == system.code else f"{product.name} {v.version}"
-                    out.append(
-                        WizardChoice(
-                            value=f"{REGISTRY_PREFIX}{system.code}:{product.code}:{v.version}",
-                            label=label,
-                            source=ChoiceSource.REGISTRY,
-                        )
+                    choice = WizardChoice(
+                        value=f"{REGISTRY_PREFIX}{system.code}:{product.code}:{v.version}",
+                        label=_version_label(system, product, v),
+                        source=ChoiceSource.REGISTRY,
                     )
+                    out.append((choice, _is_format(system, product, v)))
             return out
         return []
 
@@ -311,7 +311,8 @@ class MigrationWizardService:
             WizardChoice(
                 value=f"{REGISTRY_PREFIX if f.has_schema else KNOWN_PREFIX}{f.code}",
                 label=f.name,
-                description=f.description or (", ".join(f.versions[:4]) or None),
+                # une version qui n'est que le nom du système (son API) n'apprend rien : pas en description
+                description=f.description or (", ".join(v for v in f.versions[:4] if v != f.name) or None),
                 group=_CATEGORY.get(f.category or ""),
                 source=ChoiceSource.REGISTRY if f.has_schema else ChoiceSource.KNOWN,
             )
@@ -1155,7 +1156,7 @@ class MigrationWizardService:
             out.append(
                 TargetOption(
                     value=f"{INSTANCE_PREFIX}{inst.id}",
-                    label=f"{names.get(inst.system, inst.system)} {choice.label}",
+                    label=_target_label(names.get(inst.system, inst.system), choice.label),
                     group="instance",
                     detail=inst.name,
                     connected=inst.connected,
@@ -1163,23 +1164,23 @@ class MigrationWizardService:
                 )
             )
         for f in (f for f in facts if f.has_schema):
-            choices = self._version_choices(f.code)
+            versions = self._registry_versions(f.code)
             last = {}  # produit → dernière version (choix triés par version croissante)
-            for c in choices:
+            for c, _ in versions:
                 last[c.value.split(":")[2]] = c.value
-            for c in choices:
+            for c, is_format in versions:
                 _, _, product, version = c.value.split(":")
-                own = product == f.code
                 out.append(
                     TargetOption(
                         value=c.value,
-                        label=f"{f.name} {c.label}",
+                        label=_target_label(f.name, c.label),
                         group="registry",
                         system=f.code,
                         system_name=f.name,
-                        format=None if own else c.label,
+                        # format de fichier seulement : le système lui-même ou son API n'est pas un format
+                        format=c.label if is_format else None,
                         product=product,
-                        product_name=None if own else c.label.removesuffix(f" {version}"),
+                        product_name=c.label.removesuffix(f" {version}") if is_format else None,
                         version=version,
                         latest=last[product] == c.value,
                         receives=self._receives(f.code, product, version),
@@ -1234,7 +1235,7 @@ class MigrationWizardService:
         if choice is None:
             raise WizardInputError("This target version is not in the Registry")
         name = next((f.name for f in self.registry_facts() if f.code == parts[0]), parts[0])
-        return target, parts[0], choice.value, f"{name} {choice.label}"
+        return target, parts[0], choice.value, _target_label(name, choice.label)
 
     def _data_type_ai(self, answers: list[WizardAnswer], df: Any, options: list[str]) -> str:
         """Type de données par le LLM quand les règles ne tranchent pas : seulement parmi `options`, avec une
@@ -1788,3 +1789,29 @@ def _depends(name: str, meta: dict[str, Any]) -> list[str]:
 
 def _version_key(v: str) -> tuple[int, str]:
     return (int(v), v) if v.isdigit() else (0, v)
+
+
+def _is_format(system: Any, product: Any, version: Any) -> bool:
+    """Produit du Registry qui est un FORMAT de fichier du système (autre que le système lui-même,
+    interface de type fichier) : son nom et sa version parlent à l'utilisateur (« Buchungsstapel 13 »)."""
+    return product.code != system.code and any(i.type == "file" for i in version.interfaces)
+
+
+def _version_label(system: Any, product: Any, version: Any) -> str:
+    """Libellé d'une version du Registry : le système lui-même → sa version (« 17 ») ; un format de
+    fichier → son nom et sa version (« Buchungsstapel 13 ») ; l'API du système (autre produit, sans fichier) →
+    ni le nom du produit ni la version de route ne parlent à l'utilisateur : le nom du système, ou la version
+    s'il en a plusieurs."""
+    if product.code == system.code:
+        return version.version
+    if _is_format(system, product, version):
+        return f"{product.name} {version.version}"
+    published = [v for v in product.versions if any(i.snapshots for i in v.interfaces)]
+    return system.name if len(published) <= 1 else version.version
+
+
+def _target_label(system_name: str, version_label: str) -> str:
+    """Libellé d'une cible : le système et sa version, sans répéter le nom quand la version EST le nom."""
+    if not version_label or version_label == system_name:
+        return system_name
+    return f"{system_name} {version_label}"

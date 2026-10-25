@@ -1478,3 +1478,35 @@ def test_targets_name_the_format_when_a_system_has_several(shop):
     assert by_value["registry:ledger:people:5"].format == "People 5"
     own = by_value["registry:shop:shop:18"]
     assert (own.system, own.format) == ("shop", None)
+
+
+def test_the_api_of_a_system_is_named_by_the_system_alone(shop):
+    """Produit du Registry qui n'est pas un format de fichier (l'API d'un système, version de route
+    « v1 ») : ni le nom du produit ni la version n'apparaissent, partout où le Wizard nomme la cible."""
+    session, _, _ = shop
+    RegistryService(session, SystemContext("test")).publish_snapshot(
+        SchemaSnapshotModel(
+            system="books",
+            product="public-api",
+            version="v1",
+            interface="rest",
+            interface_type="api",
+            source={"loader": "test"},
+            metadata={"system_name": "Books Online", "product_name": "Public API"},
+            modules=[],
+            entities=[
+                EntityDef(
+                    technical_name="contacts",
+                    fields=[FieldDef(technical_name="name", data_type=DataType.STRING)],
+                )
+            ],
+        )
+    )
+    svc = MigrationWizardService(session, SystemContext("test"), None)  # type: ignore[arg-type]
+    target = {t.value: t for t in svc.quick_targets()}["registry:books:public-api:v1"]
+    assert (target.label, target.format, target.product_name) == ("Books Online", None, None)
+    assert [c.label for c in svc._version_choices("books")] == ["Books Online"]
+    assert svc._quick_target("registry:books:public-api:v1")[3] == "Books Online"
+    fact = next(f for f in svc.registry_facts() if f.code == "books")
+    question = svc._target_question([fact])
+    assert next(c for c in question.choices if c.value == "registry:books").description is None
