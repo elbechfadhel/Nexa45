@@ -57,9 +57,14 @@ export const SIMPLE_LABELS = {
   connected: "Connected",
   /** @param {number} n */
   formatCount: (n) => count(n, "format"),
+  /** @param {number} n */
+  versionCount: (n) => count(n, "version"),
   /** @param {string} system */
   formatHeading: (system) => `What should ${system} receive?`,
   formatHelp: "The most recent version is preselected.",
+  /** @param {string} system */
+  versionHeading: (system) => `Which version of ${system} do you use?`,
+  versionHelp: "Fields, types and allowed values differ between versions.",
   /** Ce que reçoit un format, d'après les types de données qu'il accepte (le nom du format suit entre parenthèses). */
   formatKinds: {
     Invoices: "Bookings",

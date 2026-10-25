@@ -9,8 +9,10 @@ import { SIMPLE_LABELS as L } from "./simple-labels.mjs";
 
 /** @typedef {{ value: string, label: string, group: "instance" | "registry" | "known", detail?: string | null, connected?: boolean, system?: string | null, system_name?: string | null, format?: string | null, product?: string | null, product_name?: string | null, version?: string | null, latest?: boolean, receives?: string[] }} TargetChoice */
 /**
- * Tuile de l'écran 1 : une cible, ou un système à plusieurs formats (une tuile, le format se choisit ensuite).
- * @typedef {{ kind: "target", key: string, target: TargetChoice } | { kind: "system", key: string, system: string, label: string, formats: TargetChoice[] }} TargetTile
+ * Tuile de l'écran 1 : une cible, ou un système à plusieurs formats ou versions (une tuile ; le format ou la version
+ * se choisit ensuite, `choose`).
+ * @typedef {{ kind: "system", key: string, system: string, label: string, choose: "format" | "version", formats: TargetChoice[] }} SystemTile
+ * @typedef {{ kind: "target", key: string, target: TargetChoice } | SystemTile} TargetTile
  */
 /** @typedef {{ value: string, label: string, description?: string | null, verified?: boolean }} Choice */
 /** @typedef {{ field: string, label: string, kind: string, title: string, help?: string | null, choices: Choice[], free_text: boolean }} Question */
@@ -53,27 +55,35 @@ export function targetGroups(targets, search = "") {
     .filter((g) => g.items.length > 0);
 }
 
-/** Tuiles d'un groupe, dans l'ordre de l'API : les formats d'un même système (cibles du Registry avec un
- * `format`) sont réunis en UNE tuile du système ; le format se choisit après. Aucun système en dur.
+/** Tuiles d'un groupe, dans l'ordre de l'API : les cibles du Registry d'un même système sont réunies en UNE tuile
+ * du système quand il a des formats (`format`) ou plusieurs versions ; le format ou la version se choisit après.
+ * Un système à une seule cible reste une tuile simple. Aucun système en dur.
  * @param {TargetChoice[]} items
  * @returns {TargetTile[]} */
 export function targetTiles(items) {
+  /** @type {Map<string, TargetChoice[]>} */
+  const bySystem = new Map();
+  for (const t of items) {
+    if (t.group === "registry" && t.system) bySystem.set(t.system, [...(bySystem.get(t.system) ?? []), t]);
+  }
   /** @type {TargetTile[]} */
   const tiles = [];
-  /** @type {Map<string, TargetChoice[]>} */
-  const formats = new Map();
+  const done = new Set();
   for (const t of items) {
-    if (t.group === "registry" && t.format && t.system) {
-      const list = formats.get(t.system);
-      if (list) {
-        list.push(t);
-        continue;
-      }
-      const created = [t];
-      formats.set(t.system, created);
-      tiles.push({ kind: "system", key: `system:${t.system}`, system: t.system, label: t.system_name ?? t.system, formats: created });
-    } else {
+    const all = t.group === "registry" && t.system ? (bySystem.get(t.system) ?? []) : [];
+    const formats = all.some((f) => f.format);
+    if (!t.system || !(formats || all.length > 1)) {
       tiles.push({ kind: "target", key: t.value, target: t });
+    } else if (!done.has(t.system)) {
+      done.add(t.system);
+      tiles.push({
+        kind: "system",
+        key: `system:${t.system}`,
+        system: t.system,
+        label: t.system_name ?? t.system,
+        choose: formats ? "format" : "version",
+        formats: all,
+      });
     }
   }
   return tiles;
@@ -81,7 +91,7 @@ export function targetTiles(items) {
 
 /** Tuile de système ouverte : celle choisie, ou celle dont un format est la cible actuelle ; sinon undefined.
  * @param {TargetTile[]} tiles @param {string} openSystem @param {string} target
- * @returns {{ kind: "system", key: string, system: string, label: string, formats: TargetChoice[] } | undefined} */
+ * @returns {SystemTile | undefined} */
 export function openTile(tiles, openSystem, target) {
   for (const t of tiles) {
     if (t.kind === "system" && (t.system === openSystem || t.formats.some((f) => f.value === target))) return t;
@@ -91,6 +101,7 @@ export function openTile(tiles, openSystem, target) {
 
 /** Choix simples d'un système à plusieurs formats : un par format (sa version la plus récente, nommée par ce
  * qu'elle reçoit : « Bookings (Buchungsstapel) ») ; les autres versions restent dans une option avancée.
+ * Système à plusieurs VERSIONS sans format : chaque version est un choix (« Odoo 17 »), aucune n'est cachée.
  * @param {TargetChoice[]} formats
  * @returns {{ main: { value: string, label: string }[], others: { value: string, label: string }[] }} */
 export function formatChoices(formats) {
@@ -98,6 +109,10 @@ export function formatChoices(formats) {
   const main = [];
   const others = [];
   for (const f of formats) {
+    if (!f.format) {
+      main.push({ value: f.value, label: f.label });
+      continue;
+    }
     const product = f.product_name ?? f.format ?? f.label;
     const kind = (f.receives ?? []).map((r) => kinds[r]).find(Boolean);
     if (f.latest) main.push({ value: f.value, label: kind ? L.formatChoice(kind, product) : (f.format ?? f.label) });

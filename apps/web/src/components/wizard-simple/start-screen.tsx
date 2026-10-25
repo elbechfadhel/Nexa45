@@ -112,7 +112,9 @@ export function StartScreen({
                         >
                           <span className="w-full truncate font-medium">{tile.label}</span>
                           <span className="meta w-full truncate text-muted-foreground">
-                            {L.formatCount(tile.formats.length)}
+                            {tile.choose === "version"
+                              ? L.versionCount(tile.formats.length)
+                              : L.formatCount(tile.formats.length)}
                           </span>
                         </button>
                       );
@@ -147,10 +149,12 @@ export function StartScreen({
                 {open && g.items.some((t) => open.formats.includes(t)) && (
                   <div className="space-y-2 rounded-lg border border-border p-3">
                     <div>
-                      <h4 className="font-medium">{L.formatHeading(open.label)}</h4>
-                      <p className="meta text-muted-foreground">{L.formatHelp}</p>
+                      <h4 className="font-medium">{choiceHeading(open)}</h4>
+                      <p className="meta text-muted-foreground">
+                        {open.choose === "version" ? L.versionHelp : L.formatHelp}
+                      </p>
                     </div>
-                    <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={L.formatHeading(open.label)}>
+                    <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={choiceHeading(open)}>
                       {formatChoices(open.formats).main.map((f) => (
                         <FormatButton key={f.value} label={f.label} selected={f.value === target} onClick={() => onTarget(f.value)} />
                       ))}
@@ -186,6 +190,11 @@ export function StartScreen({
       </div>
     </div>
   );
+}
+
+/** Question sous une tuile de système : son format, ou sa version. */
+function choiceHeading(tile: { label: string; choose: "format" | "version" }): string {
+  return tile.choose === "version" ? L.versionHeading(tile.label) : L.formatHeading(tile.label);
 }
 
 function FormatButton({ label, selected, onClick }: { label: string; selected: boolean; onClick: () => void }) {

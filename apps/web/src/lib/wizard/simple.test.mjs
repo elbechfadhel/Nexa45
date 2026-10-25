@@ -19,6 +19,7 @@ import {
   fieldLabel,
   fillsOf,
   formatChoices,
+  openTile,
   ignoredColumns,
   importSteps,
   initialEdits,
@@ -305,7 +306,7 @@ test("English texts use true singulars and plurals and English quotes", () => {
   assert.doesNotMatch(all, /[«»]|\w\(s\)/);
 });
 
-test("the formats of one system are one tile; the format is chosen next", () => {
+test("the formats or versions of one system are one tile; the format or the version is chosen next", () => {
   /** @type {any[]} */
   const targets = [
     { value: "registry:odoo:odoo:17", label: "Odoo 17", group: "registry", system: "odoo", system_name: "Odoo", format: null },
@@ -313,13 +314,34 @@ test("the formats of one system are one tile; the format is chosen next", () => 
     { value: "registry:x:a:12", label: "X A 12", group: "registry", system: "x", system_name: "X", format: "A 12" },
     { value: "registry:x:a:13", label: "X A 13", group: "registry", system: "x", system_name: "X", format: "A 13" },
     { value: "registry:x:b:5", label: "X B 5", group: "registry", system: "x", system_name: "X", format: "B 5" },
+    { value: "registry:y:api:v1", label: "Y", group: "registry", system: "y", system_name: "Y", format: null },
+    { value: "instance:1", label: "Odoo 17", group: "instance", detail: "accounting17" },
   ];
   const tiles = targetTiles(targets);
   assert.deepEqual(
-    tiles.map((t) => (t.kind === "system" ? `${t.label}: ${t.formats.map((f) => f.format).join(", ")}` : t.target.label)),
-    ["Odoo 17", "Odoo 18", "X: A 12, A 13, B 5"],
+    tiles.map((t) =>
+      t.kind === "system" ? `${t.label} (${t.choose}): ${t.formats.map((f) => f.value).join(", ")}` : t.target.label,
+    ),
+    [
+      "Odoo (version): registry:odoo:odoo:17, registry:odoo:odoo:18",
+      "X (format): registry:x:a:12, registry:x:a:13, registry:x:b:5",
+      "Y", // une seule cible : une tuile simple
+      "Odoo 17", // votre système connecté reste sa propre tuile
+    ],
   );
+  // versions : chacune est un choix visible, aucune dans « Other versions »
+  const odoo = /** @type {any} */ (tiles[0]);
+  assert.deepEqual(formatChoices(odoo.formats), {
+    main: [
+      { value: "registry:odoo:odoo:17", label: "Odoo 17" },
+      { value: "registry:odoo:odoo:18", label: "Odoo 18" },
+    ],
+    others: [],
+  });
+  assert.equal(openTile(tiles, "", "registry:odoo:odoo:18")?.system, "odoo");
   assert.equal(SIMPLE_LABELS.formatCount(3), "3 formats");
+  assert.equal(SIMPLE_LABELS.versionCount(3), "3 versions");
+  assert.equal(SIMPLE_LABELS.versionHeading("Odoo"), "Which version of Odoo do you use?");
 });
 
 test("more than half of the rows without their amounts: one visible sentence on top of the summary", () => {
