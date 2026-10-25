@@ -54,8 +54,6 @@ export const SIMPLE_LABELS = {
   targetSearch: "Search system",
   targetNone: "No system matches your search.",
   targetLoading: "Loading the systems…",
-  /** @param {string} label */
-  yourInstance: (label) => `${label} · your system`,
   connected: "Connected",
   /** @param {number} n */
   formatCount: (n) => count(n, "format"),

@@ -10,7 +10,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useWizardTargets } from "@/lib/api/wizard-hooks";
 import { cn } from "@/lib/utils";
-import { defaultTarget, formatChoices, openTile, targetGroups, targetTiles, targetTitle } from "@/lib/wizard/simple.mjs";
+import {
+  defaultTarget,
+  formatChoices,
+  openTile,
+  targetGroups,
+  targetSubtitle,
+  targetTiles,
+  targetTitle,
+} from "@/lib/wizard/simple.mjs";
 import { SIMPLE_LABELS as L } from "@/lib/wizard/simple-labels.mjs";
 
 /** Au-delà, la liste propose une recherche. */
@@ -124,7 +132,9 @@ export function StartScreen({
                         className={tileClass(selected)}
                       >
                         <span className="w-full truncate font-medium">{targetTitle(t)}</span>
-                        {t.detail && <span className="meta w-full truncate text-muted-foreground">{t.detail}</span>}
+                        {targetSubtitle(t) && (
+                          <span className="meta w-full truncate text-muted-foreground">{targetSubtitle(t)}</span>
+                        )}
                         {t.group === "instance" && (
                           <StatusBadge tone={t.connected ? "success" : "neutral"}>
                             {t.connected ? L.connected : L.notConnected}

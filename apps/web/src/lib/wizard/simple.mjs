@@ -106,10 +106,16 @@ export function formatChoices(formats) {
   return { main, others };
 }
 
-/** Libellé d'une cible : une instance est « votre système ».
+/** Titre d'une tuile : le nom de VOTRE système connecté (« accounting17 »), sinon le libellé de la cible.
  * @param {TargetChoice} t */
 export function targetTitle(t) {
-  return t.group === "instance" ? L.yourInstance(t.label) : t.label;
+  return t.group === "instance" && t.detail ? t.detail : t.label;
+}
+
+/** Sous-titre d'une tuile : pour votre système, le système et sa version (« Odoo 17 ») ; sinon le détail.
+ * @param {TargetChoice} t */
+export function targetSubtitle(t) {
+  return t.group === "instance" && t.detail ? t.label : (t.detail ?? "");
 }
 
 /** Cible présélectionnée : votre premier système connecté ; sinon aucune (l'utilisateur choisit).

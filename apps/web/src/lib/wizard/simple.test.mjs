@@ -28,6 +28,7 @@ import {
   takenFields,
   targetGroups,
   targetTiles,
+  targetSubtitle,
   targetTitle,
   unanswered,
 } from "./simple.mjs";
@@ -144,8 +145,11 @@ test("targets: your systems first, then the Registry, then known systems; search
     [["instance:1"]],
   );
   assert.deepEqual(targetGroups(TARGETS, "nothing"), []);
-  assert.equal(targetTitle(TARGETS[0]), "Shop 18 · your system");
+  // votre système connecté : son nom en titre, le système et la version en sous-titre
+  assert.equal(targetTitle(TARGETS[0]), "Main shop");
+  assert.equal(targetSubtitle(TARGETS[0]), "Shop 18");
   assert.equal(targetTitle(TARGETS[1]), "Shop 17");
+  assert.equal(targetSubtitle(TARGETS[1]), "");
   assert.equal(defaultTarget(TARGETS), "instance:1");
   assert.equal(defaultTarget(TARGETS.slice(1)), ""); // aucun système connecté : l'utilisateur choisit
 });
