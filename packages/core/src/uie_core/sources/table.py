@@ -70,6 +70,9 @@ class FileTableSpec(_Model):
     postal_codes: dict[str, str] = {}
     # pays → motif du numéro de TVA intracommunautaire (préfixe compris, sans espaces)
     vat_ids: dict[str, str] = {}
+    # pays membres de l'UE (ISO) : seul un partenaire d'un autre pays membre a une USt-IdNr ; liste explicite,
+    # jamais déduite des motifs
+    eu_members: list[str] = []
     tax_rates: list[TaxRates] = []
     # pays du fichier quand aucun n'est donné (adresse sans pays, taux de TVA) ; None : jamais supposé
     home_country: str | None = None

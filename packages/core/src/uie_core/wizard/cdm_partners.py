@@ -356,8 +356,9 @@ def partners_from_rows(  # noqa: C901, PLR0912, PLR0915
                 status = "valid"
                 if vat != val(i, "vat_id"):
                     vat_pairs.append([val(i, "vat_id"), vat])
-        vat_state[source_ref] = (status, vat[:2] if status == "valid" else countries[i])
-        abroad = countries[i] and countries[i] != table.home_country and countries[i] in table.vat_ids
+        # pays de l'état : celui de l'adresse, sinon le préfixe du numéro valide (« EL » = Grèce : l'adresse)
+        vat_state[source_ref] = (status, countries[i] or (vat[:2] if status == "valid" else None))
+        abroad = countries[i] and countries[i] != table.home_country and countries[i] in table.eu_members
         if status == "missing" and abroad and PartnerRole.SUPPLIER in roles:
             eu_without_vat.append((i, name))
         email = val(i, "email")

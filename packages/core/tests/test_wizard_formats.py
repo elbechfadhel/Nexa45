@@ -560,3 +560,30 @@ def test_an_unknown_kind_of_supply_is_one_question_never_preselected():
     assert goods.documents[0].lines[0].category.source_ref == "vat:sale:eu:services:0"
     skipped = documents_from_rows(INVOICES, rows, {}, "EUR", {SUPPLY_KIND_KEY: "skip"}, partner_vat=vat)
     assert skipped.documents == [] and skipped.skipped[0].reason.endswith("not exported (your choice).")
+
+
+def test_the_eu_members_are_an_explicit_list_with_their_vat_id_patterns():
+    assert len(PARTNERS.eu_members) == 27 and "IE" in PARTNERS.eu_members
+    assert not {"CH", "GB", "NO"} & set(PARTNERS.eu_members)
+    # chaque pays membre (hors pays du dossier) a le motif de son USt-IdNr (Grèce : préfixe EL)
+    prefixes = {"GR": "EL"}
+    assert {prefixes.get(c, c) for c in PARTNERS.eu_members} <= set(PARTNERS.vat_ids)
+    rows = [
+        {
+            "supplier_number": "2022",
+            "name": "CloudDesk Ltd.",
+            "postal_code": "D02 P820",
+            "country": "Irland",
+            "vat_id": "IE1234567T",
+        },
+        {"supplier_number": "2023", "name": "Nordic AB", "country": "Schweden"},  # UE sans USt-IdNr
+    ]
+    t = partners_from_rows(PARTNERS, rows, {}, PartnerRole.SUPPLIER, {})
+    assert t.vat == {"file:2022": ("valid", "IE"), "file:2023": ("missing", "SE")}
+    ie = t.partners[0]
+    assert (ie.addresses[0].country_code, ie.addresses[0].postal_code, ie.tax.vat_id) == (
+        "IE",
+        "D02 P820",
+        "IE1234567T",
+    )
+    assert [i.kind for i in t.issues] == ["vat_missing_eu"]  # le pays d'Irlande est reconnu

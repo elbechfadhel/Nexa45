@@ -10,9 +10,11 @@
 #   legal_forms   forme juridique en fin de nom → personne morale (le type d'adressat se déduit) ;
 #   countries     noms de pays (allemand, anglais, français) et codes → ISO 3166-1 alpha-2 ;
 #   postal_codes  motif du code postal par pays (un code allemand de 4 chiffres a perdu son zéro dans Excel) ;
-#   vat_ids       motif du numéro de TVA intracommunautaire par pays (préfixe compris, sans espaces).
+#   vat_ids       motif du numéro de TVA intracommunautaire par pays (préfixe compris, sans espaces) ;
+#   eu_members    pays membres de l'UE (ISO) : un partenaire d'un autre pays membre peut avoir une USt-IdNr,
+#                 un pays hors de cette liste n'en a jamais (jamais déduit de la présence d'un motif).
 
-table_version: "1.0.0"
+table_version: "1.1.0"   # 1.1.0 : pays de l'UE explicites, 27 motifs d'USt-IdNr
 domain: PARTNER
 data_types: ["Customers & suppliers", "Customers", "Suppliers"]
 home_country: DE
@@ -154,6 +156,82 @@ countries:
   Großbritannien: GB
   GB: GB
   UK: GB
+  Royaume-Uni: GB
+  Dänemark: DK
+  Danemark: DK
+  Tchéquie: CZ
+  Irland: IE
+  Ireland: IE
+  Irlande: IE
+  IE: IE
+  Schweden: SE
+  Sweden: SE
+  Suède: SE
+  SE: SE
+  Finnland: FI
+  Finland: FI
+  Finlande: FI
+  FI: FI
+  Portugal: PT
+  PT: PT
+  Griechenland: GR
+  Greece: GR
+  Grèce: GR
+  GR: GR
+  Ungarn: HU
+  Hungary: HU
+  Hongrie: HU
+  HU: HU
+  Rumänien: RO
+  Romania: RO
+  Roumanie: RO
+  RO: RO
+  Bulgarien: BG
+  Bulgaria: BG
+  Bulgarie: BG
+  BG: BG
+  Kroatien: HR
+  Croatia: HR
+  Croatie: HR
+  HR: HR
+  Slowenien: SI
+  Slovenia: SI
+  Slovénie: SI
+  SI: SI
+  Slowakei: SK
+  Slovakia: SK
+  Slovaquie: SK
+  SK: SK
+  Estland: EE
+  Estonia: EE
+  Estonie: EE
+  EE: EE
+  Lettland: LV
+  Latvia: LV
+  Lettonie: LV
+  LV: LV
+  Litauen: LT
+  Lithuania: LT
+  Lituanie: LT
+  LT: LT
+  Zypern: CY
+  Cyprus: CY
+  Chypre: CY
+  CY: CY
+  Malta: MT
+  Malte: MT
+  MT: MT
+  Liechtenstein: LI
+  LI: LI
+  Norwegen: "NO"
+  Norway: "NO"
+  Norvège: "NO"
+  "NO": "NO"
+  USA: US
+  Vereinigte Staaten: US
+  United States: US
+  États-Unis: US
+  US: US
 
 postal_codes:
   DE: '^\d{5}$'
@@ -168,6 +246,8 @@ postal_codes:
   PL: '^\d{2}-\d{3}$'
   CZ: '^\d{3} ?\d{2}$'
   DK: '^\d{4}$'
+  IE: '^[A-Z]\d{2}[0-9W]? ?[A-Z0-9]{4}$'   # Eircode (« D02 P820 »)
+  SE: '^\d{3} ?\d{2}$'
 
 # motifs officiels des numéros de TVA intracommunautaires (forme seulement, pas l'existence)
 vat_ids:
@@ -182,3 +262,23 @@ vat_ids:
   PL: '^PL\d{10}$'
   CZ: '^CZ\d{8,10}$'
   DK: '^DK\d{8}$'
+  IE: '^IE\d[0-9A-Z+*]\d{5}[A-Z]{1,2}$'
+  SE: '^SE\d{12}$'
+  FI: '^FI\d{8}$'
+  PT: '^PT\d{9}$'
+  EL: '^EL\d{9}$'           # Grèce : préfixe EL (pays GR)
+  HU: '^HU\d{8}$'
+  RO: '^RO\d{2,10}$'
+  BG: '^BG\d{9,10}$'
+  HR: '^HR\d{11}$'
+  SI: '^SI\d{8}$'
+  SK: '^SK\d{10}$'
+  EE: '^EE\d{9}$'
+  LV: '^LV\d{11}$'
+  LT: '^LT(\d{9}|\d{12})$'
+  CY: '^CY\d{8}[A-Z]$'
+  MT: '^MT\d{8}$'
+
+# pays membres de l'Union européenne (2026) : un pays absent n'est jamais traité comme un pays de l'UE
+eu_members: [AT, BE, BG, CY, CZ, DE, DK, EE, ES, FI, FR, GR, HR, HU, IE, IT, LT, LU, LV, MT, NL, PL, PT, RO, SE,
+             SI, SK]
