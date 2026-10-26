@@ -14,6 +14,7 @@ import { ErrorBox, LoadingRows } from "@/components/registry";
 import { Pill, StatusBadge } from "@/components/status-badge";
 import { Confirmation, PreviousSends, type SendHooks, SendResult } from "@/components/target-send";
 import { Button } from "@/components/ui/button";
+import { RadioList } from "@/components/ui/radio-list";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   type PreparedProduct,
@@ -231,18 +232,13 @@ function PriceBasis({ ids, preview }: { ids: Ids; preview: ProductTargetPreview 
       <CardContent className="space-y-3">
         <fieldset className="space-y-2" disabled={set.isPending}>
           <legend className="label mb-2">The prices in {preview.source_name} are</legend>
-          {preview.price_bases.map((b) => (
-            <label key={b} className="flex cursor-pointer items-center gap-2">
-              <input
-                type="radio"
-                name="price-basis"
-                className="size-4 accent-[var(--brand)]"
-                checked={preview.price_basis === b}
-                onChange={() => set.mutate(b)}
-              />
-              {BASIS_LABEL[b]}
-            </label>
-          ))}
+          <RadioList
+            name="price-basis"
+            label={`The prices in ${preview.source_name} are`}
+            value={preview.price_basis ?? ""}
+            onChange={(b) => set.mutate(b as (typeof preview.price_bases)[number])}
+            options={preview.price_bases.map((b) => ({ value: b, label: BASIS_LABEL[b], disabled: set.isPending }))}
+          />
         </fieldset>
         {preview.price_basis === null && <p className="text-warning">Choose one: nothing is assumed.</p>}
         {set.error && <ErrorBox error={set.error} />}

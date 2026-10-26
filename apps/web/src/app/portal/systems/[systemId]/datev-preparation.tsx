@@ -13,6 +13,7 @@ import { Field } from "@/components/form";
 import { ErrorBox, LoadingRows } from "@/components/registry";
 import { StatusBadge, type Tone } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
+import { RadioList } from "@/components/ui/radio-list";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -169,21 +170,13 @@ function Settings({ t }: { t: T }) {
           return (
             <Field key={p.name} label={p.required_for_file ? `${p.label} — needed for the file` : p.label} hint={hint}>
               {p.choices.length > 0 ? (
-                <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={p.label}>
-                  {p.choices.map((c) => (
-                    <Button
-                      key={c}
-                      type="button"
-                      size="sm"
-                      role="radio"
-                      aria-checked={current === c}
-                      variant={current === c ? "default" : "outline"}
-                      onClick={() => setValues({ ...values, [p.name]: c })}
-                    >
-                      {c}
-                    </Button>
-                  ))}
-                </div>
+                <RadioList
+                  layout="inline"
+                  label={p.label}
+                  value={current}
+                  onChange={(c) => setValues({ ...values, [p.name]: c })}
+                  options={p.choices.map((c) => ({ value: c, label: c }))}
+                />
               ) : (
                 <Input value={current} onChange={(e) => setValues({ ...values, [p.name]: e.target.value })} />
               )}

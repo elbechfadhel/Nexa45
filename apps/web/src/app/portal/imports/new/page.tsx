@@ -13,6 +13,7 @@ import { FormError } from "@/components/form";
 import { PortalGate } from "@/components/portal";
 import { ErrorBox, LoadingRows } from "@/components/registry";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { RadioList } from "@/components/ui/radio-list";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   type CatalogImport,
@@ -209,30 +210,21 @@ function SystemStep({
           </Link>
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2" role="radiogroup">
-          {ready.map((s) => (
-            <button
-              key={s.id}
-              type="button"
-              role="radio"
-              aria-checked={chosen === s.id}
-              onClick={() => onSelect(s.id)}
-              className={cn(
-                "rounded-lg border p-4 text-left transition-colors",
-                chosen === s.id ? "border-brand bg-brand/5" : "border-border hover:border-brand/60",
-              )}
-            >
-              <div className="font-medium">{s.name}</div>
-              <div className="meta">{s.system} · catalog analyzed</div>
-            </button>
-          ))}
-          {others.map((s) => (
-            <div key={s.id} className="rounded-lg border border-border p-4 opacity-60" aria-disabled>
-              <div className="font-medium">{s.name}</div>
-              <div className="meta">{s.system} · finish its catalog analysis first</div>
-            </div>
-          ))}
-        </div>
+        <RadioList
+          label="Target system"
+          value={chosen ?? ""}
+          onChange={onSelect}
+          options={[
+            ...ready.map((s) => ({ value: s.id, label: s.name, hint: `${s.system} · catalog analyzed` })),
+            // pas encore prêts : visibles, jamais choisissables
+            ...others.map((s) => ({
+              value: s.id,
+              label: s.name,
+              hint: `${s.system} · finish its catalog analysis first`,
+              disabled: true,
+            })),
+          ]}
+        />
       )}
       <div className="flex justify-between">
         <Button variant="outline" onClick={onBack}>

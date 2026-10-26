@@ -3,13 +3,14 @@
 /** Étapes du wizard « Connect a system ». Le formulaire de l'étape 2 est celui que le CONNECTEUR du système
  *  déclare (`connector.fields`) : aucun champ de connexion n'est écrit ici et aucun code de système n'est
  *  testé. Un secret est masqué, jamais rappelé dans un récapitulatif. Logique pure : `lib/connect/form.mjs`. */
-import { ArrowLeft, ArrowRight, CheckCircle2, ChevronRight, Eye, EyeOff, Info, XCircle } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, Eye, EyeOff, Info, XCircle } from "lucide-react";
 import { useState } from "react";
 
 import { Field, FormError } from "@/components/form";
 import { Pill } from "@/components/status-badge";
 import { SystemLogo } from "@/components/system-logo";
 import { Button } from "@/components/ui/button";
+import { RadioList } from "@/components/ui/radio-list";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import type { ConnectionCheck, Connector } from "@/lib/api/supplier-hooks";
@@ -58,42 +59,34 @@ export function SelectSystem({
           <h2 className="section-title">What system do you want to connect?</h2>
           <p className="text-muted-foreground">Choose the system you want to connect to your workspace.</p>
         </div>
-        <div className="grid gap-4 md:grid-cols-2">
-          {cards.map((card) => {
-            const enabled = !!card.versions;
-            const isSelected = selected === card.code;
-            return (
-              <button
-                key={card.code}
-                type="button"
-                disabled={!enabled}
-                onClick={() => onSelect(card.code)}
-                aria-pressed={isSelected}
-                className={cn(
-                  "flex items-center gap-4 rounded-card-sm border p-4.5 text-left transition-colors",
-                  enabled ? "hover:border-brand/50" : "cursor-not-allowed opacity-60",
-                  isSelected ? "border-brand bg-brand/5 ring-1 ring-brand/40" : "border-border bg-muted/30",
+        <RadioList
+          layout="columns"
+          label="What system do you want to connect?"
+          value={selected ?? ""}
+          onChange={onSelect}
+          options={cards.map((card) => ({
+            value: card.code,
+            disabled: !card.versions,
+            label: (
+              <span className="flex items-center gap-3">
+                <SystemLogo code={card.code} name={card.name} className="size-9 rounded-lg" />
+                <span className="item-title">{card.name}</span>
+              </span>
+            ),
+            hint: (
+              <span className="mt-1 flex flex-wrap items-center gap-2">
+                {card.versions ? (
+                  <Pill tone="success">Available</Pill>
+                ) : (
+                  <Pill tone="neutral" variant="neutral">
+                    {loading ? "Checking…" : "Coming soon"}
+                  </Pill>
                 )}
-              >
-                <SystemLogo code={card.code} name={card.name} />
-                <span className="min-w-0 flex-1 space-y-1.5">
-                  <span className="item-title block">{card.name}</span>
-                  {enabled ? (
-                    <Pill tone="success">Available</Pill>
-                  ) : (
-                    <Pill tone="neutral" variant="neutral">
-                      {loading ? "Checking…" : "Coming soon"}
-                    </Pill>
-                  )}
-                  <span className="meta block">
-                    {card.versions ? `Supported versions: ${card.versions.join(", ")}` : "Planned for a future release"}
-                  </span>
-                </span>
-                {enabled && <ChevronRight className="size-5 text-muted-foreground" />}
-              </button>
-            );
-          })}
-        </div>
+                {card.versions ? `Supported versions: ${card.versions.join(", ")}` : "Planned for a future release"}
+              </span>
+            ),
+          }))}
+        />
         <div className="flex justify-end">
           <Button onClick={onContinue} disabled={!selected || !available.has(selected)}>
             Continue <ArrowRight />

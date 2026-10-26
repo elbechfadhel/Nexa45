@@ -7,11 +7,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { ErrorBox, LoadingRows } from "@/components/registry";
 import { Button } from "@/components/ui/button";
+import { RadioItem } from "@/components/ui/radio-list";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import type { BindingView } from "@/lib/api/client";
 import { useVocabulary } from "@/lib/api/hooks";
-import { cn } from "@/lib/utils";
 
 const OTHER = "other"; // réponse « autre / je ne sais pas » (OTHER_KEY côté Core)
 
@@ -194,27 +194,11 @@ function Choice({
   hint: string;
   badge?: string;
 }) {
-  const on = selected === value;
+  // même radio que partout dans la console (components/ui/radio-list)
   return (
-    <label
-      className={cn(
-        "flex cursor-pointer items-start gap-3 rounded-lg border border-transparent px-2.5 py-1.5 hover:bg-muted/60",
-        on && "border-brand/50 bg-muted/60",
-      )}
-    >
-      <input
-        type="radio"
-        name="meaning"
-        value={value}
-        checked={on}
-        onChange={() => onSelect(value)}
-        className="mt-1.5 accent-(--brand)"
-      />
-      <span>
-        <span className="font-medium">{label}</span>
-        {badge && <span className="meta ml-2">({badge})</span>}
-        <span className="meta block">{hint}</span>
-      </span>
-    </label>
+    <RadioItem name="meaning" value={value} checked={selected === value} onSelect={onSelect} hint={hint} className="py-1">
+      <span className="font-medium">{label}</span>
+      {badge && <span className="meta ml-2">({badge})</span>}
+    </RadioItem>
   );
 }

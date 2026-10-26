@@ -547,3 +547,17 @@ test("an entry point reuses the Simple screens: only its title, introduction and
   const header = readFileSync(join(here, "..", "..", "components", "app-header.tsx"), "utf8");
   assert.match(header, /href: "\/portal\/prepare-datev", label: "Prepare data for DATEV"/);
 });
+
+test("every single choice of the console uses the shared radio group", () => {
+  // un seul style de choix unique (components/ui/radio-list.tsx) : aucun radio dessiné ailleurs
+  const src = join(here, "..", "..");
+  /** @param {string} dir @returns {string[]} */
+  const files = (dir) =>
+    readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
+      e.isDirectory() ? files(join(dir, e.name)) : e.name.endsWith(".tsx") ? [join(dir, e.name)] : [],
+    );
+  const offenders = files(src).filter(
+    (f) => !f.endsWith("radio-list.tsx") && /type="radio"|role="radio"/.test(readFileSync(f, "utf8")),
+  );
+  assert.deepEqual(offenders, []);
+});
