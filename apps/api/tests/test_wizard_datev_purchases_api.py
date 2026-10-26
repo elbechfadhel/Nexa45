@@ -156,7 +156,7 @@ def test_the_expense_account_is_preselected_by_category_never_guessed_and_rememb
         "category": "Wareneinkauf",
         "rate": "19",
         "tax_decision": "map:TAX:rate:PURCHASE:19",
-        "automatic_accounts": ["3300", "3400"],
+        "automatic_accounts": ["3300", "3400", "3425", "3123", "3125"],
     }
     assert every["setting:advisor_number"].get("mapping") is None
     assert every["map:CATEGORY:purchase:strom:19"]["default"] is None  # inconnue : jamais devinée

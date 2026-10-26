@@ -285,7 +285,7 @@ def test_invoice_headers_name_the_data_type_only_when_the_target_takes_invoices(
 
 def test_a_zero_rate_invoice_follows_the_vat_id_kept_from_the_customer_export():
     rows = [
-        _i("RE-1", "2026-09-15", "3200", "0", "0", "3200", partner="1008"),  # Autriche, ATU valide
+        {**_i("RE-1", "2026-09-15", "3200", "0", "0", "3200", partner="1008"), "supply_kind": "Ware"},  # AT
         _i("RE-2", "2026-09-18", "1850", "0", "0", "1850", partner="1009"),  # France, FR123 invalide
         _i("RE-3", "2026-09-19", "100", "0", "0", "100", partner="1003"),  # Allemagne, sans USt-IdNr
         _i("RE-4", "2026-09-20", "100", "0", "0", "100", partner="1099"),  # client inconnu
@@ -293,6 +293,7 @@ def test_a_zero_rate_invoice_follows_the_vat_id_kept_from_the_customer_export():
     vat = {"1008": ("valid", "AT"), "1009": ("invalid", "FR"), "1003": ("missing", "DE")}
     t = documents_from_rows(INVOICES, rows, {}, "EUR", {}, partner_vat=vat)
     assert [d.number for d in t.documents] == ["RE-1"]  # justifiée : écrite sans question
+    assert t.documents[0].lines[0].category.source_ref == "vat:sale:eu:goods:0"
     reasons = {e.row: (e.kind, e.reason) for e in t.skipped}
     assert reasons[2][0] == "zero_rate_vat" and "is not valid in your customer list (FR)" in reasons[2][1]
     assert (
@@ -507,3 +508,35 @@ def test_the_usual_accounts_of_cross_border_operations_are_data_to_be_validated(
     (q, _tax) = mapping_questions(fmt, {ref: "EU services at 0 % VAT"}, ["0"], "03", {}, scope="SALE")
     assert q.default == "8336" and "to be validated by your tax advisor" in q.question.help
     assert q.mapping is not None and q.mapping.category == "EU services"
+
+
+def test_a_cross_border_sale_at_zero_rate_follows_the_zone_and_the_kind_of_supply():
+    def sale(number: str, partner: str, kind: str) -> dict[str, str]:
+        return {**_i(number, "2026-10-05", "100", "0", "0", "100", partner=partner), "supply_kind": kind}
+
+    rows = [
+        sale("RE-101", "1008", "Ware"),  # AT, USt-IdNr valide
+        sale("RE-103", "1021", "Dienstleistung"),  # NL, prestation : jamais une livraison
+        sale("RE-104", "1020", "Ware"),  # CH, hors UE : exportation
+        sale("RE-105", "1020", "Dienstleistung"),  # CH : prestation hors UE
+        sale("RE-106", "1022", ""),  # DK, nature inconnue : jamais devinée
+    ]
+    vat = {
+        "1008": ("valid", "AT"),
+        "1021": ("valid", "NL"),
+        "1022": ("valid", "DK"),
+        "1020": ("non_eu", "CH"),
+    }
+    t = documents_from_rows(INVOICES, rows, {}, "EUR", {}, partner_vat=vat)
+    cats = {d.number: d.lines[0].category.source_ref for d in t.documents}
+    assert cats == {
+        "RE-101": "vat:sale:eu:goods:0",
+        "RE-103": "vat:sale:eu:services:0",
+        "RE-104": "vat:sale:non_eu:goods:0",
+        "RE-105": "vat:sale:non_eu:services:0",
+    }
+    assert t.categories["vat:sale:eu:services:0"] == "Services to EU businesses at 0 % VAT"
+    (skipped,) = t.skipped
+    assert (skipped.row, skipped.kind) == (5, "supply_kind")
+    assert "goods or services is not known (Leistungsart), never guessed" in skipped.reason
+    assert not any(q.key == ZERO_RATE_KEY for q in t.questions)

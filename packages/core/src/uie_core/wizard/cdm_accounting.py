@@ -39,7 +39,7 @@ from uie_cdm import (
     SupplyKind,
 )
 
-from uie_core.mapping.suggestions import category_key
+from uie_core.mapping.suggestions import category_key, vat_category_ref
 from uie_core.sources.table import FileTableSpec
 from uie_core.wizard.text import say
 from uie_core.wizard.values import ExcludedRow, QuestionOption, ValueIssue, ValueQuestion, ValueTransform
@@ -83,6 +83,28 @@ def purchase_category(rate: Decimal, expense: str | None = None) -> PostingCateg
             source_ref=f"purchase:{category_key(expense)}:{r:f}", name=f"{expense} at {r:f} % VAT"
         )
     return PostingCategoryRef(source_ref=f"purchase:{r:f}", name=f"purchases at {r:f} % VAT")
+
+
+# opérations avec l'étranger (sens, zone du partenaire, nature) : nom de la catégorie (aucun compte ici)
+VAT_TREATMENTS = {
+    ("SALE", "EU", "GOODS"): "Intra-community supplies of goods",
+    ("SALE", "EU", "SERVICES"): "Services to EU businesses",
+    ("SALE", "NON_EU", "GOODS"): "Exports of goods outside the EU",
+    ("SALE", "NON_EU", "SERVICES"): "Services to non-EU businesses",
+    ("PURCHASE", "EU", "GOODS"): "Intra-community acquisitions of goods",
+    ("PURCHASE", "EU", "SERVICES"): "Services from EU businesses",
+    ("PURCHASE", "NON_EU", "SERVICES"): "Services from non-EU businesses",
+}
+
+
+def vat_category(scope: str, zone: str, nature: SupplyKind, rate: Decimal) -> PostingCategoryRef:
+    """Catégorie d'une opération avec l'étranger : la cible lui fait correspondre un compte (table des
+    comptes de TVA, à valider), jamais deviné ici."""
+    name = VAT_TREATMENTS[(scope, zone, nature.value)]
+    return PostingCategoryRef(
+        source_ref=vat_category_ref(scope, zone, nature.value, rate),
+        name=f"{name} at {rate.normalize():f} % VAT",
+    )
 
 
 def _amount(text: str) -> Decimal | None:
@@ -354,8 +376,29 @@ def documents_from_rows(  # noqa: C901, PLR0912, PLR0915
                     "zero_rate_vat",
                 )
                 continue
-            if not (status == "valid" and country and country != table.home_country):
+            zone = (
+                "EU"
+                if status == "valid" and country and country != table.home_country
+                else "NON_EU"
+                if status == "non_eu"
+                else None
+            )
+            if zone is None:
                 zero_rows.append(i)  # rien de connu (ou client du même pays) : décision de l'utilisateur
+            else:
+                # client étranger justifié : le compte dépend de la NATURE de l'opération (Leistungsart),
+                # jamais devinée (ni depuis une remarque, ni depuis le montant)
+                nature = line.supply_kind
+                if nature is None:
+                    skip(
+                        i,
+                        f"Invoice {number}: 0 % VAT to {who} ({country}): goods or services is not known "
+                        "(Leistungsart), never guessed: not exported.",
+                        "supply_kind",
+                    )
+                    continue
+                cat = vat_category("SALE", zone, nature, rate)
+                doc = doc.model_copy(update={"lines": [line.model_copy(update={"category": cat})]})
         candidates.append((i, doc))
 
     if zero_rows:

@@ -17,7 +17,7 @@
 # (motif de l'en-tête 5 dans le Registry) ; les versions 10-12 restent dans le Registry pour Compare.
 # Le sens (2) se rapporte au champ 7 Konto (description officielle) : S = débit du compte du tiers.
 
-binding_version: "1.2.0"   # 1.2.0 : Bezeichnung d'une plage de mois (source fichier)
+binding_version: "1.3.0"   # 1.2.0 : Bezeichnung d'une plage de mois ; 1.3.0 : 0 % sans compte d'usage
 name: DATEV Buchungsstapel (EXTF)
 source: {model: accounting, version: "1"}
 target:
@@ -51,11 +51,12 @@ lookups:
 # par plan comptable du dossier (Sachkontenrahmen, réglage partagé « chart_of_accounts »). Ce sont des
 # réponses PRÉSÉLECTIONNÉES, à confirmer avec le Steuerberater, jamais appliquées sans la réponse de
 # l'utilisateur. Comptes automatiques (« Automatikkonten ») : ils calculent la TVA, aucune clé de taxe.
-# 0 % : livraison intracommunautaire exonérée (§ 4 Nr. 1b UStG), seulement après la décision de l'utilisateur.
+# 0 % : aucun compte d'usage ici ; une vente à l'étranger a la catégorie de son opération (zone × nature),
+# dont le compte vient de la table des comptes de TVA du plan comptable (`<système>/*_vat_accounts.yaml`).
 chart_param: chart_of_accounts
 suggestions:
-  "03": {categories: {"sale:19": "8400", "sale:7": "8300", "sale:0": "8125"}, no_tax_key: true}
-  "04": {categories: {"sale:19": "4400", "sale:7": "4300", "sale:0": "4125"}, no_tax_key: true}
+  "03": {categories: {"sale:19": "8400", "sale:7": "8300"}, no_tax_key: true}
+  "04": {categories: {"sale:19": "4400", "sale:7": "4300"}, no_tax_key: true}
 
 fields:
   - {field: "001", source: amount}                                  # Umsatz : toujours positif

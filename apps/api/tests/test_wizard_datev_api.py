@@ -248,7 +248,6 @@ def test_invoices_to_datev_buchungsstapel_with_every_trap_and_no_double_export(w
     assert applied["setting:advisor_number"] == ("1234567", "your_settings")
     assert applied["map:CATEGORY:sale:19"] == ("8400", "usual_default")
     assert applied["map:CATEGORY:sale:7"] == ("8300", "usual_default")
-    assert applied["map:CATEGORY:sale:0"] == ("8125", "usual_default")
     assert applied["map:TAX:rate:SALE:19"] == ("none", "usual_default")
     assert applied["century:1"] == ("20", "usual_default")  # « 5.9.26 » : siècle des autres dates
 
@@ -269,7 +268,9 @@ def test_invoices_to_datev_buchungsstapel_with_every_trap_and_no_double_export(w
     assert "outside the fiscal year" in reasons[12]
     # FR123 dans la liste des clients : livraison intracommunautaire impossible à justifier, signalée
     assert "VAT ID of Lefèvre Distribution SARL is not valid in your customer list (FR)" in reasons[13]
-    assert len(reasons) == 7 and pre["rows"] == 6
+    # 0 % vers l'Autriche (ATU valide) sans colonne Leistungsart : marchandise ou service jamais deviné
+    assert "goods or services is not known (Leistungsart), never guessed" in reasons[3]
+    assert len(reasons) == 8 and pre["rows"] == 5
 
     res = _download(c, flow)
     assert res.status_code == 200, res.text
@@ -280,7 +281,7 @@ def test_invoices_to_datev_buchungsstapel_with_every_trap_and_no_double_export(w
     assert witness[:3] == ["1545,81", '"S"', '"EUR"']
     assert (witness[6], witness[7], witness[9]) == ("11001", "8400", "0507")
     assert _by(rows, 11, "RE-2")[7] == "8300"  # 7 %
-    assert _by(rows, 11, "RE-3")[7] == "8125"  # 0 % : USt-IdNr autrichienne valide (ATU), sans question
+    assert not [r for r in rows if r[10] == '"RE-3"']  # nature inconnue : jamais sur un compte deviné
     assert _by(rows, 11, "RE-4")[9] == "0509"  # 5.9.26 → 05.09.2026
     credit = _by(rows, 11, "RE-8")
     assert credit[:2] == ["297,50", '"H"']  # avoir : montant positif, sens inversé
@@ -296,7 +297,7 @@ def test_invoices_to_datev_buchungsstapel_with_every_trap_and_no_double_export(w
         {"setting:lock_bookings": "0", "accounting:zero_rate": "export"},
     )["preview"]
     assert second["rows"] == 0
-    assert sum(1 for e in second["excluded_rows"] if e["kind"] == "already_exported") == 6
+    assert sum(1 for e in second["excluded_rows"] if e["kind"] == "already_exported") == 5
 
     # remise à zéro de la démo (CLI) : comptes réservés et pièces journalisées retirés, réglages gardés
     from uie_core.exports.demo import reset_file_exports
@@ -305,7 +306,7 @@ def test_invoices_to_datev_buchungsstapel_with_every_trap_and_no_double_export(w
     session = world["session"]
     org = session.query(Organization).filter_by(slug="acme").one()
     done = reset_file_exports(session, SystemContext("test"), org.id)
-    assert (done.accounts, done.documents, done.runs) == (8, 6, 2)  # le 2e export refusé n'a rien écrit
+    assert (done.accounts, done.documents, done.runs) == (8, 5, 2)  # le 2e export refusé n'a rien écrit
     assert _download(c, customers).status_code == 200  # la démo se rejoue entièrement
     replay = _download(c, flow)
     assert replay.status_code == 200 and _rows(replay.content)[1] == rows
