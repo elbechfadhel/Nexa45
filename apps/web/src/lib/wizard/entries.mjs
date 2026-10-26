@@ -18,13 +18,15 @@ import { SIMPLE_LABELS as L } from "./simple-labels.mjs";
  *   detect?: boolean,
  *   prepares?: string[],
  *   startHint?: string,
+ *   stepStart?: string,
  * }} WizardEntry
  * `targetHeading` : intitulé du choix de la cible (absent : celui du Wizard, « 2. Where should your data go? ») ;
  * `systems` : codes des systèmes du Registry affichés (tous si absent) ; `groups` : groupes de cibles affichés
  * (tous si absent) ; `detect` : dès le dépôt du fichier, le format est choisi d'après le type reconnu ;
  * `prepares` : ce que la page sait préparer, affiché sous l'introduction (domaines VALIDÉS seulement : ajouter
  * un domaine = une ligne ici, jamais un « coming soon ») ; `startHint` : aide sous le bouton de départ (absent :
- * celle du Wizard).
+ * celle du Wizard) ;
+ * `stepStart` : nom de l'étape 1 (absent : celui du Wizard, « Your file and target »).
  */
 
 /** @type {{ general: WizardEntry, datev: WizardEntry }} */
@@ -44,6 +46,7 @@ export const WIZARD_ENTRIES = {
     prepares: ["Customers", "Suppliers", "Sales invoices", "Purchase invoices"],
     // le format est choisi d'après le fichier : seul le fichier reste à donner
     startHint: "Choose a file to continue.",
+    stepStart: "Your file", // aucune cible à choisir ici
   },
 };
 

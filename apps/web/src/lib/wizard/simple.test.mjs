@@ -488,6 +488,10 @@ test("an entry point reuses the Simple screens: only its title, introduction and
   assert.equal(WIZARD_ENTRIES.datev.startHint, "Choose a file to continue.");
   assert.equal(WIZARD_ENTRIES.general.startHint, undefined);
   assert.equal(SIMPLE_LABELS.startHint, "Choose a file and a target system to continue.");
+  // étape 1 : « Your file » ici (aucune cible à choisir), « Your file and target » dans le Wizard général
+  assert.equal(WIZARD_ENTRIES.datev.stepStart, "Your file");
+  assert.equal(WIZARD_ENTRIES.general.stepStart, undefined);
+  assert.equal(SIMPLE_LABELS.stepStart, "Your file and target");
   const start = readFileSync(join(here, "..", "..", "components", "wizard-simple", "start-screen.tsx"), "utf8");
   assert.match(start, /entry\.startHint \?\? L\.startHint/);
   // la question de l'étape 2 : propre au parcours ; le Wizard garde la sienne

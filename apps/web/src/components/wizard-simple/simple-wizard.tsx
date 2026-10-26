@@ -123,7 +123,7 @@ export function SimpleWizard({
 
   const failed = quick.error ?? (screen === "working" ? check.error : null);
   const stage = quick.isPending ? "analyzing" : "checking";
-  const steps = [L.stepStart, L.stepWorking, L.stepResult];
+  const steps = [entry.stepStart ?? L.stepStart, L.stepWorking, L.stepResult];
   const current = screen === "start" ? 0 : screen === "working" ? 1 : 2;
 
   return (
