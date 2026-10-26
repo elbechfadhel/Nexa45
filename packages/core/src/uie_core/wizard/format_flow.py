@@ -9,7 +9,7 @@ from datetime import date
 from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import select
-from uie_cdm import DocumentStatus
+from uie_cdm import DocumentStatus, PartnerRole
 
 from uie_core.accounting.service import AccountingReadItem, AccountingReadResult, CompanyRef
 from uie_core.accounting.target import AccountingTargetNotReady, ExportInvalid, PeriodSpan
@@ -232,7 +232,10 @@ class FormatFlow:
                 columns,
                 currency,
                 choices,
-                partner_vat=self._partner_vat(),
+                # état du numéro de TVA et pays du partenaire DE CE RÔLE (client ou fournisseur)
+                partner_vat=self._partner_vat(
+                    PartnerRole.SUPPLIER if data_type == PURCHASE_INVOICES else PartnerRole.CUSTOMER
+                ),
                 purchase=data_type == PURCHASE_INVOICES,
             )
         return {
@@ -402,9 +405,11 @@ class FormatFlow:
         )
         return out, content, filename
 
-    def _partner_vat(self) -> dict[str, tuple[str | None, str | None]]:
-        """Numéro du client → état de son numéro de TVA, retenu à l'export de la liste des clients (comptes du
-        format partagé, même dossier, source fichier) ; {} : clients pas encore exportés depuis un fichier."""
+    def _partner_vat(self, role: PartnerRole) -> dict[str, tuple[str | None, str | None]]:
+        """Numéro du client (ou du fournisseur, selon `role`) → état de son numéro de TVA et son pays,
+        retenus à l'export de la liste des clients ou des fournisseurs (comptes du format partagé, même
+        dossier, source fichier) ; {} : pas encore exportés depuis un fichier. Un client et un fournisseur de
+        même numéro ne se confondent jamais."""
         b = self.fmt.binding
         if (
             b.inherit_profile is None
@@ -421,6 +426,7 @@ class FormatFlow:
                 ExportAccountAssignmentRecord.profile_id == profile.id,
                 ExportAccountAssignmentRecord.instance_id.is_(None),
                 ExportAccountAssignmentRecord.source_ref.like(f"{FILE_REF}%"),
+                ExportAccountAssignmentRecord.role == role.value,
             )
         )
         return {r.source_ref.removeprefix(FILE_REF): (r.vat_status, r.vat_country) for r in rows}

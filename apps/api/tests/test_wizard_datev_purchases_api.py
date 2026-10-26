@@ -11,7 +11,15 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from test_wizard_datev_api import _target, pytestmark, world  # noqa: F401 — fixture et marqueur partagés
+from test_wizard_datev_api import (  # noqa: F401 — fixture et marqueur partagés
+    _by,
+    _download,
+    _flow,
+    _rows,
+    _target,
+    pytestmark,
+    world,
+)
 
 SUPPLIERS = (
     "Lieferantenstamm Beispiel GmbH;;;;;;;;\n"
@@ -96,3 +104,36 @@ def test_every_column_of_a_purchase_journal_is_known_by_the_rules(world):  # noq
         "Brutto €": ("gross_amount", "matched"),
         "Bemerkung": ("remark", "matched"),
     }
+
+
+def _suppliers_exported(c: Any) -> None:
+    flow = _flow(c, "Debitoren/Kreditoren 5", SUPPLIERS, "Lieferanten.csv")
+    assert _download(c, flow).status_code == 200
+
+
+def test_a_purchase_invoice_is_booked_on_the_creditor_account_of_its_supplier(world):  # noqa: F811
+    """Fournisseurs exportés d'abord (Kreditor = 70000 + Lief-Nr.), puis la facture témoin : Konto = le
+    Kreditor du fournisseur, au crédit (H)."""
+    c = world["client"]
+    _suppliers_exported(c)
+    accounts = {
+        "map:CATEGORY:purchase:19": "3400",
+        "map:CATEGORY:purchase:7": "3300",
+        "map:TAX:rate:PURCHASE:19": "none",
+        "map:TAX:rate:PURCHASE:7": "none",
+        "setting:lock_bookings": "0",
+    }
+    flow = _flow(c, "Buchungsstapel 13", PURCHASES, "Rechnungseingang.csv", accounts)
+    res = _download(c, flow)
+    assert res.status_code == 200, res.text
+    _, rows = _rows(res.content)
+    witness = _by(rows, 11, "H-100")
+    # Umsatz, Soll/Haben, Konto (Kreditor), Gegenkonto, Belegdatum, Belegfeld 1
+    assert [witness[0], witness[1], witness[6], witness[7], witness[9], witness[10]] == [
+        "1190,00",
+        '"H"',
+        "73001",
+        "3400",
+        "2809",
+        '"H-100"',
+    ]
