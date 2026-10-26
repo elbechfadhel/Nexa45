@@ -17,12 +17,14 @@ import { SIMPLE_LABELS as L } from "./simple-labels.mjs";
  *   groups?: TargetChoice["group"][],
  *   detect?: boolean,
  *   prepares?: string[],
+ *   startHint?: string,
  * }} WizardEntry
  * `targetHeading` : intitulé du choix de la cible (absent : celui du Wizard, « 2. Where should your data go? ») ;
  * `systems` : codes des systèmes du Registry affichés (tous si absent) ; `groups` : groupes de cibles affichés
  * (tous si absent) ; `detect` : dès le dépôt du fichier, le format est choisi d'après le type reconnu ;
  * `prepares` : ce que la page sait préparer, affiché sous l'introduction (domaines VALIDÉS seulement : ajouter
- * un domaine = une ligne ici, jamais un « coming soon »).
+ * un domaine = une ligne ici, jamais un « coming soon ») ; `startHint` : aide sous le bouton de départ (absent :
+ * celle du Wizard).
  */
 
 /** @type {{ general: WizardEntry, datev: WizardEntry }} */
@@ -34,12 +36,14 @@ export const WIZARD_ENTRIES = {
   datev: {
     title: "Prepare data for DATEV",
     intro:
-      "Add your customer or supplier list, or your sales or purchase invoices, check what DATEV should receive, and download the file prepared for DATEV. Nothing is written to your systems.",
+      "Add your file, check what DATEV will receive, and download it prepared. Nothing is written to your systems.",
     targetHeading: "2. What do you want to prepare?",
     systems: ["datev"],
     groups: ["registry"],
     detect: true,
     prepares: ["Customers", "Suppliers", "Sales invoices", "Purchase invoices"],
+    // le format est choisi d'après le fichier : seul le fichier reste à donner
+    startHint: "Choose a file to continue.",
   },
 };
 

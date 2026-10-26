@@ -480,7 +480,16 @@ test("an entry point reuses the Simple screens: only its title, introduction and
   assert.match(result, /preview\.value_transforms\.map/);
   assert.equal(SIMPLE_LABELS.transformCount(1), "1 value");
   // les deux sens : clients et fournisseurs, factures de vente et d'achat
-  assert.match(WIZARD_ENTRIES.datev.intro, /customer or supplier list, or your sales or purchase invoices/);
+  assert.equal(
+    WIZARD_ENTRIES.datev.intro,
+    "Add your file, check what DATEV will receive, and download it prepared. Nothing is written to your systems.",
+  );
+  // aide du bouton : propre à ce point d'entrée ; le Wizard général garde la sienne
+  assert.equal(WIZARD_ENTRIES.datev.startHint, "Choose a file to continue.");
+  assert.equal(WIZARD_ENTRIES.general.startHint, undefined);
+  assert.equal(SIMPLE_LABELS.startHint, "Choose a file and a target system to continue.");
+  const start = readFileSync(join(here, "..", "..", "components", "wizard-simple", "start-screen.tsx"), "utf8");
+  assert.match(start, /entry\.startHint \?\? L\.startHint/);
   // la question de l'étape 2 : propre au parcours ; le Wizard garde la sienne
   assert.equal(WIZARD_ENTRIES.datev.targetHeading, "2. What do you want to prepare?");
   assert.equal(WIZARD_ENTRIES.general.targetHeading, undefined);

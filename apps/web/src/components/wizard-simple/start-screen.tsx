@@ -195,7 +195,7 @@ export function StartScreen({
       </Card>
 
       <div className="flex flex-wrap items-center justify-end gap-3">
-        {(!file || !target) && <p className="meta text-muted-foreground">{L.startHint}</p>}
+        {(!file || !target) && <p className="meta text-muted-foreground">{entry.startHint ?? L.startHint}</p>}
         <Button onClick={onStart} disabled={!file || !target}>
           {L.start}
         </Button>
