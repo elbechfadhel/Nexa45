@@ -632,3 +632,9 @@ test("invoices already exported are one summary line by date, the detail only in
   assert.match(readFileSync(join(folder, "result-screen.tsx"), "utf8"), /preview\.nothing_new\s*\?\s*L\.nothingNewHelp/);
   assert.match(readFileSync(join(folder, "download-card.tsx"), "utf8"), /\{!preview\.nothing_new && \(\s*<Button/);
 });
+
+test("the accounts table uses the page text size in every column", () => {
+  // compte et clé de taxe : même police et même taille que la catégorie (pas de police à chasse fixe)
+  const decisions = readFileSync(join(here, "..", "..", "components", "wizard-simple", "decisions.tsx"), "utf8");
+  assert.doesNotMatch(decisions, /<TableCell className="[^"]*\btech\b/);
+});

@@ -155,8 +155,8 @@ export function Decisions({
                           <TableRow>
                             <TableCell className="break-words whitespace-normal">{q.mapping?.category}</TableCell>
                             <TableCell>{q.mapping?.rate} %</TableCell>
-                            <TableCell className="tech">{answerText(q, valueOf(q))}</TableCell>
-                            <TableCell className="tech whitespace-normal">{rowTaxKey(q, tax, values)}</TableCell>
+                            <TableCell>{answerText(q, valueOf(q))}</TableCell>
+                            <TableCell className="whitespace-normal">{rowTaxKey(q, tax, values)}</TableCell>
                             <TableCell className="text-right">
                               <Button variant="outline" size="sm" onClick={() => toggle(key)}>
                                 {editing ? L.done : L.change}
