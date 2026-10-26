@@ -5,11 +5,14 @@
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { RadioList } from "@/components/ui/radio-list";
 import { Card, CardContent } from "@/components/ui/card";
 import type { PreparedFile, QuickQuestion, QuickStart } from "@/lib/api/wizard-hooks";
-import { cn } from "@/lib/utils";
 import { answerText, COLUMN_ANSWER, defaultOrigin, type Edits, questionKey } from "@/lib/wizard/simple.mjs";
 import { SIMPLE_LABELS as L } from "@/lib/wizard/simple-labels.mjs";
+
+/** Option « autre valeur » : réponse saisie (jamais une valeur proposée). */
+const OTHER = "__other__";
 
 type Option = { value: string; label: string };
 
@@ -155,53 +158,54 @@ function Question({
 }) {
   const known = options.some((o) => o.value === value);
   const [other, setOther] = useState(!known && value !== "" ? value : "");
+  const [otherMode, setOtherMode] = useState(!known && value !== "");
+  const field = (
+    <input
+      className="input w-full max-w-sm"
+      placeholder={L.otherPlaceholder}
+      aria-label={options.length > 0 ? L.otherValue : L.yourAnswer}
+      value={other}
+      onChange={(e) => {
+        setOther(e.target.value);
+        if (e.target.value.trim()) onChange(e.target.value.trim());
+      }}
+    />
+  );
   return (
     <fieldset className="space-y-2">
       <legend className="font-medium">{title}</legend>
       {help && <p className="meta text-muted-foreground">{help}</p>}
-      <div className="space-y-1.5" role="radiogroup">
-        {options.map((o) => (
-          <label
-            key={o.value}
-            className={cn(
-              "flex cursor-pointer items-start gap-3 rounded-lg border p-2.5 transition-colors",
-              value === o.value ? "border-brand bg-brand/5" : "border-border hover:border-brand/60",
-            )}
-          >
-            <input
-              type="radio"
-              className="mt-1 accent-[var(--brand)]"
-              checked={value === o.value}
-              onChange={() => onChange(o.value)}
-            />
-            <span className="min-w-0 flex-1">{o.label}</span>
-            {o.value === preselected && <span className="meta text-muted-foreground">{L.preselected}</span>}
+      {options.length > 0 ? (
+        <RadioList
+          label={title}
+          value={otherMode ? OTHER : value}
+          onChange={(v) => {
+            if (v === OTHER) {
+              setOtherMode(true);
+              if (other.trim()) onChange(other.trim());
+            } else {
+              setOtherMode(false);
+              onChange(v);
+            }
+          }}
+          options={[
+            ...options.map((o) => ({
+              value: o.value,
+              label: o.label,
+              hint: o.value === preselected ? L.preselected : undefined,
+            })),
+            ...(freeText ? [{ value: OTHER, label: L.otherValue, content: field }] : []),
+          ]}
+        />
+      ) : (
+        // sans choix proposé (ex. un numéro du cabinet) : une simple réponse, pas une « autre valeur »
+        freeText && (
+          <label className="flex flex-wrap items-center gap-3">
+            <span>{L.yourAnswer}</span>
+            {field}
           </label>
-        ))}
-        {freeText && (
-          <label className="flex flex-wrap items-center gap-3 rounded-lg border border-border p-2.5">
-            {options.length > 0 && (
-              <input
-                type="radio"
-                className="accent-[var(--brand)]"
-                checked={!known && value !== ""}
-                onChange={() => other && onChange(other)}
-              />
-            )}
-            {/* sans choix proposé (ex. un numéro du cabinet) : une simple réponse, pas une « autre valeur » */}
-            <span>{options.length > 0 ? L.otherValue : L.yourAnswer}</span>
-            <input
-              className="input min-w-0 flex-1"
-              placeholder={L.otherPlaceholder}
-              value={other}
-              onChange={(e) => {
-                setOther(e.target.value);
-                if (e.target.value.trim()) onChange(e.target.value.trim());
-              }}
-            />
-          </label>
-        )}
-      </div>
+        )
+      )}
     </fieldset>
   );
 }

@@ -15,6 +15,7 @@ import { SimpleWizard } from "@/components/wizard-simple/simple-wizard";
 import { TemplateSidebar } from "@/components/wizard-templates";
 import { StatusBadge } from "@/components/status-badge";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { RadioItem, RadioList } from "@/components/ui/radio-list";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
@@ -416,24 +417,17 @@ function ModeToggle({
   disabled: boolean;
 }) {
   return (
-    <div className="flex rounded-lg border p-0.5" role="radiogroup" aria-label="Mode">
-      {(["simple", "expert"] as const).map((m) => (
-        <button
-          key={m}
-          type="button"
-          role="radio"
-          aria-checked={mode === m}
-          disabled={disabled}
-          onClick={() => onChange(m)}
-          className={cn(
-            "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
-            mode === m ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground",
-          )}
-        >
-          {m === "simple" ? "Simple" : "Expert"}
-        </button>
-      ))}
-    </div>
+    <RadioList
+      layout="inline"
+      label="Mode"
+      value={mode}
+      onChange={(m) => onChange(m as WizardMode)}
+      options={(["simple", "expert"] as const).map((m) => ({
+        value: m,
+        label: m === "simple" ? "Simple" : "Expert",
+        disabled,
+      }))}
+    />
   );
 }
 
@@ -1125,20 +1119,12 @@ function ValueQuestionCard({
           </p>
         )}
       </div>
-      <div className="flex flex-wrap gap-2">
-        {q.options.map((o) => (
-          <Button
-            key={o.value}
-            size="sm"
-            variant={q.answer === o.value ? "default" : "outline"}
-            aria-pressed={q.answer === o.value}
-            disabled={busy}
-            onClick={() => onAnswer(q.key, o.value)}
-          >
-            {o.label}
-          </Button>
-        ))}
-      </div>
+      <RadioList
+        label={q.title}
+        value={q.answer ?? ""}
+        onChange={(v) => onAnswer(q.key, v)}
+        options={q.options.map((o) => ({ value: o.value, label: o.label, disabled: busy }))}
+      />
       {(expert ? q.options : q.options.slice(0, 2)).some((o) => (o.examples ?? []).length > 0) && (
         <dl className="meta grid gap-x-4 gap-y-1 text-muted-foreground sm:grid-cols-[auto_minmax(0,1fr)]">
           {q.options
@@ -1649,23 +1635,11 @@ function Choice({
   onSelect: (v: string) => void;
   children: React.ReactNode;
 }) {
+  // même radio que partout dans la console (components/ui/radio-list)
   return (
-    <label
-      className={cn(
-        "flex cursor-pointer items-start gap-3 rounded-lg border px-3 py-2.5 transition-colors",
-        checked ? "border-brand bg-brand/5" : "hover:bg-muted/40",
-      )}
-    >
-      <input
-        type="radio"
-        name={name}
-        value={value}
-        checked={checked}
-        onChange={() => onSelect(value)}
-        className="mt-1 accent-[var(--brand)]"
-      />
-      <span className="min-w-0 flex-1 space-y-0.5">{children}</span>
-    </label>
+    <RadioItem name={name} value={value} checked={checked} onSelect={onSelect}>
+      <span className="block space-y-0.5">{children}</span>
+    </RadioItem>
   );
 }
 

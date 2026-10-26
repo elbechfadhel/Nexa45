@@ -7,6 +7,7 @@ import { CheckCircle2, Circle, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { RadioList } from "@/components/ui/radio-list";
 import { WizardFailure } from "@/lib/api/wizard-hooks";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -80,23 +81,12 @@ export function ProgressScreen({
               <p className="meta text-muted-foreground">{error.message}</p>
               <p className="meta text-muted-foreground">{L.dataTypeHelp}</p>
             </div>
-            <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={L.dataTypeHeading}>
-              {choices.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  role="radio"
-                  aria-checked={c === dataType}
-                  onClick={() => setDataType(c)}
-                  className={cn(
-                    "rounded-lg border px-3 py-2 text-left transition-colors",
-                    c === dataType ? "border-brand bg-brand/5" : "border-border hover:border-brand/60",
-                  )}
-                >
-                  {c}
-                </button>
-              ))}
-            </div>
+            <RadioList
+              label={L.dataTypeHeading}
+              options={choices.map((c) => ({ value: c, label: c }))}
+              value={dataType}
+              onChange={setDataType}
+            />
             <div className="flex flex-wrap gap-2">
               <Button onClick={() => onChooseType(dataType)} disabled={!dataType}>
                 {L.continue}

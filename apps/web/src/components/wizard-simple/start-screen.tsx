@@ -57,6 +57,18 @@ export function StartScreen({
   const open = openTile(tiles, openSystem, target);
   const sole = soleSystem(tiles);
   const heading = entry.targetHeading ?? L.targetHeading;
+  // option cochée : le système ouvert (ses formats ou versions se choisissent dessous), sinon la cible
+  const selected = open ? open.key : target;
+  function pickTile(key: string) {
+    const tile = tiles.find((t) => t.key === key);
+    if (tile?.kind === "system") {
+      setOpenSystem(tile.system);
+      if (!tile.formats.some((f) => f.value === target)) onTarget("");
+    } else {
+      setOpenSystem("");
+      onTarget(key);
+    }
+  }
   // point d'entrée d'un système : le format est choisi dès le dépôt du fichier (règles du serveur, sans LLM)
   const detect = useWizardDetect();
   const [auto, setAuto] = useState(false);
@@ -132,66 +144,43 @@ export function StartScreen({
               {auto && target && !detect.isPending && <p className="meta text-muted-foreground">{L.autoChosen}</p>}
             </div>
           ) : (
-          <div className="space-y-5" role="radiogroup" aria-label={heading}>
+          <div className="space-y-5">
             {groups.map((g) => (
-              <section key={g.group} className="space-y-2">
+              <section key={g.group} className="space-y-2.5">
                 <div>
                   <h3 className="eyebrow">{L.groups[g.group]}</h3>
                   <p className="meta text-muted-foreground">{L.groupHelp[g.group]}</p>
                 </div>
-                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                  {targetTiles(g.items).map((tile) => {
-                    if (tile.kind === "system") {
-                      const selected = open?.key === tile.key;
-                      return (
-                        <button
-                          key={tile.key}
-                          type="button"
-                          role="radio"
-                          aria-checked={selected}
-                          onClick={() => {
-                            setOpenSystem(tile.system);
-                            if (!tile.formats.some((f) => f.value === target)) onTarget("");
-                          }}
-                          className={tileClass(selected)}
-                        >
-                          <span className="w-full truncate font-medium">{tile.label}</span>
-                          <span className="meta w-full truncate text-muted-foreground">
-                            {systemTileDetail(tile)}
-                          </span>
-                        </button>
-                      );
-                    }
-                    const t = tile.target;
-                    const selected = t.value === target;
-                    return (
-                      <button
-                        key={tile.key}
-                        type="button"
-                        role="radio"
-                        aria-checked={selected}
-                        onClick={() => {
-                          setOpenSystem("");
-                          onTarget(t.value);
-                        }}
-                        className={tileClass(selected)}
-                      >
-                        <span className="w-full truncate font-medium">{targetTitle(t)}</span>
-                        {targetSubtitle(t) && (
-                          <span className="meta w-full truncate text-muted-foreground">{targetSubtitle(t)}</span>
-                        )}
-                        {t.group === "instance" && (
-                          <StatusBadge tone={t.connected ? "success" : "neutral"}>
-                            {t.connected ? L.connected : L.notConnected}
-                          </StatusBadge>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-                {open && g.items.some((t) => open.formats.includes(t)) && (
-                  <Choices tile={open} target={target} onTarget={onTarget} framed />
-                )}
+                <RadioList
+                  label={L.groups[g.group]}
+                  layout={g.group === "known" ? "columns" : "list"}
+                  value={selected}
+                  onChange={pickTile}
+                  options={targetTiles(g.items).map((tile) =>
+                    tile.kind === "system"
+                      ? {
+                          value: tile.key,
+                          label: tile.label,
+                          hint: systemTileDetail(tile),
+                          content: <Choices tile={tile} target={target} onTarget={onTarget} />,
+                        }
+                      : {
+                          value: tile.key,
+                          label: targetTitle(tile.target),
+                          hint:
+                            tile.target.group === "instance" ? (
+                              <span className="inline-flex flex-wrap items-center gap-2">
+                                {targetSubtitle(tile.target)}
+                                <StatusBadge tone={tile.target.connected ? "success" : "neutral"}>
+                                  {tile.target.connected ? L.connected : L.notConnected}
+                                </StatusBadge>
+                              </span>
+                            ) : (
+                              targetSubtitle(tile.target) || undefined
+                            ),
+                        },
+                  )}
+                />
               </section>
             ))}
           </div>
@@ -209,64 +198,33 @@ export function StartScreen({
   );
 }
 
-/** Formats ou versions d'un système : sous sa tuile (`framed`), ou seuls quand le système est le seul à l'écran. */
+/** Formats ou versions d'un système : sous l'option du système choisi, ou seuls quand le système est le seul à
+ *  l'écran (`label` : la question est déjà l'intitulé de la carte, ni second titre ni aide). */
 function Choices({
   tile,
   target,
   onTarget,
-  framed = false,
   label,
 }: {
   tile: SystemTile;
   target: string;
   onTarget: (value: string) => void;
-  framed?: boolean;
-  /** Choix seuls à l'écran : la question est déjà l'intitulé de la carte (ni second titre, ni aide : aucun choix
-   *  n'y est présélectionné). */
   label?: string;
 }) {
   const { main, others } = formatChoices(tile.formats);
-  if (label !== undefined) {
-    // choix seuls à l'écran : radio group (style commun de la console), versions plus anciennes repliées
-    return (
-      <div className="space-y-3">
-        <RadioList options={main} value={target} onChange={onTarget} label={label} />
-        {others.length > 0 && (
-          <details className="meta" open={others.some((f) => f.value === target)}>
-            <summary className="cursor-pointer text-muted-foreground">{L.otherVersions}</summary>
-            <RadioList
-              className="mt-2.5"
-              options={others}
-              value={target}
-              onChange={onTarget}
-              label={L.otherVersions}
-            />
-          </details>
-        )}
-      </div>
-    );
-  }
   return (
-    <div className={cn("space-y-2", framed && "rounded-lg border border-border p-3")}>
+    <div className="space-y-3">
       {label === undefined && (
         <div>
           <h4 className="font-medium">{choiceHeading(tile)}</h4>
           <p className="meta text-muted-foreground">{tile.choose === "version" ? L.versionHelp : L.formatHelp}</p>
         </div>
       )}
-      <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={label ?? choiceHeading(tile)}>
-        {main.map((f) => (
-          <FormatButton key={f.value} label={f.label} selected={f.value === target} onClick={() => onTarget(f.value)} />
-        ))}
-      </div>
+      <RadioList options={main} value={target} onChange={onTarget} label={label ?? choiceHeading(tile)} />
       {others.length > 0 && (
         <details className="meta" open={others.some((f) => f.value === target)}>
           <summary className="cursor-pointer text-muted-foreground">{L.otherVersions}</summary>
-          <div className="mt-2 flex flex-wrap gap-2" role="radiogroup" aria-label={L.otherVersions}>
-            {others.map((f) => (
-              <FormatButton key={f.value} label={f.label} selected={f.value === target} onClick={() => onTarget(f.value)} />
-            ))}
-          </div>
+          <RadioList className="mt-2.5" options={others} value={target} onChange={onTarget} label={L.otherVersions} />
         </details>
       )}
     </div>
@@ -276,27 +234,6 @@ function Choices({
 /** Question sous une tuile de système : son format, ou sa version. */
 function choiceHeading(tile: { label: string; choose: "format" | "version" }): string {
   return tile.choose === "version" ? L.versionHeading(tile.label) : L.formatHeading(tile.label);
-}
-
-function FormatButton({ label, selected, onClick }: { label: string; selected: boolean; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      role="radio"
-      aria-checked={selected}
-      onClick={onClick}
-      className={cn(tileClass(selected), "w-auto px-3 py-2")}
-    >
-      {label}
-    </button>
-  );
-}
-
-function tileClass(selected: boolean): string {
-  return cn(
-    "flex min-w-0 flex-col items-start gap-1 rounded-lg border p-3 text-left transition-colors",
-    selected ? "border-brand bg-brand/5" : "border-border hover:border-brand/60",
-  );
 }
 
 function FileDrop({ file, onPick }: { file: File | null; onPick: (file: File) => void }) {
