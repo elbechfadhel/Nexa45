@@ -309,6 +309,7 @@ def partners_from_rows(  # noqa: C901, PLR0912, PLR0915
     # fournisseur d'un autre pays de l'UE sans numéro de TVA : ses achats ne peuvent pas être traités comme
     # des acquisitions intracommunautaires (signalé, jamais bloquant pour la liste)
     eu_without_vat: list[tuple[int, str]] = []
+    foreign_number: list[tuple[int, str]] = []  # numéro de TVA d'un pays hors UE (pas une USt-IdNr)
     vat_pairs: list[list[str]] = []
     zero_pairs: list[list[str]] = []
     for i in range(len(rows)):
@@ -347,7 +348,16 @@ def partners_from_rows(  # noqa: C901, PLR0912, PLR0915
             pc = ""
         vat = vat_of(i)
         status = "missing"
-        if vat:
+        # pays hors de l'UE (Suisse…) : aucune USt-IdNr possible ; son numéro de TVA (« CHE-… MWST ») n'est
+        # jamais contrôlé comme une USt-IdNr ni signalé invalide, et jamais écrit comme tel
+        non_eu = bool(
+            countries[i] and countries[i] != table.home_country and countries[i] not in table.eu_members
+        )
+        if non_eu:
+            if vat:
+                foreign_number.append((i, val(i, "vat_id")))
+            vat, status = "", "non_eu"
+        elif vat:
             pattern = table.vat_ids.get(vat[:2])
             if pattern is None or not re.match(pattern, vat):
                 bad_vat.append((i, val(i, "vat_id")))
@@ -437,6 +447,17 @@ def partners_from_rows(  # noqa: C901, PLR0912, PLR0915
         lambda n: say("{n} VAT [ID is|IDs are] not valid for [its|their] country: not written.", n),
         "Correct the VAT ID (country code + number). Without a valid VAT ID, a tax-free intra-community "
         "delivery cannot be justified.",
+    )
+    issue(
+        "vat_id",
+        "vat_non_eu",
+        foreign_number,
+        lambda n: say(
+            "{n} tax [number|numbers] of a country outside the EU [is|are] not an EU VAT ID: not written in "
+            "the EU VAT ID field.",
+            n,
+        ),
+        "Nothing to correct: a partner outside the EU has no EU VAT ID.",
     )
     issue(
         "vat_id",

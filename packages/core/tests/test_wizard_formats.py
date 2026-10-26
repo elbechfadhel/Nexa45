@@ -587,3 +587,21 @@ def test_the_eu_members_are_an_explicit_list_with_their_vat_id_patterns():
         "IE1234567T",
     )
     assert [i.kind for i in t.issues] == ["vat_missing_eu"]  # le pays d'Irlande est reconnu
+
+
+def test_a_tax_number_outside_the_eu_is_never_an_invalid_eu_vat_id():
+    rows = [
+        {
+            "customer_number": "1020",
+            "name": "Helvetia Office AG",
+            "country": "Schweiz",
+            "vat_id": "CHE-123.456.789 MWST",
+        },
+        {"customer_number": "1023", "name": "Oslo Paper AS", "country": "Norwegen"},
+    ]
+    t = partners_from_rows(PARTNERS, rows, {}, PartnerRole.CUSTOMER, {})
+    assert t.vat == {"file:1020": ("non_eu", "CH"), "file:1023": ("non_eu", "NO")}
+    assert t.partners[0].tax.vat_id is None  # jamais écrit dans le champ de l'USt-IdNr
+    (issue,) = t.issues
+    assert issue.kind == "vat_non_eu" and issue.kind != "vat_invalid" and issue.rows == [1]
+    assert issue.message.startswith("1 tax number of a country outside the EU is not an EU VAT ID")
