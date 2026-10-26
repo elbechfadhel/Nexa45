@@ -567,6 +567,7 @@ class QuickQuestionOut(_Out):
     # décision sur les valeurs (clé de `choices`, ex. « currency ») ; None : valeur d'un champ (`fills`)
     decision: str | None = None
     mapping: QuickMappingOut | None = None  # correspondance de catégorie (tableau)
+    summary: str | None = None  # réglage : ligne de résumé, « {value} » = la réponse
 
 
 class QuickStartOut(_Out):
@@ -594,6 +595,7 @@ def _quick_question(x: QuickQuestion) -> QuickQuestionOut:
         default_from=x.default_from,  # type: ignore[arg-type]
         decision=x.decision,
         mapping=QuickMappingOut.model_validate(x.mapping.model_dump()) if x.mapping else None,
+        summary=x.summary,
     )
 
 

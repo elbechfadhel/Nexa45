@@ -199,7 +199,7 @@ export const SIMPLE_LABELS = {
   mappingsHeading: "Accounts by category",
   mappingsHelp: "Preselected usual accounts: confirm them with your tax advisor.",
   mappingColumns: { category: "Category", rate: "VAT", account: "Account", taxKey: "Tax key" },
-  automaticAccount: "none (automatic account)",
+  automaticAccount: "No tax key (automatic account)",
   /** @param {string} rate */
   taxKeyShared: (rate) => `The tax key applies to every category at ${rate} % VAT.`,
   fileDecisionsHeading: "About your file",

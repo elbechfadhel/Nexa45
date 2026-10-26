@@ -6415,6 +6415,8 @@ export interface components {
             default_from?: ("your_answers" | "your_system" | "your_settings" | "registry_first_value" | "your_file" | "usual_default") | null;
             mapping?: components["schemas"]["QuickMappingOut"] | null;
             question: components["schemas"]["MissingQuestionOut"];
+            /** Summary */
+            summary?: string | null;
         };
         /** QuickStartOut */
         QuickStartOut: {

@@ -612,8 +612,12 @@ test("decided for you is grouped by kind of decision: settings, accounts by cate
   assert.deepEqual(themes.taxes.map((x) => x.decision), ["map:TAX:rate:PURCHASE:19"]); // jamais une ligne à part
   assert.deepEqual(themes.others.map((x) => x.decision), ["accounting:number_spaces"]);
   assert.equal(settingsSummary(themes.settings, {}), "Beraternummer 1234567 · Sachkontenrahmen 03");
-  // compte automatique : aucune clé de taxe écrite, quelle que soit la clé du taux
-  assert.equal(rowTaxKey(themes.rows[0], themes.taxes[0], {}), "none (automatic account)");
+  // réglage avec sa phrase de résumé (déclarée par le binding)
+  const offset = { ...q("setting:account_offset", "Customer account number = this number + the customer number", "10000"), summary: "Customer account = {value} + customer number" };
+  assert.equal(settingsSummary([offset], {}), "Customer account = 10000 + customer number");
+  assert.equal(settingsSummary([{ ...offset, default: null }], {}), "Customer account number = this number + the customer number");
+  // compte automatique : aucune clé de taxe écrite, quelle que soit la clé du taux ; un seul libellé « No tax key »
+  assert.equal(rowTaxKey(themes.rows[0], themes.taxes[0], {}), "No tax key (automatic account)");
   assert.equal(rowTaxKey(themes.rows[1], themes.taxes[0], {}), "0009");
 });
 

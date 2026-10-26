@@ -72,7 +72,7 @@ class InvoiceTable(_Model):
 def category(rate: Decimal) -> PostingCategoryRef:
     """Catégorie d'une vente à ce taux : la cible lui fait correspondre un compte de produits."""
     r = rate.normalize()
-    return PostingCategoryRef(source_ref=f"sale:{r:f}", name=f"sales at {r:f} % VAT")
+    return PostingCategoryRef(source_ref=f"sale:{r:f}", name=f"Domestic sales at {r:f} % VAT")
 
 
 def purchase_category(rate: Decimal, expense: str | None = None) -> PostingCategoryRef:

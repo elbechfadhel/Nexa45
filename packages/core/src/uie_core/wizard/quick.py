@@ -240,6 +240,8 @@ class QuickQuestion(_Model):
     decision: str | None = None
     # correspondance de catégorie : affichée en tableau (catégorie, taux, compte, clé)
     mapping: QuickMapping | None = None
+    # réglage : ligne de résumé (« Customer account = {value} + customer number ») ; None : nom + valeur
+    summary: str | None = None
 
 
 class QuickStart(_Model):

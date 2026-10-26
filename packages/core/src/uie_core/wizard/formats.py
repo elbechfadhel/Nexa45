@@ -236,6 +236,7 @@ def settings_questions(
                 default=default,
                 default_from=("your_settings" if own else "usual_default") if default else None,
                 decision=SETTING + p.name,
+                summary=p.summary,
             )
         )
     return out

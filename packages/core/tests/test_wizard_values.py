@@ -401,3 +401,12 @@ def test_only_interpreted_dates_are_listed_as_written_differently() -> None:
     # date ambiguë lue dans l'ordre décidé : listée
     ambiguous = check_column(f, "Datum", 2, ["03/04/2024", "05/06/2024"], {"date_order:2": "dmy"})
     assert [t.kind for t in ambiguous.transforms] == ["date_read_order"]
+
+
+def test_a_date_order_proven_by_another_value_of_the_column_is_not_listed() -> None:
+    """« 13.10.2026 » prouve « le jour d'abord » : les autres dates (05.10.2026…) ne sont ni une question ni
+    « read two ways » ; seule une décision visible (la question) est dite « as decided »."""
+    f = _f("document_date", "date", "Invoice date")
+    r = check_column(f, "Re-Datum", 1, ["05.10.2026", "06.10.2026", "13.10.2026"], {})
+    assert r.values == ["2026-10-05", "2026-10-06", "2026-10-13"]
+    assert r.questions == [] and r.transforms == []

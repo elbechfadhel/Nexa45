@@ -914,8 +914,11 @@ def check_column(  # noqa: C901, PLR0912, PLR0915
         orders = {r.order for r in reads_d if r and r.order}
         both = [cleaned[i] for i, r in enumerate(reads_d) if r and r.options]
         order: str | None = None
+        # ordre PROUVÉ par une autre valeur de la colonne (« 13.10.2026 » : le jour d'abord) : aucune
+        # interprétation à lister ; décidé par la question : listé (« as decided », la décision est visible)
+        proven = False
         if both and len(orders) == 1:
-            order = orders.pop()
+            order, proven = orders.pop(), True
         elif both:
             q = _question(
                 f"date_order:{position}",
@@ -952,7 +955,8 @@ def check_column(  # noqa: C901, PLR0912, PLR0915
                     out.append(acc.issue("date_order", raw, i))
                 else:
                     value = r.options[0] if order == "dmy" else r.options[1]
-                    out.append(acc.form("date_century" if i in centuried else "date_read_order", raw, value))
+                    form = "date_century" if i in centuried else None if proven else "date_read_order"
+                    out.append(acc.form(form, raw, value))
             else:
                 # simple mise au format standard (ISO, heure 00:00:00 retirée, 05.09.2026…) : jamais listée
                 out.append(acc.form(r.form if r.form == "date_century" else None, raw, r.value or ""))

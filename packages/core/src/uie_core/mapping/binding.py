@@ -77,6 +77,10 @@ class FieldMapping(_Spec):
     map: dict[str, str] | None = None  # valeur source → valeur cible ; valeur absente de la table = omise
     date_format: str | None = None  # date source → texte (strftime), ex. « %d%m » quand le format le déclare
     identity: bool = False  # sans elle l'enregistrement n'est pas utilisable (invalide → bloqué)
+    # phrase affichée quand la cible REFUSE une valeur facultative, par raison (« format » : motif du
+    # Registry, « encoding » : caractère que l'encodage du fichier ne sait pas écrire, « {chars} » = ces
+    # caractères) ; sans phrase : message générique du moteur
+    refused: dict[Literal["format", "encoding"], str] = {}
 
     @model_validator(mode="after")
     def _one_source(self) -> FieldMapping:
@@ -163,6 +167,8 @@ class ProfileParam(_Spec):
     # indispensable seulement pour CRÉER le fichier (ex. un choix d'en-tête) : un aperçu des enregistrements
     # reste possible sans lui ; `required` reste réservé aux paramètres sans lesquels rien n'est possible
     required_for_file: bool = False
+    # ligne de résumé des réglages (« Customer account = {value} + customer number ») ; sans elle : libellé
+    summary: str | None = None
 
 
 class AccountSpec(_Spec):

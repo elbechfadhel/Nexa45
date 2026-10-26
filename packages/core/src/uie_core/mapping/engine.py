@@ -178,29 +178,41 @@ def _pattern(expr: str, syntax: str | None = None) -> re.Pattern[str] | None:
 
 def check_value(fd: FieldDef, value: Any, writer: ValueFormat, encoding: str) -> str | None:
     """Raison (phrase simple) pour laquelle la valeur ne peut pas être écrite ici, sinon None."""
+    refused = check_refusal(fd, value, writer, encoding)
+    return refused[1] if refused else None
+
+
+def unencodable(text: str, writer: ValueFormat, encoding: str) -> str:
+    """Caractères de `text` que l'encodage du fichier ne sait pas écrire (une fois chacun, dans l'ordre)."""
+    return "".join(dict.fromkeys(c for c in text if not writer.encodable(c, encoding)))
+
+
+def check_refusal(fd: FieldDef, value: Any, writer: ValueFormat, encoding: str) -> tuple[str, str] | None:
+    """(raison, phrase) du refus d'une valeur : « number », « decimals », « length », « encoding », « enum »,
+    « format » ; None : écrivable."""
     meta = fd.metadata
     text = value if isinstance(value, str) else None
     if fd.data_type.value in ("integer", "decimal") and isinstance(value, str):
         if not re.fullmatch(r"-?\d+([.,]\d+)?", value):
-            return "is not a number"
+            return "number", "is not a number"
     decimals = meta.get("decimals")
     if isinstance(value, Decimal) and isinstance(decimals, int) and value.as_tuple().exponent < -decimals:
         # jamais d'arrondi silencieux : l'écrivain arrondirait à `decimals`
         if value != value.quantize(Decimal(1).scaleb(-decimals)):
-            return f"has more than {decimals} decimals"
+            return "decimals", f"has more than {decimals} decimals"
     length = meta.get("length")
     if text is not None and isinstance(length, int) and length > 0 and len(text) > length:
-        return f"is longer than {length} characters"
+        return "length", f"is longer than {length} characters"
     if text is not None and not writer.encodable(text, encoding):
-        return f"contains characters that cannot be written in {encoding}"
+        return "encoding", f"contains characters that cannot be written in {encoding}"
     allowed = meta.get("enum")
     if isinstance(allowed, list) and allowed and writer.format_cell(fd, value) not in allowed:
-        return "is not one of the values accepted by the target"
+        return "enum", "is not one of the values accepted by the target"
     expr = meta.get("pattern")
     syntax = meta.get("pattern_syntax")
     compiled = _pattern(expr, syntax if isinstance(syntax, str) else None) if isinstance(expr, str) else None
     if compiled is not None and not compiled.match(writer.format_cell(fd, value)):
-        return "does not have the format expected by the target"
+        return "format", "does not have the format expected by the target"
     return None
 
 
@@ -227,19 +239,25 @@ def map_record(
     values: dict[str, Any] = {}
     issues: list[TargetIssue] = []
 
-    def put(pos: str, value: Any, identity: bool) -> None:
+    def put(pos: str, value: Any, identity: bool, said: dict[str, str] | None = None) -> None:
         fd = resolved.field(pos)
-        reason = check_value(fd, value, writer, encoding)
-        if reason is None:
+        refused = check_refusal(fd, value, writer, encoding)
+        if refused is None:
             values[pos] = value
             return
+        kind, reason = refused
         blocking = identity or fd.required
+        message = f"{fd.label} {reason}" + ("" if blocking else ": left out")
+        if not blocking and (said or {}).get(kind):
+            # phrase du binding (donnée), avec les caractères refusés le cas échéant
+            chars = unencodable(value, writer, encoding) if isinstance(value, str) else ""
+            message = (said or {})[kind].replace("{chars}", chars)
         issues.append(
             TargetIssue(
                 level=IssueLevel.BLOCKING if blocking else IssueLevel.WARNING,
                 field=pos,
                 label=fd.label,
-                message=f"{fd.label} {reason}" + ("" if blocking else ": left out"),
+                message=message,
             )
         )
 
@@ -257,7 +275,7 @@ def map_record(
                 TargetIssue(level=level, field=fm.field, label=fd.label, message=f"{fd.label} {problem}")
             )
             continue
-        put(fm.field, value, fm.identity)
+        put(fm.field, value, fm.identity, dict(fm.refused))
 
     for rep in b.repeat:
         items = view.get(rep.source) or []

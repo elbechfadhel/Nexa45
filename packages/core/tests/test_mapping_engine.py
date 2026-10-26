@@ -300,3 +300,16 @@ def test_pattern_syntax_declared_by_the_registry(syntax, value, ok):  # noqa: AN
         technical_name="09", label="Code", native_type="text", metadata={**meta, "pattern": r'^"\d{1,2}"$'}
     )
     assert (check_value(digits, "٣", DemoWriter(), "utf-8") is None) is (syntax is None)
+
+
+def test_a_refused_optional_value_uses_the_sentence_declared_by_the_binding(session):  # noqa: ANN001
+    data = BINDING.model_dump()
+    for f in data["fields"]:
+        if f["field"] == "07":
+            f["refused"] = {"format": "Foreign postal code: digits only, left empty."}
+    registry = RegistryService(session, SystemContext("test"))
+    registry.publish_snapshot(_snapshot())
+    custom = resolve_binding(registry, TargetBinding.model_validate(data))
+    rec = _map(custom, _org(**{"address.MAIN.country_code": "NL", "address.MAIN.postal_code": "12 AB"}))
+    assert [i.message for i in rec.issues] == ["Foreign postal code: digits only, left empty."]
+    assert "07" not in rec.values  # toujours laissé vide, seule la phrase change

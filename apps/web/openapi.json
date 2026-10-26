@@ -11007,6 +11007,17 @@
           },
           "question": {
             "$ref": "#/components/schemas/MissingQuestionOut"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
           }
         },
         "required": [

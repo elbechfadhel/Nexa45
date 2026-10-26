@@ -17,7 +17,7 @@ import { SIMPLE_LABELS as L } from "./simple-labels.mjs";
 /** @typedef {{ value: string, label: string, description?: string | null, verified?: boolean }} Choice */
 /** @typedef {{ field: string, label: string, kind: string, title: string, help?: string | null, choices: Choice[], free_text: boolean }} Question */
 /** @typedef {{ category: string, rate: string, tax_decision?: string | null, automatic_accounts?: string[] }} QuickMapping */
-/** @typedef {{ question: Question, default?: string | null, default_from?: string | null, decision?: string | null, mapping?: QuickMapping | null }} QuickQuestion */
+/** @typedef {{ question: Question, default?: string | null, default_from?: string | null, decision?: string | null, mapping?: QuickMapping | null, summary?: string | null }} QuickQuestion */
 /** @typedef {{ position: number, header: string, status: string, target?: string | null, examples: string[], filled: number, confidence?: number | null, probably_not_needed?: boolean }} Column */
 /** @typedef {{ field: string, common?: string | null, per_row?: Record<string, string>, confirmed?: boolean }} Fill */
 /** @typedef {{ position: number, target?: string | null }} Decision */
@@ -221,11 +221,17 @@ export function settingName(q) {
   return m ? m[1] : q.question.label;
 }
 
-/** Ligne de résumé des réglages : « Beraternummer 1234567 · Mandantennummer 10001 · … ».
+/** Ligne de résumé des réglages : « Beraternummer 1234567 · Mandantennummer 10001 · … » ; un réglage qui
+ * déclare sa phrase de résumé (« Customer account = {value} + customer number ») l'utilise quand il a une
+ * valeur.
  * @param {QuickQuestion[]} settings @param {Record<string, string>} answers */
 export function settingsSummary(settings, answers) {
   return settings
-    .map((q) => `${settingName(q)} ${answerText(q, answers[questionKey(q)] ?? q.default ?? "")}`.trim())
+    .map((q) => {
+      const value = answerText(q, answers[questionKey(q)] ?? q.default ?? "");
+      if (q.summary && value) return q.summary.replace("{value}", value);
+      return `${settingName(q)} ${value}`.trim();
+    })
     .join(" · ");
 }
 

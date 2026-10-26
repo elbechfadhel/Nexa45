@@ -195,6 +195,9 @@ def test_customers_list_to_datev_debitoren_with_every_trap(world):
     applied = {q["decision"]: q["default"] for q in body["applied"]}
     # règle « 10000 + Kd-Nr. » présélectionnée, visible et modifiable ; exercice de l'année des données
     assert applied["setting:account_offset"] == "10000"
+    offsets = {q["decision"]: q["summary"] for q in body["applied"] if q["decision"].endswith("_offset")}
+    assert offsets["setting:account_offset"] == "Customer account = {value} + customer number"
+    assert offsets["setting:creditor_offset"] == "Supplier account = {value} + supplier number"
     assert applied["setting:debtor_range"] == "10000-69999" and applied["setting:account_length"] == "4"
     assert applied["setting:fiscal_year_start"].startswith("20")
     assert applied["partner:postal_zero"] == "add" and applied["partner:duplicates"] == "first"
@@ -248,6 +251,8 @@ def test_invoices_to_datev_buchungsstapel_with_every_trap_and_no_double_export(w
     applied = {q["decision"]: (q["default"], q["default_from"]) for q in body["applied"]}
     assert applied["setting:advisor_number"] == ("1234567", "your_settings")
     assert applied["map:CATEGORY:sale:19"] == ("8400", "usual_default")
+    sales = next(q for q in body["applied"] if q["decision"] == "map:CATEGORY:sale:19")
+    assert sales["mapping"]["category"] == "Domestic sales"
     assert applied["map:CATEGORY:sale:7"] == ("8300", "usual_default")
     assert applied["map:TAX:rate:SALE:19"] == ("none", "usual_default")
     # comptes des deux natures possibles de RE-3, présélectionnés (table des comptes de TVA, à valider)

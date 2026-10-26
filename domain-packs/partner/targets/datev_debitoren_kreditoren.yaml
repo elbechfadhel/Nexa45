@@ -13,8 +13,8 @@
 # Les plages de numéros débiteurs / créanciers ne figurent pas dans ces sources : paramètres du profil, saisis
 # selon la configuration comptable (cabinet), sans valeur par défaut.
 
-binding_version: "1.2.0"   # 1.1.0 : Ansprechpartner (102), « décalage + numéro du client » ; 1.2.0 : un
-                           # décalage par rôle (débiteurs, créanciers)
+binding_version: "1.3.0"   # 1.1.0 : Ansprechpartner (102), « décalage + numéro du client » ; 1.2.0 : un
+                           # décalage par rôle (débiteurs, créanciers) ; 1.3.0 : phrases de refus, résumés
 name: DATEV Debitoren/Kreditoren (EXTF)
 source: {model: partner, version: "1"}
 target:
@@ -46,10 +46,18 @@ fields:
   - {field: "008", source: short_name}
   - {field: "009", source: tax.vat_id, extract: {regex: '^([A-Z]{2})([0-9A-Z+*.]{2,13})$', group: 1}}
   - {field: "010", source: tax.vat_id, extract: {regex: '^([A-Z]{2})([0-9A-Z+*.]{2,13})$', group: 2}}
-  - {field: "016", source: address.MAIN.street}
+  # adresse étrangère : la Postleitzahl de DATEV n'admet que des chiffres ; caractère hors de l'encodage du fichier
+  # (« ł ») : laissé vide, avec une phrase claire (jamais translittéré en silence)
+  - field: "016"
+    source: address.MAIN.street
+    refused: {encoding: "The street contains a character DATEV cannot store ({chars}): left empty. Add it in DATEV if needed."}
   - {field: "017", source: address.MAIN.po_box}
-  - {field: "018", source: address.MAIN.postal_code}
-  - {field: "019", source: address.MAIN.city}
+  - field: "018"
+    source: address.MAIN.postal_code
+    refused: {format: "Foreign postal code: DATEV accepts digits only, left empty. Add it in DATEV if needed."}
+  - field: "019"
+    source: address.MAIN.city
+    refused: {encoding: "The city contains a character DATEV cannot store ({chars}): left empty. Add it in DATEV if needed."}
   - {field: "020", source: address.MAIN.country_code}
   - {field: "022", source: address.MAIN.street2}
   - {field: "029", source: contact.phone}
@@ -124,8 +132,10 @@ profile:
   # 70000 + numéro du fournisseur (2001 → 72001) ; sans valeur, les comptes sont numérotés dans l'ordre de la
   # plage ; un numéro hors de la plage du rôle prend le premier libre, et c'est signalé
   - {name: account_offset, label: Customer account number = this number + the customer number, type: integer,
+     summary: "Customer account = {value} + customer number",
      help: "For example 10000: customer 1001 gets the account 11001. Leave it empty to number the accounts in
        order."}
   - {name: creditor_offset, label: Supplier account number = this number + the supplier number, type: integer,
+     summary: "Supplier account = {value} + supplier number",
      help: "For example 70000: supplier 2001 gets the account 72001. Leave it empty to number the accounts in
        order."}

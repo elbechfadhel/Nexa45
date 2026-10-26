@@ -136,10 +136,19 @@ def test_warnings_and_blocking(resolved):
     rec = _map(resolved, foreign, PartnerRole.SUPPLIER, "70000")
     assert rec.status == RecordStatus.WARNING
     assert {i.message for i in rec.issues} == {
-        "Postleitzahl does not have the format expected by the target: left out",
+        "Foreign postal code: DATEV accepts digits only, left empty. Add it in DATEV if needed.",
         "Sprache value « nl » is not supported by the target",
         "1 bank accounts not written: IBAN missing",
     }
+
+    polish = _company(
+        addresses=[Address(street="ul. Długa 15", postal_code="00238", city="Warszawa", country_code="PL")]
+    )
+    rec = _map(resolved, polish, PartnerRole.SUPPLIER, "70002")
+    assert [i.message for i in rec.issues] == [
+        "The street contains a character DATEV cannot store (ł): left empty. Add it in DATEV if needed."
+    ]
+    assert "016" not in rec.values and rec.values["019"] == "Warszawa"
 
     no_country = _company(addresses=[Address(street="Waldweg 1", postal_code="24103", city="Kiel")])
     rec = _map(resolved, no_country, PartnerRole.SUPPLIER, "70001")
