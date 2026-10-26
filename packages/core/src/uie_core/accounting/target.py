@@ -327,6 +327,7 @@ class ExportFilePlan(_Model):
     company_name: str | None
     encoding: str
     source_documents: int
+    # période écrite dans l'en-tête, en clair (« 08/2026 to 09/2026 ») : mois des pièces ÉCRITES
     exported_documents: int
     excluded_documents: int
     warning_documents: int  # exportées avec avertissement
@@ -344,6 +345,7 @@ class ExportFilePlan(_Model):
     last_export_at: datetime | None
     # historique d'export par pièce (idempotence) : état de chaque pièce exportable et compteurs
     documents: list[ExportDocument] = []
+    period_text: str = ""
     new_documents: int = 0
     already_exported_documents: int = 0
     changed_documents: int = 0
@@ -848,6 +850,14 @@ class AccountingTargetService:
         classes = self.ledger.classify(scope, list(contents.values()), {})
         now = utcnow()
         plan, content = _serialize(target, prep, settings, span, now, classes=classes)  # type: ignore[arg-type]
+        # période de l'en-tête (Datum von / bis) = mois des pièces réellement ÉCRITES : un mois dont toutes
+        # les pièces sont bloquées ou hors de l'exercice n'y figure pas
+        written = {d.document_ref for d in plan.documents if d.included}
+        days = [d.accounting_date for d in prep.documents if d.source_ref in written and d.accounting_date]
+        narrowed = PeriodSpan.covering(days) if days else span
+        if (narrowed.first_day, narrowed.last_day) != (span.first_day, span.last_day):
+            span = narrowed
+            plan, content = _serialize(target, prep, settings, span, now, classes=classes)  # type: ignore[arg-type]
         if not generate:
             return prep, plan, content, None
         if plan.exported_documents == 0:
@@ -1410,6 +1420,7 @@ def _serialize(
         snapshot_label=prep.snapshot_label,
         binding_version=prep.binding_version,
         period=prep.period,
+        period_text=str(getattr(period, "text", period)),
         company_name=prep.company_name,
         encoding=encoding,
         source_documents=len(prep.documents),

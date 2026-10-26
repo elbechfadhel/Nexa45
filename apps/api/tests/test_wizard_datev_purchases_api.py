@@ -229,3 +229,25 @@ def test_purchases_from_another_country_are_left_to_the_vat_domain_and_flagged(w
         "(intra-community acquisition, reverse charge) is not supported yet, not exported.",
     )
     assert reasons[9][0] == "vat_abroad" and "(ES)" in reasons[9][1]
+
+
+def test_the_period_covers_only_the_months_written_and_last_year_is_refused(world):  # noqa: F811
+    """Facture de l'exercice précédent : refusée avec son motif ; un mois dont les factures sont toutes
+    bloquées à la préparation DATEV (juillet : catégorie sans compte) n'entre pas dans la période de l'en-tête
+    (Datum von / bis)."""
+    c = world["client"]
+    _suppliers_exported(c)
+    journal = (
+        "Beleg-Nr. Lieferant;Rechnungsdatum;Lief-Nr.;Lieferant;Kostenart;Netto €;USt %;USt €;Brutto €\n"
+        "J-1;15.07.2026;3001;Holz Großhandel GmbH;Reisekosten;100,00;19;19,00;119,00\n"
+        "S-1;28.09.2026;3001;Holz Großhandel GmbH;Wareneinkauf;100,00;19;19,00;119,00\n"
+        "H-90;30.12.2025;3001;Holz Großhandel GmbH;Wareneinkauf;300,00;19;57,00;357,00\n"
+    )
+    flow = _flow(c, "Buchungsstapel 13", journal, "Eingang.csv", {"setting:lock_bookings": "0"})
+    reasons = {e["row"]: e["reason"] for e in flow["preview"]["excluded_rows"]}
+    assert "outside the fiscal year starting 2026-01-01" in reasons[3]
+    assert any("period 09/2026)" in n for n in flow["preview"]["notices"]), flow["preview"]["notices"]
+    res = _download(c, flow)
+    assert res.status_code == 200, res.text
+    header, rows = _rows(res.content)
+    assert (header[14], header[15]) == ("20260901", "20260930") and len(rows) == 1

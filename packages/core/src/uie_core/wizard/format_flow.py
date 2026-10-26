@@ -419,7 +419,7 @@ class FormatFlow:
                 written = plan.exported_documents
                 notices.append(
                     say("{n} [invoice|invoices] in the file", written)
-                    + f" ({count(plan.row_count, 'booking')}, period {span.text})."
+                    + f" ({count(plan.row_count, 'booking')}, period {plan.period_text or span.text})."
                 )
             else:
                 written = sum(
