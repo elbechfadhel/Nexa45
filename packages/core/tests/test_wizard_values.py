@@ -385,3 +385,19 @@ def test_a_two_digit_year_is_a_decision_preselected_with_the_century_of_the_othe
     assert r.values[2] == "" and [i.kind for i in r.issues] == ["two_digit_year"]
     r = check_column(f, "Re-Datum", 1, values, {"century:1": "20"})
     assert r.values == ["2026-07-05", "2026-07-27", "2026-09-05", "2026-09-12"] and r.issues == []
+
+
+def test_only_interpreted_dates_are_listed_as_written_differently() -> None:
+    """« Written differently » : une date seulement remise au format standard (« 2026-07-28 00:00:00 »,
+    « 27.07.2026 ») n'est pas listée ; une année à deux chiffres complétée par le siècle choisi l'est."""
+    f = _f("document_date", "date", "Invoice date")
+    values = ["2026-07-28 00:00:00", "27.07.2026", "5.9.26", "2026-09-04"]
+    r = check_column(f, "Re-Datum", 1, values, {"century:1": "20"})
+    assert r.values == ["2026-07-28", "2026-07-27", "2026-09-05", "2026-09-04"]
+    assert [(t.kind, t.examples) for t in r.transforms] == [("date_century", [["5.9.26", "2026-09-05"]])]
+    # aucune interprétation : rien à lister
+    plain = check_column(f, "Re-Datum", 1, ["2026-07-28 00:00:00", "27.07.2026"], {})
+    assert plain.transforms == []
+    # date ambiguë lue dans l'ordre décidé : listée
+    ambiguous = check_column(f, "Datum", 2, ["03/04/2024", "05/06/2024"], {"date_order:2": "dmy"})
+    assert [t.kind for t in ambiguous.transforms] == ["date_read_order"]

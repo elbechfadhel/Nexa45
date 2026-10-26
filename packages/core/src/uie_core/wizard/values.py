@@ -23,7 +23,7 @@ import math
 import re
 from collections import Counter, defaultdict
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import date, datetime
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any, Protocol, runtime_checkable
@@ -499,6 +499,10 @@ _FORM_LABEL = {
     "unit": "Unit removed (the unit you confirmed)",
     "convert": "Converted to the unit you confirmed (exact factor)",
     "date_format": "Date written in standard form (YYYY-MM-DD)",
+    # dates vraiment INTERPRÉTÉES (les seules listées) ; une date seulement remise au format standard ne
+    # l'est pas
+    "date_century": "Two-digit year completed with the century you chose",
+    "date_read_order": "Date that can be read two ways, read day or month first as decided",
     "boolean": "Yes / no written as true / false",
     "choice": "Allowed value written with its code",
     "integer": "Whole number written without decimals",
@@ -876,6 +880,7 @@ def check_column(  # noqa: C901, PLR0912, PLR0915
         # année sur deux chiffres (« 5.9.26 ») : le siècle est une DÉCISION, présélectionnée seulement quand
         # toutes les autres dates de la colonne sont du même siècle ; jamais deviné en silence
         short = [i for i, r in enumerate(reads_d) if r and r.bad == "two_digit_year"]
+        centuried: set[int] = set()  # lignes dont le siècle a été complété (interprétation listée)
         if short:
             centuries = {r.value[:2] for r in reads_d if r and r.value and len(r.value) >= 4}
             q = _question(
@@ -901,7 +906,11 @@ def check_column(  # noqa: C901, PLR0912, PLR0915
             if q.answer and q.answer != "skip":
                 for i in short:
                     a, b, y = _NUMERIC_DATE.match(cleaned[i]).groups()  # type: ignore[union-attr]
-                    reads_d[i] = _read_date(f"{a}.{b}.{q.answer}{y}", kind == "datetime")
+                    read = _read_date(f"{a}.{b}.{q.answer}{y}", kind == "datetime")
+                    # siècle complété : une vraie interprétation, listée (ses options d'ordre restent
+                    # possibles)
+                    reads_d[i] = replace(read, form="date_century") if not read.options else read
+                    centuried.add(i)
         orders = {r.order for r in reads_d if r and r.order}
         both = [cleaned[i] for i, r in enumerate(reads_d) if r and r.options]
         order: str | None = None
@@ -942,9 +951,11 @@ def check_column(  # noqa: C901, PLR0912, PLR0915
                 if order is None:
                     out.append(acc.issue("date_order", raw, i))
                 else:
-                    out.append(acc.form(r.form, raw, r.options[0] if order == "dmy" else r.options[1]))
+                    value = r.options[0] if order == "dmy" else r.options[1]
+                    out.append(acc.form("date_century" if i in centuried else "date_read_order", raw, value))
             else:
-                out.append(acc.form(r.form, raw, r.value or ""))
+                # simple mise au format standard (ISO, heure 00:00:00 retirée, 05.09.2026…) : jamais listée
+                out.append(acc.form(r.form if r.form == "date_century" else None, raw, r.value or ""))
     else:
         for i, v in enumerate(cleaned):
             raw = values[i]
