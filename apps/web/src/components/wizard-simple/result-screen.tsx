@@ -123,6 +123,33 @@ export function ResultScreen({
           <IssueList title={L.notWrittenHeading} help={L.notWrittenHelp} issues={problems.notWritten} />
           <IssueList title={L.toCheckHeading} issues={problems.toCheck} />
 
+          {preview.value_transforms.length > 0 && (
+            <section className="space-y-2">
+              <div>
+                <h3 className="eyebrow">{L.transformsHeading}</h3>
+                <p className="meta text-muted-foreground">{L.transformsHelp}</p>
+              </div>
+              <ul className="space-y-1.5">
+                {preview.value_transforms.map((t) => (
+                  <li key={`${t.kind}-${t.column}`} className="space-y-0.5">
+                    <p>
+                      <span className="font-medium">{t.label}</span>
+                      <span className="meta text-muted-foreground"> · {L.transformCount(t.count)}</span>
+                    </p>
+                    {t.examples.length > 0 && (
+                      <p className="meta tech text-muted-foreground">
+                        {t.examples
+                          .slice(0, 3)
+                          .map(([before, after]) => `${before} → ${after}`)
+                          .join(", ")}
+                      </p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
           {preview.missing_required.length > 0 && (
             <section className="space-y-1">
               <h3 className="eyebrow">{L.missingHeading}</h3>

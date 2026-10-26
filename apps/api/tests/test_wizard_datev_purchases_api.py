@@ -207,9 +207,24 @@ def test_input_tax_keys_follow_the_account_and_a_domestic_purchase_without_vat_i
     assert [row("H-101", "73001")[i] for i in (6, 7, 8)] == ["73001", "3300", '""']
     assert [row("500", "73002")[i] for i in (6, 7, 8)] == ["73002", "4240", '"0009"']
     assert [row("M-0926", "73003")[i] for i in (0, 7, 8)] == ["1500,00", "4210", '""']
-    # un numéro avec une espace n'est pas un Belegfeld 1 DATEV : refusé avec son motif, jamais corrigé
+    # numéro avec une espace : décision PRÉSÉLECTIONNÉE « tiret » (Decided for you), listée comme
+    # transformation
+    spaces = next(q for q in start["applied"] if q["decision"] == "accounting:number_spaces")
+    assert spaces["default"] == "hyphen" and spaces["question"]["title"] == "1 invoice number contains spaces"
+    assert [row("Miete-08/2026", "73003")[i] for i in (0, 7, 8)] == ["1500,00", "4210", '""']
+    done = next(t for t in flow["preview"]["value_transforms"] if t["kind"] == "number_spaces")
+    assert done["examples"] == [["Miete 08/2026", "Miete-08/2026"]]
+
+
+def test_a_number_with_spaces_kept_as_it_is_is_refused_by_the_target_with_its_reason(world):  # noqa: F811
+    c = world["client"]
+    _suppliers_exported(c)
+    choices = {"accounting:number_spaces": "keep", "setting:lock_bookings": "0"}
+    flow = _flow(c, "Buchungsstapel 13", PURCHASES, "Rechnungseingang.csv", choices)
     reasons = {e["row"]: e["reason"] for e in flow["preview"]["excluded_rows"]}
-    assert "Invoice Miete 08/2026: Belegfeld 1 does not have the format expected" in reasons[7]
+    assert (
+        "Invoice Miete 08/2026: Belegfeld 1 does not have the format expected" in reasons[7]
+    )  # jamais corrigé
 
 
 def test_purchases_from_another_country_are_left_to_the_vat_domain_and_flagged(world):  # noqa: F811

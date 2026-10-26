@@ -471,6 +471,10 @@ test("an entry point reuses the Simple screens: only its title, introduction and
     assert.match(entry.intro, /Nothing is written to your systems\./);
   }
   assert.equal(WIZARD_ENTRIES.datev.title, "Prepare data for DATEV");
+  // les transformations décidées (numéro : espace → tiret, zéro d'une PLZ) sont listées dans la synthèse
+  const result = readFileSync(join(here, "..", "..", "components", "wizard-simple", "result-screen.tsx"), "utf8");
+  assert.match(result, /preview\.value_transforms\.map/);
+  assert.equal(SIMPLE_LABELS.transformCount(1), "1 value");
   // les deux sens : clients et fournisseurs, factures de vente et d'achat
   assert.match(WIZARD_ENTRIES.datev.intro, /customer or supplier list, or your sales or purchase invoices/);
   // la question de l'étape 2 : propre au parcours ; le Wizard garde la sienne

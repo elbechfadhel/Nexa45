@@ -22,6 +22,7 @@ Références de la source préfixées « file: » : jamais confondues avec celle
 
 from __future__ import annotations
 
+import re
 from datetime import date
 from decimal import Decimal, InvalidOperation
 
@@ -40,10 +41,11 @@ from uie_cdm import (
 from uie_core.mapping.suggestions import category_key
 from uie_core.sources.table import FileTableSpec
 from uie_core.wizard.text import say
-from uie_core.wizard.values import ExcludedRow, QuestionOption, ValueIssue, ValueQuestion
+from uie_core.wizard.values import ExcludedRow, QuestionOption, ValueIssue, ValueQuestion, ValueTransform
 
 FILE_REF = "file:"
 ZERO_RATE_KEY = "accounting:zero_rate"  # factures à 0 % : à exporter ou non (décision)
+NUMBER_SPACES_KEY = "accounting:number_spaces"  # numéros avec des espaces : tiret ou tels quels (décision)
 CENT = Decimal("0.01")
 
 
@@ -62,6 +64,7 @@ class InvoiceTable(_Model):
     categories: dict[str, str] = {}
     rates: list[str] = []
     scope: str = "SALE"  # SALE | PURCHASE : sens des pièces (clés de taxe différentes chez une cible)
+    transforms: list[ValueTransform] = []  # transformations décidées (numéro : espace → tiret)
 
 
 def category(rate: Decimal) -> PostingCategoryRef:
@@ -118,6 +121,54 @@ def documents_from_rows(  # noqa: C901, PLR0912, PLR0915
 
     def skip(i: int, reason: str, kind: str) -> None:
         skipped.append(ExcludedRow(row=i + 1, reason=reason, kind=kind))
+
+    # numéro de pièce avec des espaces (« Miete 07/2026 ») : certaines cibles le refusent ; le remplacer par
+    # un tiret est une DÉCISION (présélectionnée), listée comme transformation, jamais faite en silence
+    transforms: list[ValueTransform] = []
+    spaced = [i for i, r in enumerate(rows) if re.search(r"\s", (r.get("document_number") or "").strip())]
+    if spaced:
+        before = [(rows[i].get("document_number") or "").strip() for i in spaced]
+        after = [re.sub(r"\s+", "-", n) for n in before]
+        pairs = [[a, b] for a, b in dict(zip(before, after, strict=True)).items()]
+        answer = choices.get(NUMBER_SPACES_KEY)
+        questions.append(
+            ValueQuestion(
+                key=NUMBER_SPACES_KEY,
+                kind="number_spaces",
+                field="document_number",
+                column=columns.get("document_number"),
+                title=say("{n} invoice [number contains|numbers contain] spaces", len(spaced)),
+                help="Some targets do not accept spaces in a document number: these invoices would be "
+                "refused.",
+                count=len(spaced),
+                options=[
+                    QuestionOption(
+                        value="hyphen", label="Replace each space by a hyphen", examples=pairs[:3]
+                    ),
+                    QuestionOption(value="keep", label="Keep the numbers as they are"),
+                ],
+                suggested="hyphen",
+                suggested_by="rule",
+                answer=answer if answer in ("hyphen", "keep") else None,
+            )
+        )
+        if answer == "hyphen":
+            rows = [
+                {**r, "document_number": re.sub(r"\s+", "-", r["document_number"].strip())}
+                if i in spaced
+                else r
+                for i, r in enumerate(rows)
+            ]
+            transforms.append(
+                ValueTransform(
+                    field="document_number",
+                    column=columns.get("document_number", "document_number"),
+                    kind="number_spaces",
+                    label="Space replaced by a hyphen in the invoice number (your choice)",
+                    count=len(spaced),
+                    examples=pairs[:5],
+                )
+            )
 
     used = [i for i in range(len(rows)) if any(rows[i].values())]
     # même numéro de facture plusieurs fois : contenu identique = saisie en double ; sinon conflit. Achat : le
@@ -335,6 +386,7 @@ def documents_from_rows(  # noqa: C901, PLR0912, PLR0915
     )
     return InvoiceTable(
         scope="PURCHASE" if purchase else "SALE",
+        transforms=transforms,
         categories={
             x.category.source_ref: x.category.name or x.category.source_ref for x in every if x.category
         },

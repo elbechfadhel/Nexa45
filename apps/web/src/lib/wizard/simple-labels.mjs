@@ -166,6 +166,10 @@ export const SIMPLE_LABELS = {
   notWrittenHeading: "Values left empty",
   notWrittenHelp: "These values are not written; the rest of each row is imported.",
   toCheckHeading: "To check",
+  transformsHeading: "Written differently",
+  transformsHelp: "Same value, another spelling, as you decided above.",
+  /** @param {number} n */
+  transformCount: (n) => count(n, "value"),
   missingHeading: "Still missing",
   /** @param {string} fields */
   missingText: (fields) => `${fields}: required by the target, no value in your file yet.`,

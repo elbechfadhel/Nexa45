@@ -434,3 +434,21 @@ def test_a_long_category_name_keeps_a_short_stable_key():
     assert len(key) == 60 and key == category_key(long_name.upper())
     assert key != category_key(long_name + " und 5")  # jamais deux catégories confondues
     assert category_key("Telefon/Internet") == "telefon-internet"
+
+
+def test_a_space_in_an_invoice_number_becomes_a_hyphen_only_by_decision():
+    from uie_core.wizard.cdm_accounting import NUMBER_SPACES_KEY
+
+    rows = [_buy("Miete 07/2026", "2026-07-01", "1500", "19", "285", "1785")]
+    asked = documents_from_rows(INVOICES, rows, {}, "EUR", purchase=True)
+    q = next(q for q in asked.questions if q.key == NUMBER_SPACES_KEY)
+    assert (q.suggested, q.answer, asked.documents[0].number) == (
+        "hyphen",
+        None,
+        "Miete 07/2026",
+    )  # rien seul
+    done = documents_from_rows(INVOICES, rows, {}, "EUR", {NUMBER_SPACES_KEY: "hyphen"}, purchase=True)
+    assert done.documents[0].number == "Miete-07/2026"
+    assert done.transforms[0].examples == [["Miete 07/2026", "Miete-07/2026"]]
+    kept = documents_from_rows(INVOICES, rows, {}, "EUR", {NUMBER_SPACES_KEY: "keep"}, purchase=True)
+    assert kept.documents[0].number == "Miete 07/2026" and kept.transforms == []
