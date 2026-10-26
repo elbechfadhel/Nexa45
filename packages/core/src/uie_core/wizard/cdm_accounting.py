@@ -253,9 +253,26 @@ def documents_from_rows(  # noqa: C901, PLR0912, PLR0915
             # sans TVA déductible, exportée sans question ; pays lu dans la liste des fournisseurs exportée,
             # jamais dans une remarque
             _, country = (partner_vat or {}).get(partner, (None, None))
+            who = val(i, "partner_name") or partner
+            if country is None:
+                # fournisseur pas encore exporté (ou sans pays) : son pays n'est jamais deviné
+                skip(
+                    i,
+                    f"Invoice {number}: 0 % VAT from {who}, whose country is not known: export your "
+                    "suppliers first, not exported.",
+                    "zero_rate",
+                )
+                continue
             if not (table.home_country and country == table.home_country):
-                reason = f"Invoice {number}: 0 % VAT on a purchase: not supported yet, not exported."
-                skip(i, reason, "zero_rate")
+                # achat à l'étranger (acquisition intracommunautaire, autoliquidation §13b, import) : la TVA
+                # de ces achats relève du domaine suivant (TVA dans les écritures), jamais un achat national
+                skip(
+                    i,
+                    f"Invoice {number}: 0 % VAT from {who} ({country}): VAT on purchases from another "
+                    "country (intra-community acquisition, reverse charge) is not supported yet, not "
+                    "exported.",
+                    "vat_abroad",
+                )
                 continue
         elif rate == 0:
             # état du numéro de TVA du client, retenu à l'export de la liste des clients (même source fichier)

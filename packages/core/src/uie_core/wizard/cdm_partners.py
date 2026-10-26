@@ -306,6 +306,9 @@ def partners_from_rows(  # noqa: C901, PLR0912, PLR0915
     vat_state: dict[str, tuple[str, str | None]] = {}
     bad_email: list[tuple[int, str]] = []
     bad_iban: list[tuple[int, str]] = []
+    # fournisseur d'un autre pays de l'UE sans numéro de TVA : ses achats ne peuvent pas être traités comme
+    # des acquisitions intracommunautaires (signalé, jamais bloquant pour la liste)
+    eu_without_vat: list[tuple[int, str]] = []
     vat_pairs: list[list[str]] = []
     zero_pairs: list[list[str]] = []
     for i in range(len(rows)):
@@ -354,6 +357,9 @@ def partners_from_rows(  # noqa: C901, PLR0912, PLR0915
                 if vat != val(i, "vat_id"):
                     vat_pairs.append([val(i, "vat_id"), vat])
         vat_state[source_ref] = (status, vat[:2] if status == "valid" else countries[i])
+        abroad = countries[i] and countries[i] != table.home_country and countries[i] in table.vat_ids
+        if status == "missing" and abroad and PartnerRole.SUPPLIER in roles:
+            eu_without_vat.append((i, name))
         email = val(i, "email")
         if email and not _EMAIL.match(email):
             bad_email.append((i, email))
@@ -430,6 +436,18 @@ def partners_from_rows(  # noqa: C901, PLR0912, PLR0915
         lambda n: say("{n} VAT [ID is|IDs are] not valid for [its|their] country: not written.", n),
         "Correct the VAT ID (country code + number). Without a valid VAT ID, a tax-free intra-community "
         "delivery cannot be justified.",
+    )
+    issue(
+        "vat_id",
+        "vat_missing_eu",
+        eu_without_vat,
+        lambda n: say(
+            "{n} [supplier|suppliers] from another EU country [has|have] no VAT ID: [its|their] purchases "
+            "cannot be treated as intra-community acquisitions.",
+            n,
+        ),
+        "Ask the supplier for its VAT ID and add it to your file.",
+        severity="to_check",
     )
     issue(
         "email",

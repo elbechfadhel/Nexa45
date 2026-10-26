@@ -210,3 +210,22 @@ def test_input_tax_keys_follow_the_account_and_a_domestic_purchase_without_vat_i
     # un numéro avec une espace n'est pas un Belegfeld 1 DATEV : refusé avec son motif, jamais corrigé
     reasons = {e["row"]: e["reason"] for e in flow["preview"]["excluded_rows"]}
     assert "Invoice Miete 08/2026: Belegfeld 1 does not have the format expected" in reasons[7]
+
+
+def test_purchases_from_another_country_are_left_to_the_vat_domain_and_flagged(world):  # noqa: F811
+    """0 % d'un fournisseur autrichien ou espagnol : relève de la TVA des achats à l'étranger (domaine 2), non
+    exporté, jamais une question d'exonération ; fournisseur de l'UE sans USt-IdNr signalé dans la liste."""
+    c = world["client"]
+    suppliers = _flow(c, "Debitoren/Kreditoren 5", SUPPLIERS, "Lieferanten.csv")
+    flagged = [i for i in suppliers["preview"]["value_issues"] if i["kind"] == "vat_missing_eu"]
+    assert len(flagged) == 1 and flagged[0]["rows"] == [5]
+    assert flagged[0]["message"].startswith("1 supplier from another EU country has no VAT ID")
+    assert _download(c, suppliers).status_code == 200
+    flow = _flow(c, "Buchungsstapel 13", PURCHASES, "Rechnungseingang.csv", {"setting:lock_bookings": "0"})
+    reasons = {e["row"]: (e["kind"], e["reason"]) for e in flow["preview"]["excluded_rows"]}
+    assert reasons[8] == (
+        "vat_abroad",
+        "Invoice AT-1: 0 % VAT from Farben Graz GmbH (AT): VAT on purchases from another country "
+        "(intra-community acquisition, reverse charge) is not supported yet, not exported.",
+    )
+    assert reasons[9][0] == "vat_abroad" and "(ES)" in reasons[9][1]
