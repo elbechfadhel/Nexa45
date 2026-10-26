@@ -660,3 +660,9 @@ test("what an entry point can prepare comes from its configuration, validated do
     assert.ok(!(entry.prepares ?? []).some((p) => /soon/i.test(p)));
   }
 });
+
+test("the introduction of an entry point is not narrowed to a reading width", () => {
+  // « Add your file, check what DATEV will receive… » tient sur une ligne : aucune largeur maximale imposée
+  const wizard = readFileSync(join(here, "..", "..", "components", "wizard-simple", "simple-wizard.tsx"), "utf8");
+  assert.match(wizard, /className="page-description max-w-none[^"]*">\{entry\.intro\}/);
+});

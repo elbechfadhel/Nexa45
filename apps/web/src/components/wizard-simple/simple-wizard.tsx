@@ -131,7 +131,8 @@ export function SimpleWizard({
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-1.5">
           <h1 className="hero-badge">{entry.title}</h1>
-          <p className="page-description text-muted-foreground">{entry.intro}</p>
+          {/* introduction sur une seule ligne quand la place le permet (pas de largeur de lecture imposée) */}
+          <p className="page-description max-w-none text-muted-foreground">{entry.intro}</p>
           {/* ce que le point d'entrée sait préparer (sa configuration) : des étiquettes d'information */}
           {entry.prepares && entry.prepares.length > 0 && (
             <div className="flex flex-wrap items-center gap-2 pt-1">
