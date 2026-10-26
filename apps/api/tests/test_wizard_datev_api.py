@@ -260,7 +260,7 @@ def test_invoices_to_datev_buchungsstapel_with_every_trap_and_no_double_export(w
         "Buchungsstapel 13",
         INVOICES,
         "Rechnungen.csv",
-        {"setting:lock_bookings": "0", "accounting:zero_rate": "export", "accounting:supply_kind": "GOODS"},
+        {"setting:lock_bookings": "0", "accounting:supply_kind": "GOODS"},
     )
     pre = flow["preview"]
     reasons = {e["row"]: e["reason"] for e in pre["excluded_rows"]}
@@ -296,7 +296,7 @@ def test_invoices_to_datev_buchungsstapel_with_every_trap_and_no_double_export(w
         "Buchungsstapel 13",
         INVOICES,
         "Rechnungen.csv",
-        {"setting:lock_bookings": "0", "accounting:zero_rate": "export", "accounting:supply_kind": "GOODS"},
+        {"setting:lock_bookings": "0", "accounting:supply_kind": "GOODS"},
     )["preview"]
     assert second["rows"] == 0
     assert sum(1 for e in second["excluded_rows"] if e["kind"] == "already_exported") == 6

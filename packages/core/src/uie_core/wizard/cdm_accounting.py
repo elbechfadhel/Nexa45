@@ -13,8 +13,9 @@ Rien n'est corrigé ni deviné ; une facture qui ne peut pas être écrite est L
 - taux de TVA non admis dans le pays à la date de la facture (16 % en 2026) ;
 - même numéro de facture deux fois : contenu identique → écrite une fois (la seconde listée) ; contenu
   différent → aucune des deux ;
-- taux de 0 % : livraison intracommunautaire (ou autre exonération) à justifier par l'USt-IdNr du client,
-  que ce fichier ne contient pas → DÉCISION de l'utilisateur pour ces factures, jamais automatique.
+- taux de 0 % d'une vente : justifié par l'état TVA du client retenu à l'export des clients (USt-IdNr valide
+  d'un autre pays de l'UE, ou pays hors UE) et classé par zone et NATURE (Leistungsart, sinon une question) ;
+  USt-IdNr invalide ou absente, client du pays du dossier, client inconnu → non exportée avec son motif.
 Factures d'ACHAT (`purchase`) : fournisseur (numéro de fournisseur), pièces VENDOR_BILL / VENDOR_CREDIT_NOTE,
 charge au débit (le fournisseur au crédit), avoir fournisseur en sens inverse ; référence de la pièce = numéro
 du fournisseur + numéro de sa facture (un numéro n'est unique que chez un fournisseur).
@@ -45,7 +46,6 @@ from uie_core.wizard.text import say
 from uie_core.wizard.values import ExcludedRow, QuestionOption, ValueIssue, ValueQuestion, ValueTransform
 
 FILE_REF = "file:"
-ZERO_RATE_KEY = "accounting:zero_rate"  # factures à 0 % : à exporter ou non (décision)
 NUMBER_SPACES_KEY = "accounting:number_spaces"  # numéros avec des espaces : tiret ou tels quels (décision)
 SUPPLY_KIND_KEY = "accounting:supply_kind"  # nature inconnue d'opérations avec l'étranger (décision)
 CENT = Decimal("0.01")
@@ -126,9 +126,10 @@ def documents_from_rows(  # noqa: C901, PLR0912, PLR0915
 ) -> InvoiceTable:
     """`rows` : une entrée par ligne (clé du tableau → valeur mise en forme : nombres en notation standard,
     dates ISO) ; `currency` : devise des montants (choisie ou lue) ; `choices` : réponses aux décisions ;
-    `partner_vat` : numéro du client → état de son numéro de TVA retenu à l'export des clients. Une facture à
-    0 % est écrite d'office si le client a un numéro de TVA VALIDE d'un autre pays de l'UE, refusée s'il est
-    invalide ou absent, sinon décidée par l'utilisateur."""
+    `partner_vat` : numéro du partenaire → état de son numéro de TVA (valid, invalid, missing, non_eu) et son
+    pays, retenus à l'export des clients ou des fournisseurs. Une vente à 0 % est écrite si le client a une
+    USt-IdNr VALIDE d'un autre pays de l'UE, ou s'il est hors UE (catégorie par zone et nature) ; refusée
+    sinon, avec son motif, jamais par une question « exporter quand même »."""
     choices = choices or {}
     # ventes : numéro du client ; achats : numéro du fournisseur
     pkey, who_kind = ("supplier_number", "supplier") if purchase else ("partner_number", "customer")
@@ -237,7 +238,6 @@ def documents_from_rows(  # noqa: C901, PLR0912, PLR0915
             unknown_kinds.append(i)
         return SupplyKind(found) if found else None
 
-    zero_rows: list[int] = []
     zero_docs: list[tuple[int, AccountingDocument]] = []
     # opérations avec l'étranger dont la nature manque : ligne → (sens, zone, taux) ; une seule question
     no_kind: dict[int, tuple[str, str, Decimal]] = {}
@@ -390,7 +390,24 @@ def documents_from_rows(  # noqa: C901, PLR0912, PLR0915
                 else None
             )
             if zone is None:
-                zero_rows.append(i)  # rien de connu (ou client du même pays) : décision de l'utilisateur
+                # client du pays du dossier : aucune exonération que ce fichier puisse justifier ; client pas
+                # encore exporté (ou sans pays) : son pays n'est jamais deviné. Jamais une question « exporter
+                # quand même » : refusée avec son motif
+                if country and country == table.home_country:
+                    skip(
+                        i,
+                        f"Invoice {number}: 0 % VAT for {who}, a customer in your own country ({country}): a "
+                        "domestic sale without VAT cannot be justified by this file, not exported.",
+                        "zero_rate_domestic",
+                    )
+                else:
+                    skip(
+                        i,
+                        f"Invoice {number}: 0 % VAT for {who}, whose country is not known: export your "
+                        "customers first, not exported.",
+                        "zero_rate",
+                    )
+                continue
             else:
                 # client étranger justifié : le compte dépend de la NATURE de l'opération (Leistungsart),
                 # jamais devinée (ni depuis une remarque, ni depuis le montant)
@@ -456,38 +473,6 @@ def documents_from_rows(  # noqa: C901, PLR0912, PLR0915
                             cat = vat_category(scope, zone, nature, rate)
                             pending[cat.source_ref] = cat.name or cat.source_ref
 
-    if zero_rows:
-        listed = ", ".join(
-            f"{val(i, 'document_number')} ({val(i, 'partner_name') or val(i, pkey)})" for i in zero_rows[:5]
-        )
-        q = ValueQuestion(
-            key=ZERO_RATE_KEY,
-            kind="zero_rate",
-            field=None,
-            column=columns.get("tax_rate"),
-            title=say("{n} [invoice has|invoices have] no VAT (0 %)", len(zero_rows)),
-            help=f"{listed}. A tax-free intra-community delivery needs a valid VAT ID of the customer, which "
-            "this file does not contain: check it before exporting.",
-            count=len(zero_rows),
-            options=[
-                QuestionOption(value="export", label="Export them: I checked the customers' VAT IDs"),
-                QuestionOption(value="skip", label="Do not export them"),
-            ],
-            answer=choices.get(ZERO_RATE_KEY) if choices.get(ZERO_RATE_KEY) in ("export", "skip") else None,
-        )
-        questions.append(q)
-        if q.answer != "export":
-            for i in zero_rows:
-                skip(
-                    i,
-                    f"Invoice {val(i, 'document_number')}: 0 % VAT"
-                    + (" (your choice)" if q.answer == "skip" else ", waiting for your answer above")
-                    + ": not exported.",
-                    "zero_rate",
-                )
-            zero_docs += [(i, d) for i, d in candidates if i in zero_rows]
-            candidates = [(i, d) for i, d in candidates if i not in zero_rows]
-
     if unknown_kinds:
         found = list(dict.fromkeys(val(i, "supply_kind") for i in unknown_kinds))
         issues.append(
@@ -535,7 +520,6 @@ def documents_from_rows(  # noqa: C901, PLR0912, PLR0915
 
 __all__ = [
     "FILE_REF",
-    "ZERO_RATE_KEY",
     "InvoiceTable",
     "category",
     "documents_from_rows",

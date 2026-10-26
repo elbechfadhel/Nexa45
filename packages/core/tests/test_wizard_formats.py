@@ -14,7 +14,7 @@ from uie_core.domains.model import DomainKey
 from uie_core.exports.service import plan_accounts
 from uie_core.mapping import TargetBindingRegistry
 from uie_core.sources.table import FileTableRegistry
-from uie_core.wizard.cdm_accounting import ZERO_RATE_KEY, documents_from_rows
+from uie_core.wizard.cdm_accounting import documents_from_rows
 from uie_core.wizard.cdm_partners import (
     DUPLICATES_KEY,
     KINDS_KEY,
@@ -186,12 +186,9 @@ def test_invoices_are_built_without_correction_and_every_trap_is_listed():
     assert reasons[6][0] == "duplicate" and "entered twice" in reasons[6][1]  # identique : écrite une fois
     assert reasons[7][0] == reasons[8][0] == "probable_duplicate"  # même numéro, contenu différent : aucune
     assert reasons[9][0] == "missing_number"
-    assert reasons[10][0] == "zero_rate"  # 0 % : en attente de la décision
-    (q,) = t.questions
-    assert q.key == ZERO_RATE_KEY and q.answer is None
-    assert set(t.categories) == {"sale:19", "sale:0"}  # 0 % compris : son compte est demandé d'avance
-    exported = documents_from_rows(INVOICES, rows, {}, "EUR", {ZERO_RATE_KEY: "export"})
-    assert "RE-7" in {d.number for d in exported.documents}
+    # 0 % pour un client pas encore exporté : son pays n'est jamais deviné, aucune question
+    assert reasons[10][0] == "zero_rate" and "export your customers first" in reasons[10][1]
+    assert t.questions == [] and set(t.categories) == {"sale:19"}
 
 
 def test_the_period_of_a_file_covers_whole_months():
@@ -296,11 +293,10 @@ def test_a_zero_rate_invoice_follows_the_vat_id_kept_from_the_customer_export():
     assert t.documents[0].lines[0].category.source_ref == "vat:sale:eu:goods:0"
     reasons = {e.row: (e.kind, e.reason) for e in t.skipped}
     assert reasons[2][0] == "zero_rate_vat" and "is not valid in your customer list (FR)" in reasons[2][1]
-    assert (
-        reasons[3][0] == reasons[4][0] == "zero_rate"
-    )  # client allemand sans numéro, client inconnu : décision
-    (q,) = t.questions
-    assert q.count == 2
+    # client allemand à 0 % : refusé sans question ; client inconnu : exporter les clients d'abord
+    assert reasons[3][0] == "zero_rate_domestic" and "a customer in your own country (DE)" in reasons[3][1]
+    assert reasons[4][0] == "zero_rate" and "export your customers first" in reasons[4][1]
+    assert t.questions == []
 
 
 def test_the_customer_export_keeps_the_state_of_each_vat_id():
@@ -541,7 +537,7 @@ def test_a_cross_border_sale_at_zero_rate_follows_the_zone_and_the_kind_of_suppl
     assert skipped.reason.endswith(
         "goods or services is not known (Leistungsart), waiting for your answer above."
     )
-    assert not any(q.key == ZERO_RATE_KEY for q in t.questions)
+    assert all(q.key != "accounting:zero_rate" for q in t.questions)
 
 
 def test_an_unknown_kind_of_supply_is_one_question_never_preselected():
