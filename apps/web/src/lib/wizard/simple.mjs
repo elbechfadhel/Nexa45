@@ -16,7 +16,8 @@ import { SIMPLE_LABELS as L } from "./simple-labels.mjs";
  */
 /** @typedef {{ value: string, label: string, description?: string | null, verified?: boolean }} Choice */
 /** @typedef {{ field: string, label: string, kind: string, title: string, help?: string | null, choices: Choice[], free_text: boolean }} Question */
-/** @typedef {{ question: Question, default?: string | null, default_from?: string | null, decision?: string | null }} QuickQuestion */
+/** @typedef {{ category: string, rate: string, tax_decision?: string | null, automatic_accounts?: string[] }} QuickMapping */
+/** @typedef {{ question: Question, default?: string | null, default_from?: string | null, decision?: string | null, mapping?: QuickMapping | null }} QuickQuestion */
 /** @typedef {{ position: number, header: string, status: string, target?: string | null, examples: string[], filled: number, confidence?: number | null, probably_not_needed?: boolean }} Column */
 /** @typedef {{ field: string, common?: string | null, per_row?: Record<string, string>, confirmed?: boolean }} Fill */
 /** @typedef {{ position: number, target?: string | null }} Decision */
@@ -196,6 +197,45 @@ export function initialEdits(start) {
 export function answerText(q, value) {
   if (!value) return "";
   return q.question.choices.find((c) => c.value === value)?.label ?? value;
+}
+
+/** Décisions appliquées d'office, par THÈME (d'après le type de décision, jamais d'après un système) :
+ * réglages du dossier (`setting:`), correspondances de catégories (tableau : catégorie, taux, compte, clé de
+ * taxe du taux) et décisions sur le fichier (doublons, zéros ajoutés, espaces…), une ligne chacune.
+ * @param {QuickQuestion[]} applied
+ * @returns {{ settings: QuickQuestion[], rows: QuickQuestion[], taxes: QuickQuestion[], others: QuickQuestion[] }} */
+export function appliedThemes(applied) {
+  const settings = applied.filter((q) => (q.decision ?? "").startsWith("setting:"));
+  const rows = applied.filter((q) => q.mapping);
+  const shared = new Set(rows.map((q) => q.mapping?.tax_decision).filter(Boolean));
+  const taxes = applied.filter((q) => q.decision && shared.has(q.decision));
+  const grouped = new Set([...settings, ...rows, ...taxes]);
+  return { settings, rows, taxes, others: applied.filter((q) => !grouped.has(q)) };
+}
+
+/** Nom court d'un réglage pour la ligne de résumé : le terme entre parenthèses (« Advisor number
+ * (Beraternummer) » → « Beraternummer »), sinon le libellé.
+ * @param {QuickQuestion} q */
+export function settingName(q) {
+  const m = /\(([^()]+)\)\s*$/.exec(q.question.label);
+  return m ? m[1] : q.question.label;
+}
+
+/** Ligne de résumé des réglages : « Beraternummer 1234567 · Mandantennummer 10001 · … ».
+ * @param {QuickQuestion[]} settings @param {Record<string, string>} answers */
+export function settingsSummary(settings, answers) {
+  return settings
+    .map((q) => `${settingName(q)} ${answerText(q, answers[questionKey(q)] ?? q.default ?? "")}`.trim())
+    .join(" · ");
+}
+
+/** Clé de taxe affichée sur une ligne du tableau : aucune sur un compte automatique, sinon la réponse.
+ * @param {QuickQuestion} row @param {QuickQuestion | undefined} tax @param {Record<string, string>} answers */
+export function rowTaxKey(row, tax, answers) {
+  const account = answers[questionKey(row)] ?? row.default ?? "";
+  if (account && (row.mapping?.automatic_accounts ?? []).includes(account)) return L.automaticAccount;
+  if (!tax) return "";
+  return answerText(tax, answers[questionKey(tax)] ?? tax.default ?? "");
 }
 
 /** Origine de la présélection en mots simples.

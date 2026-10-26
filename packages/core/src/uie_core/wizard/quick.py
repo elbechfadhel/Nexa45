@@ -217,6 +217,17 @@ def registry_structure(
 # --------------------------------------------------------------------------- #
 # Réponse du démarrage rapide
 # --------------------------------------------------------------------------- #
+class QuickMapping(_Model):
+    """Correspondance d'une CATÉGORIE de la source vers un compte (une ligne d'un tableau) : catégorie, taux,
+    décision de la clé de taxe de ce taux (partagée par les catégories du même taux) et comptes automatiques
+    du plan comptable (aucune clé de taxe n'y est écrite)."""
+
+    category: str
+    rate: str
+    tax_decision: str | None = None
+    automatic_accounts: list[str] = []
+
+
 class QuickQuestion(_Model):
     """Question bloquante avec une valeur PRÉSÉLECTIONNÉE (à confirmer, jamais appliquée seule) et son
     origine : déduite des réponses, lue dans le système connecté, ou première valeur admise du Registry."""
@@ -227,6 +238,8 @@ class QuickQuestion(_Model):
     default_from: str | None = None
     # décision sur les VALEURS (clé de `choices`, ex. « currency ») ; None : valeur d'un champ (`fills`)
     decision: str | None = None
+    # correspondance de catégorie : affichée en tableau (catégorie, taux, compte, clé)
+    mapping: QuickMapping | None = None
 
 
 class QuickStart(_Model):

@@ -10880,6 +10880,45 @@
         "title": "QuestionOut",
         "type": "object"
       },
+      "QuickMappingOut": {
+        "additionalProperties": false,
+        "description": "Ligne du tableau des correspondances de catégories (catégorie, taux, compte, clé de taxe).",
+        "properties": {
+          "automatic_accounts": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Automatic Accounts",
+            "type": "array"
+          },
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "rate": {
+            "title": "Rate",
+            "type": "string"
+          },
+          "tax_decision": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tax Decision"
+          }
+        },
+        "required": [
+          "category",
+          "rate"
+        ],
+        "title": "QuickMappingOut",
+        "type": "object"
+      },
       "QuickQuestionOut": {
         "additionalProperties": false,
         "properties": {
@@ -10923,6 +10962,16 @@
               }
             ],
             "title": "Default From"
+          },
+          "mapping": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QuickMappingOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "question": {
             "$ref": "#/components/schemas/MissingQuestionOut"

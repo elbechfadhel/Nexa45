@@ -8,6 +8,9 @@ import { fileURLToPath } from "node:url";
 
 import {
   answerText,
+  appliedThemes,
+  rowTaxKey,
+  settingsSummary,
   currencyNoticeText,
   automaticColumns,
   choicesOf,
@@ -560,4 +563,42 @@ test("every single choice of the console uses the shared radio group", () => {
     (f) => !f.endsWith("radio-list.tsx") && /type="radio"|role="radio"/.test(readFileSync(f, "utf8")),
   );
   assert.deepEqual(offenders, []);
+});
+
+test("decided for you is grouped by kind of decision: settings, accounts by category, file decisions", () => {
+  /** @param {string} decision @param {string} label @param {string} value @param {any} [mapping] @returns {any} */
+  const q = (decision, label, value, mapping) => ({
+    decision,
+    default: value,
+    question: { field: decision, label, kind: "text", title: label, choices: [], free_text: true },
+    ...(mapping ? { mapping } : {}),
+  });
+  const auto = ["3300", "3400"];
+  const applied = [
+    q("setting:advisor_number", "Advisor number (Beraternummer)", "1234567"),
+    q("setting:chart_of_accounts", "Chart of accounts (Sachkontenrahmen)", "03"),
+    q("map:CATEGORY:purchase:wareneinkauf:19", "G/L account for Wareneinkauf at 19 % VAT", "3400", {
+      category: "Wareneinkauf",
+      rate: "19",
+      tax_decision: "map:TAX:rate:PURCHASE:19",
+      automatic_accounts: auto,
+    }),
+    q("map:CATEGORY:purchase:werbung:19", "G/L account for Werbung at 19 % VAT", "4600", {
+      category: "Werbung",
+      rate: "19",
+      tax_decision: "map:TAX:rate:PURCHASE:19",
+      automatic_accounts: auto,
+    }),
+    q("map:TAX:rate:PURCHASE:19", "Tax key for purchases at 19 % VAT", "0009"),
+    q("accounting:number_spaces", "1 invoice number contains spaces", "hyphen"),
+  ];
+  const themes = appliedThemes(applied);
+  assert.deepEqual(themes.settings.map((x) => x.decision), ["setting:advisor_number", "setting:chart_of_accounts"]);
+  assert.deepEqual(themes.rows.map((x) => x.mapping?.category), ["Wareneinkauf", "Werbung"]);
+  assert.deepEqual(themes.taxes.map((x) => x.decision), ["map:TAX:rate:PURCHASE:19"]); // jamais une ligne à part
+  assert.deepEqual(themes.others.map((x) => x.decision), ["accounting:number_spaces"]);
+  assert.equal(settingsSummary(themes.settings, {}), "Beraternummer 1234567 · Sachkontenrahmen 03");
+  // compte automatique : aucune clé de taxe écrite, quelle que soit la clé du taux
+  assert.equal(rowTaxKey(themes.rows[0], themes.taxes[0], {}), "none (automatic account)");
+  assert.equal(rowTaxKey(themes.rows[1], themes.taxes[0], {}), "0009");
 });

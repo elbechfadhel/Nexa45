@@ -151,6 +151,14 @@ def test_the_expense_account_is_preselected_by_category_never_guessed_and_rememb
     assert (wares["default"], wares["default_from"]) == ("3400", "usual_default")
     assert "to be confirmed by your tax advisor" in wares["question"]["help"]
     assert every["map:CATEGORY:purchase:wareneinkauf:7"]["default"] == "3300"
+    # ligne du tableau « comptes par catégorie » : données structurées, jamais lues dans un titre
+    assert wares["mapping"] == {
+        "category": "Wareneinkauf",
+        "rate": "19",
+        "tax_decision": "map:TAX:rate:PURCHASE:19",
+        "automatic_accounts": ["3300", "3400"],
+    }
+    assert every["setting:advisor_number"].get("mapping") is None
     assert every["map:CATEGORY:purchase:strom:19"]["default"] is None  # inconnue : jamais devinée
     reasons = {e["row"]: e["reason"] for e in first["preview"]["excluded_rows"]}
     assert (

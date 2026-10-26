@@ -6371,6 +6371,23 @@ export interface components {
             reopened: boolean;
             suggestion: components["schemas"]["SuggestionOut"] | null;
         };
+        /**
+         * QuickMappingOut
+         * @description Ligne du tableau des correspondances de catégories (catégorie, taux, compte, clé de taxe).
+         */
+        QuickMappingOut: {
+            /**
+             * Automatic Accounts
+             * @default []
+             */
+            automatic_accounts: string[];
+            /** Category */
+            category: string;
+            /** Rate */
+            rate: string;
+            /** Tax Decision */
+            tax_decision?: string | null;
+        };
         /** QuickQuestionOut */
         QuickQuestionOut: {
             /** Decision */
@@ -6379,6 +6396,7 @@ export interface components {
             default?: string | null;
             /** Default From */
             default_from?: ("your_answers" | "your_system" | "your_settings" | "registry_first_value" | "your_file" | "usual_default") | null;
+            mapping?: components["schemas"]["QuickMappingOut"] | null;
             question: components["schemas"]["MissingQuestionOut"];
         };
         /** QuickStartOut */

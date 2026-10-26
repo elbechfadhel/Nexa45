@@ -39,7 +39,7 @@ from uie_core.mapping.suggestions import CategoryAccountRegistry
 from uie_core.sources.table import FileTableRegistry, FileTableSpec
 from uie_core.wizard.missing import MissingChoice, MissingKind, MissingQuestion
 from uie_core.wizard.model import TargetField, TargetProposal, Verification
-from uie_core.wizard.quick import INVOICES, PURCHASE_INVOICES, QuickQuestion
+from uie_core.wizard.quick import INVOICES, PURCHASE_INVOICES, QuickMapping, QuickQuestion
 from uie_core.wizard.values import ValueQuestion
 
 MODEL_DOMAIN = {"partner": DomainKey.PARTNER, "accounting": DomainKey.ACCOUNTING}
@@ -291,6 +291,7 @@ def mapping_questions(
     out = []
     for ref, name in sorted(categories.items()):
         decision = f"{MAPPING}CATEGORY:{ref}"
+        rate_of = ref.rsplit(":", 1)[-1]  # « purchase:bürobedarf:19 », « sale:19 » : le taux en dernier
         usual = hint.categories.get(ref) if hint else None
         from_table = None
         if usual is None and table is not None and ref.count(":") == 2:
@@ -327,6 +328,12 @@ def mapping_questions(
                     ("your_settings" if saved.get(decision) else "usual_default") if default else None
                 ),
                 decision=decision,
+                mapping=QuickMapping(
+                    category=name.removesuffix(f" at {rate_of} % VAT"),
+                    rate=rate_of,
+                    tax_decision=f"{MAPPING}TAX:rate:{scope}:{rate_of}",
+                    automatic_accounts=list(table.automatic_accounts) if table else [],
+                ),
             )
         )
     tax_lookup = b.lookup(LookupKind.TAX)

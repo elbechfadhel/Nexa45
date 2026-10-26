@@ -533,6 +533,15 @@ class QuickTargetOut(_Out):
     currency: str | None = None
 
 
+class QuickMappingOut(_Out):
+    """Ligne du tableau des correspondances de catégories (catégorie, taux, compte, clé de taxe)."""
+
+    category: str
+    rate: str
+    tax_decision: str | None = None  # décision de la clé de taxe de ce taux
+    automatic_accounts: list[str] = []  # comptes qui ne reçoivent jamais de clé de taxe
+
+
 class QuickQuestionOut(_Out):
     question: MissingQuestionOut
     default: str | None = None  # valeur présélectionnée, à confirmer
@@ -549,6 +558,7 @@ class QuickQuestionOut(_Out):
     ) = None
     # décision sur les valeurs (clé de `choices`, ex. « currency ») ; None : valeur d'un champ (`fills`)
     decision: str | None = None
+    mapping: QuickMappingOut | None = None  # correspondance de catégorie (tableau)
 
 
 class QuickStartOut(_Out):
@@ -575,6 +585,7 @@ def _quick_question(x: QuickQuestion) -> QuickQuestionOut:
         default=x.default,
         default_from=x.default_from,  # type: ignore[arg-type]
         decision=x.decision,
+        mapping=QuickMappingOut.model_validate(x.mapping.model_dump()) if x.mapping else None,
     )
 
 

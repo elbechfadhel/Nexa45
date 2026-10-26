@@ -2,13 +2,23 @@
 
 /** Décisions du mode Simple : celles appliquées d'office (chacune modifiable d'un clic) et les questions posées
  *  (3 au plus), toutes présélectionnées. Les libellés viennent de l'API (jamais une valeur technique affichée). */
-import { useState } from "react";
+import { Fragment, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { RadioList } from "@/components/ui/radio-list";
 import { Card, CardContent } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { PreparedFile, QuickQuestion, QuickStart } from "@/lib/api/wizard-hooks";
-import { answerText, COLUMN_ANSWER, defaultOrigin, type Edits, questionKey } from "@/lib/wizard/simple.mjs";
+import {
+  answerText,
+  appliedThemes,
+  COLUMN_ANSWER,
+  defaultOrigin,
+  type Edits,
+  questionKey,
+  rowTaxKey,
+  settingsSummary,
+} from "@/lib/wizard/simple.mjs";
 import { SIMPLE_LABELS as L } from "@/lib/wizard/simple-labels.mjs";
 
 /** Option « autre valeur » : réponse saisie (jamais une valeur proposée). */
@@ -41,6 +51,18 @@ export function Decisions({
   const asked = start.questions.length + openValues.length;
   const preselected =
     start.questions.filter((q) => q.default).length + openValues.filter((q) => q.suggested).length;
+
+  // « Decided for you » par thème (type de décision) : réglages, comptes par catégorie, décisions sur le fichier
+  const themes = appliedThemes(start.applied) as Record<"settings" | "rows" | "taxes" | "others", QuickQuestion[]>;
+  const valueOf = (q: QuickQuestion) => edits.answers[questionKey(q)] ?? q.default ?? "";
+  const values = Object.fromEntries(start.applied.map((q) => [questionKey(q), valueOf(q)]));
+  const toggle = (key: string) => setOpen(open === key ? null : key);
+  const rowProps = (q: QuickQuestion) => ({
+    value: valueOf(q),
+    editing: open === questionKey(q),
+    onToggle: () => toggle(questionKey(q)),
+    onChange: (v: string) => answer(q, v),
+  });
 
   if (start.applied.length === 0 && asked === 0) return null;
   return (
@@ -80,49 +102,161 @@ export function Decisions({
         )}
 
         {start.applied.length > 0 && (
-          <section className="space-y-3">
+          <section className="space-y-5">
             <div>
               <h2 className="item-title">{L.appliedHeading}</h2>
               <p className="meta text-muted-foreground">{L.appliedHelp}</p>
             </div>
-            <ul className="divide-y rounded-lg border">
-              {start.applied.map((q) => {
-                const key = questionKey(q);
-                const value = edits.answers[key] ?? q.default ?? "";
-                const editing = open === key;
-                return (
-                  <li key={key} className="space-y-3 p-3">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div className="min-w-0">
-                        <span className="font-medium">{q.question.label}</span>
-                        <span className="text-muted-foreground"> · {answerText(q, value)}</span>
-                        {value === q.default && defaultOrigin(q) && (
-                          <span className="meta text-muted-foreground"> ({defaultOrigin(q)})</span>
-                        )}
-                      </div>
-                      <Button variant="outline" size="sm" onClick={() => setOpen(editing ? null : key)}>
-                        {editing ? L.done : L.change}
-                      </Button>
-                    </div>
-                    {editing && (
-                      <Question
-                        title={q.question.title}
-                        help={q.question.help}
-                        options={q.question.choices}
-                        preselected={q.default ?? null}
-                        freeText={q.question.free_text}
-                        value={value}
-                        onChange={(v) => answer(q, v)}
-                      />
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
+
+            {themes.settings.length > 0 && (
+              <div className="space-y-3 rounded-lg border p-3">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div className="min-w-0 space-y-0.5">
+                    <h3 className="eyebrow">{L.settingsHeading}</h3>
+                    <p className="meta text-muted-foreground">{settingsSummary(themes.settings, values)}</p>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => toggle(SETTINGS)}>
+                    {open === SETTINGS ? L.done : L.change}
+                  </Button>
+                </div>
+                {open === SETTINGS && (
+                  <ul className="divide-y rounded-lg border">
+                    {themes.settings.map((q) => (
+                      <AppliedRow key={questionKey(q)} q={q} {...rowProps(q)} />
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+
+            {themes.rows.length > 0 && (
+              <div className="space-y-2">
+                <div>
+                  <h3 className="eyebrow">{L.mappingsHeading}</h3>
+                  <p className="meta text-muted-foreground">{L.mappingsHelp}</p>
+                </div>
+                <Table className="table-fixed">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{L.mappingColumns.category}</TableHead>
+                      <TableHead className="w-20">{L.mappingColumns.rate}</TableHead>
+                      <TableHead className="w-28">{L.mappingColumns.account}</TableHead>
+                      <TableHead className="w-48">{L.mappingColumns.taxKey}</TableHead>
+                      <TableHead className="w-28" />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {themes.rows.map((q) => {
+                      const key = questionKey(q);
+                      const tax = themes.taxes.find((t) => t.decision === q.mapping?.tax_decision);
+                      const editing = open === key;
+                      return (
+                        <Fragment key={key}>
+                          <TableRow>
+                            <TableCell className="break-words whitespace-normal">{q.mapping?.category}</TableCell>
+                            <TableCell>{q.mapping?.rate} %</TableCell>
+                            <TableCell className="tech">{answerText(q, valueOf(q))}</TableCell>
+                            <TableCell className="tech whitespace-normal">{rowTaxKey(q, tax, values)}</TableCell>
+                            <TableCell className="text-right">
+                              <Button variant="outline" size="sm" onClick={() => toggle(key)}>
+                                {editing ? L.done : L.change}
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                          {editing && (
+                            <TableRow>
+                              <TableCell colSpan={5} className="space-y-4 whitespace-normal">
+                                <Question
+                                  title={q.question.title}
+                                  help={q.question.help}
+                                  options={q.question.choices}
+                                  preselected={q.default ?? null}
+                                  freeText={q.question.free_text}
+                                  value={valueOf(q)}
+                                  onChange={(v) => answer(q, v)}
+                                />
+                                {tax && (
+                                  <Question
+                                    title={tax.question.title}
+                                    help={L.taxKeyShared(q.mapping?.rate ?? "")}
+                                    options={tax.question.choices}
+                                    preselected={tax.default ?? null}
+                                    freeText={tax.question.free_text}
+                                    value={valueOf(tax)}
+                                    onChange={(v) => answer(tax, v)}
+                                  />
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </Fragment>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+
+            {themes.others.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="eyebrow">{L.fileDecisionsHeading}</h3>
+                <ul className="divide-y rounded-lg border">
+                  {themes.others.map((q) => (
+                    <AppliedRow key={questionKey(q)} q={q} {...rowProps(q)} />
+                  ))}
+                </ul>
+              </div>
+            )}
           </section>
         )}
       </CardContent>
     </Card>
+  );
+}
+
+/** Bloc des réglages : son « Change » déplie le détail. */
+const SETTINGS = "__settings__";
+
+/** Une décision appliquée sur une ligne : libellé, valeur, origine, « Change » qui ouvre la question. */
+function AppliedRow({
+  q,
+  value,
+  editing,
+  onToggle,
+  onChange,
+}: {
+  q: QuickQuestion;
+  value: string;
+  editing: boolean;
+  onToggle: () => void;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <li className="space-y-3 p-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="min-w-0">
+          <span className="font-medium">{q.question.label}</span>
+          <span className="text-muted-foreground"> · {answerText(q, value)}</span>
+          {value === q.default && defaultOrigin(q) && (
+            <span className="meta text-muted-foreground"> ({defaultOrigin(q)})</span>
+          )}
+        </div>
+        <Button variant="outline" size="sm" onClick={onToggle}>
+          {editing ? L.done : L.change}
+        </Button>
+      </div>
+      {editing && (
+        <Question
+          title={q.question.title}
+          help={q.question.help}
+          options={q.question.choices}
+          preselected={q.default ?? null}
+          freeText={q.question.free_text}
+          value={value}
+          onChange={onChange}
+        />
+      )}
+    </li>
   );
 }
 
