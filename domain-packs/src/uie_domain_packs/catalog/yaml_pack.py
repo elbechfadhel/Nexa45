@@ -43,7 +43,12 @@ from uie_core.domains import (
     Vocabulary,
 )
 from uie_core.mapping import TargetBinding, TargetBindingRegistry
-from uie_core.mapping.suggestions import CategoryAccountRegistry, CategoryAccountTable
+from uie_core.mapping.suggestions import (
+    CategoryAccountRegistry,
+    CategoryAccountTable,
+    VatAccountRegistry,
+    VatAccountTable,
+)
 from uie_core.registry import EntityDef, FieldDef, RelationDef, SchemaSnapshotModel
 from uie_core.sources import SourceBinding, SourceBindingRegistry
 from uie_core.sources.table import FileTableRegistry, FileTableSpec
@@ -321,6 +326,15 @@ def load_category_accounts(path: Path) -> CategoryAccountTable:
         raise DomainPackError(f"{path} : table de comptes par catégorie invalide\n{exc}") from None
 
 
+def load_vat_accounts(path: Path) -> VatAccountTable:
+    """Table des comptes d'usage des opérations avec l'étranger (`kind: vat_accounts`) : présélections à
+    valider par le conseiller fiscal, jamais un domain pack."""
+    try:
+        return VatAccountTable.model_validate(read_yaml(path))
+    except ValidationError as exc:
+        raise DomainPackError(f"{path} : table des comptes de TVA invalide\n{exc}") from None
+
+
 def load_source_binding(path: Path) -> SourceBinding:
     """Binding de source à schéma fixe (`<domaine>/sources/*.yaml`), validé au chargement. La confrontation au
     contrat du Registry se fait à la lecture, quand le snapshot du système est disponible."""
@@ -370,6 +384,9 @@ def discover_domain_packs(domain_dir: str, root: Path | None = None) -> list[typ
         raw = read_yaml(path)
         if isinstance(raw, dict) and raw.get("kind") == "category_accounts":
             CategoryAccountRegistry.register(load_category_accounts(path))  # invalide → erreur au démarrage
+            continue
+        if isinstance(raw, dict) and raw.get("kind") == "vat_accounts":
+            VatAccountRegistry.register(load_vat_accounts(path))  # invalide → erreur au démarrage
             continue
         spec = load_pack_spec(path)
         rel = path.relative_to(base.parent).as_posix()

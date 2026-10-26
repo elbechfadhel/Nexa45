@@ -1,0 +1,29 @@
+# Comptes d'usage en SKR03 des opérations avec l'ÉTRANGER, par sens (vente / achat), zone du partenaire
+# (UE avec USt-IdNr valide / hors UE) et nature (marchandise / service), pour DATEV Buchungsstapel.
+# USAGE COURANT, À VALIDER PAR LE STEUERBERATER : cette table ne sert qu'à PRÉSÉLECTIONNER la réponse à la
+# question « catégorie → compte » (changeable dans « Decided for you ») ; une opération absente de la table
+# (achat de marchandises hors UE : TVA à l'importation) n'a jamais de compte deviné.
+# Pas un domain pack (`kind: vat_accounts`). Toute modification : incrémenter table_version.
+#
+# Ventes : 8125 livraison intracommunautaire exonérée (§ 4 Nr. 1b UStG), 8336 prestation dans un autre pays
+# de l'UE (TVA due par le client, § 13b), 8120 exportation exonérée (§ 4 Nr. 1a), 8338 prestation hors UE non
+# imposable en Allemagne. Achats : 3425 acquisition intracommunautaire 19 % / 19 %, 3123 prestation d'un
+# entrepreneur d'un autre pays de l'UE 19 % / 19 % (§ 13b), 3125 prestation d'un entrepreneur hors UE
+# 19 % / 19 % (§ 13b) : comptes AUTOMATIQUES (DATEV calcule la TVA due et déductible), aucune clé de taxe.
+
+kind: vat_accounts
+table_version: "1.0.0"
+target: {system: datev, product: buchungsstapel}
+chart: "03"
+status: usual practice, to be validated by your tax advisor (Steuerberater)
+
+automatic_accounts: ["3425", "3123", "3125"]
+
+accounts:
+  - {scope: SALE, zone: EU, supply_kind: GOODS, account: "8125"}
+  - {scope: SALE, zone: EU, supply_kind: SERVICES, account: "8336"}
+  - {scope: SALE, zone: NON_EU, supply_kind: GOODS, account: "8120"}
+  - {scope: SALE, zone: NON_EU, supply_kind: SERVICES, account: "8338"}
+  - {scope: PURCHASE, zone: EU, supply_kind: GOODS, account: "3425"}
+  - {scope: PURCHASE, zone: EU, supply_kind: SERVICES, account: "3123"}
+  - {scope: PURCHASE, zone: NON_EU, supply_kind: SERVICES, account: "3125"}

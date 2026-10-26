@@ -35,7 +35,12 @@ from uie_core.mapping import (
     TargetBindingError,
     TargetBindingRegistry,
 )
-from uie_core.mapping.suggestions import CategoryAccountRegistry
+from uie_core.mapping.suggestions import (
+    CategoryAccountRegistry,
+    VatAccountRegistry,
+    automatic_accounts,
+    parse_vat_ref,
+)
 from uie_core.sources.table import FileTableRegistry, FileTableSpec
 from uie_core.wizard.missing import MissingChoice, MissingKind, MissingQuestion
 from uie_core.wizard.model import TargetField, TargetProposal, Verification
@@ -286,6 +291,8 @@ def mapping_questions(
     saved = saved or {}
     hint = b.suggestions.get(chart or "")
     table = CategoryAccountRegistry.find(b.target.system, b.target.product, chart, scope)
+    vat_table = VatAccountRegistry.find(b.target.system, b.target.product, chart)
+    automatic = automatic_accounts(b.target.system, b.target.product, chart, scope)
     lookup = b.lookup(LookupKind.CATEGORY)
     account = lookup.label if lookup else "Account"
     out = []
@@ -294,14 +301,21 @@ def mapping_questions(
         rate_of = ref.rsplit(":", 1)[-1]  # « purchase:bürobedarf:19 », « sale:19 » : le taux en dernier
         usual = hint.categories.get(ref) if hint else None
         from_table = None
-        if usual is None and table is not None and ref.count(":") == 2:
+        status = table.status if table is not None else ""
+        vat = parse_vat_ref(ref)
+        if vat is not None:
+            # opération avec l'étranger : compte d'usage par sens, zone et nature (table des comptes de TVA)
+            if vat_table is not None:
+                usual = from_table = vat_table.account_for(vat[0], vat[1], vat[2])
+                status = vat_table.status
+        elif usual is None and table is not None and ref.count(":") == 2:
             _, key, rate = ref.split(":")
             usual = from_table = table.account_for(key, Decimal(rate))
         default = saved.get(decision) or usual
         if saved.get(decision):
             help_text = "Your account from a previous file, preselected."
-        elif from_table and table is not None:
-            help_text = f"Usual account of your chart of accounts ({table.status}), preselected."
+        elif from_table:
+            help_text = f"Usual account of your chart of accounts ({status}), preselected."
         elif usual:
             help_text = (
                 "Usual account of your chart of accounts, preselected: confirm it with your tax advisor."
@@ -332,7 +346,7 @@ def mapping_questions(
                     category=name.removesuffix(f" at {rate_of} % VAT"),
                     rate=rate_of,
                     tax_decision=f"{MAPPING}TAX:rate:{scope}:{rate_of}",
-                    automatic_accounts=list(table.automatic_accounts) if table else [],
+                    automatic_accounts=automatic,
                 ),
             )
         )
@@ -349,7 +363,7 @@ def mapping_questions(
             usual = NO_VALUE if Decimal(rate) == 0 else table.tax_key_for(Decimal(rate))
             tax_help = (
                 f"Usual input-tax key for this rate ({table.status}); automatic accounts "
-                f"({', '.join(table.automatic_accounts) or 'none'}) never get a tax key."
+                f"({', '.join(automatic) or 'none'}) never get a tax key."
                 if Decimal(rate)
                 else "No VAT on these purchases: no input tax, no tax key."
             )

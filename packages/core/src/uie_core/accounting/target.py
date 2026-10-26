@@ -84,7 +84,7 @@ from uie_core.mapping import (
     map_record,
     resolve_binding,
 )
-from uie_core.mapping.suggestions import CategoryAccountRegistry
+from uie_core.mapping.suggestions import automatic_accounts
 from uie_core.registry import SnapshotRef
 from uie_core.registry.service import NotFound, RegistryError, RegistryService
 
@@ -1793,10 +1793,9 @@ def _document(
     # comptes AUTOMATIQUES du plan comptable du dossier (données) : la cible calcule la taxe, aucune clé
     scope = "SALE" if doc.partner.role == PartnerRole.CUSTOMER else "PURCHASE"
     chart = values.get(b.chart_param) if b.chart_param else None
-    table = CategoryAccountRegistry.find(
-        b.target.system, b.target.product, str(chart) if chart else None, scope
+    automatic = set(
+        automatic_accounts(b.target.system, b.target.product, str(chart) if chart else None, scope)
     )
-    automatic = set(table.automatic_accounts) if table else set()
     bookings = []
     for bk in bs.bookings:
         issues: list[TargetIssue] = [partner_issue] if partner_issue else []

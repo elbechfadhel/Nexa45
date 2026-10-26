@@ -470,3 +470,40 @@ def test_the_kind_of_supply_is_read_from_its_column_and_never_guessed():
     assert kinds == {"RE-1": SupplyKind.GOODS, "RE-2": SupplyKind.SERVICES, "RE-3": None, "RE-4": None}
     (issue,) = [i for i in t.issues if i.kind == "supply_kind_unknown"]
     assert (issue.rows, issue.examples, issue.severity) == ([4], ["Montage"], "to_check")
+
+
+def test_the_usual_accounts_of_cross_border_operations_are_data_to_be_validated():
+    from uie_core.mapping.suggestions import (
+        VatAccountRegistry,
+        automatic_accounts,
+        parse_vat_ref,
+        vat_category_ref,
+    )
+    from uie_core.wizard.formats import format_target, mapping_questions
+
+    table = VatAccountRegistry.find("datev", "buchungsstapel", "03")
+    assert table is not None and "to be validated by your tax advisor" in table.status
+    usual = {(a.scope, a.zone, a.supply_kind): a.account for a in table.accounts}
+    assert usual == {
+        ("SALE", "EU", "GOODS"): "8125",
+        ("SALE", "EU", "SERVICES"): "8336",
+        ("SALE", "NON_EU", "GOODS"): "8120",
+        ("SALE", "NON_EU", "SERVICES"): "8338",
+        ("PURCHASE", "EU", "GOODS"): "3425",
+        ("PURCHASE", "EU", "SERVICES"): "3123",
+        ("PURCHASE", "NON_EU", "SERVICES"): "3125",
+    }
+    assert table.account_for("PURCHASE", "NON_EU", "GOODS") is None  # import : jamais deviné
+    assert VatAccountRegistry.find("datev", "buchungsstapel", "04") is None
+    # comptes automatiques : ceux des catégories d'achat ET ceux des opérations avec l'étranger
+    assert {"3400", "3425", "3123", "3125"} <= set(
+        automatic_accounts("datev", "buchungsstapel", "03", "PURCHASE")
+    )
+    ref = vat_category_ref("SALE", "EU", "SERVICES", Decimal("0"))
+    assert ref == "vat:sale:eu:services:0" and parse_vat_ref(ref) == ("SALE", "EU", "SERVICES", Decimal("0"))
+    assert parse_vat_ref("purchase:wareneinkauf:19") is None
+    fmt = format_target("datev", "buchungsstapel", "13", "DATEV Buchungsstapel 13")
+    assert fmt is not None
+    (q, _tax) = mapping_questions(fmt, {ref: "EU services at 0 % VAT"}, ["0"], "03", {}, scope="SALE")
+    assert q.default == "8336" and "to be validated by your tax advisor" in q.question.help
+    assert q.mapping is not None and q.mapping.category == "EU services"
