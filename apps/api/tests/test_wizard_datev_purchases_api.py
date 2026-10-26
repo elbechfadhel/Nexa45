@@ -251,3 +251,23 @@ def test_the_period_covers_only_the_months_written_and_last_year_is_refused(worl
     assert res.status_code == 200, res.text
     header, rows = _rows(res.content)
     assert (header[14], header[15]) == ("20260901", "20260930") and len(rows) == 1
+
+
+def test_a_long_decision_key_is_never_cut(world):  # noqa: F811
+    """« map:CATEGORY:purchase:telefon-internet:19 » (41 caractères) : la réponse présélectionnée s'applique
+    (une clé coupée ne correspondait plus à sa question) ; une clé démesurée est refusée, jamais tronquée."""
+    c = world["client"]
+    _suppliers_exported(c)
+    journal = (
+        "Beleg-Nr. Lieferant;Rechnungsdatum;Lief-Nr.;Lieferant;Kostenart;Netto €;USt %;USt €;Brutto €\n"
+        "T-1;15.09.2026;3002;Strom Nord AG;Telefon/Internet;100,00;19;19,00;119,00\n"
+    )
+    flow = _flow(c, "Buchungsstapel 13", journal, "Eingang.csv", {"setting:lock_bookings": "0"})
+    assert flow["preview"]["excluded_rows"] == []
+    res = _download(c, flow)
+    assert res.status_code == 200, res.text
+    _, rows = _rows(res.content)
+    assert [rows[0][i] for i in (6, 7, 8)] == ["73002", "4920", '"0009"']
+    payload = dict(flow["payload"], choices={"x" * 161: "1"})
+    refused = c.post("/api/wizard/file/preview", files=flow["files"], data={"payload": json.dumps(payload)})
+    assert refused.status_code == 422

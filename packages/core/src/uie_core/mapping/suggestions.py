@@ -8,6 +8,7 @@ Aucun nom de système ici : la table nomme sa cible (système, format) et son pl
 
 from __future__ import annotations
 
+import hashlib
 import re
 from decimal import Decimal
 from typing import ClassVar, Literal
@@ -21,10 +22,17 @@ class _Spec(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
 
+KEY_MAX = 60  # au-delà : début du nom + empreinte stable (la référence tient dans une colonne de 120)
+
+
 def category_key(name: str) -> str:
     """Forme comparable d'un nom de catégorie : minuscules, mots séparés par un tiret (« Telefon/Internet » →
-    « telefon-internet »)."""
-    return "-".join(re.findall(r"[^\W_]+", name.casefold()))
+    « telefon-internet ») ; un nom très long garde son début et une empreinte stable (jamais deux catégories
+    confondues)."""
+    key = "-".join(re.findall(r"[^\W_]+", name.casefold()))
+    if len(key) <= KEY_MAX:
+        return key
+    return f"{key[: KEY_MAX - 9]}-{hashlib.sha256(key.encode()).hexdigest()[:8]}"
 
 
 class CategoryAccount(_Spec):

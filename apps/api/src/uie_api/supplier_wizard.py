@@ -6,7 +6,7 @@ quand le Registry a vérifié la structure). `source` = registry | known | ai | 
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 from uie_core.wizard import (
@@ -258,13 +258,16 @@ class WizardFileIn(WizardExcelIn):
     decisions: list[WizardMappingDecisionIn] = Field(default_factory=list, max_length=500)
     fills: list[FillIn] = Field(default_factory=list, max_length=100)
     previous: list[PreviousChoiceIn] = Field(default_factory=list, max_length=500)
-    # décisions sur les VALEURS : clé de question (« list:3 », « unit:9 », « currency »…) → option choisie
-    choices: dict[str, str] = Field(default_factory=dict, max_length=200)
+    # décisions sur les VALEURS : clé de question (« list:3 », « unit:9 », « currency »…) → option choisie ;
+    # trop longue → refusée (422), jamais tronquée (une clé coupée ne correspond plus à sa question)
+    choices: dict[Annotated[str, Field(max_length=160)], Annotated[str, Field(max_length=120)]] = Field(
+        default_factory=dict, max_length=200
+    )
     # colonnes dont l'utilisateur a confirmé ou corrigé la correspondance (mémoire de l'organisation)
     confirmed: list[int] = Field(default_factory=list, max_length=500)
 
     def core_choices(self) -> dict[str, str]:
-        return {k[:40]: v[:40] for k, v in self.choices.items()}
+        return dict(self.choices)
 
     def core_previous(self) -> list[PreviousChoice]:
         return [PreviousChoice(header=c.header, target=c.target) for c in self.previous]

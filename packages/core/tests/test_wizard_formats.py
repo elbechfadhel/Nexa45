@@ -424,3 +424,13 @@ def test_the_usual_expense_accounts_are_data_and_an_unknown_category_has_none():
     t = documents_from_rows(INVOICES, rows, {"expense_category": "Kostenart"}, "EUR", purchase=True)
     assert t.categories == {"purchase:telefon-internet:19": "Telefon/Internet at 19 % VAT"}
     assert [(e.row, e.kind) for e in t.skipped] == [(2, "missing_category")]
+
+
+def test_a_long_category_name_keeps_a_short_stable_key():
+    from uie_core.mapping.suggestions import category_key
+
+    long_name = "Wartung und Instandhaltung der technischen Anlagen im Lager Nord, Halle 3 und 4"
+    key = category_key(long_name)
+    assert len(key) == 60 and key == category_key(long_name.upper())
+    assert key != category_key(long_name + " und 5")  # jamais deux catégories confondues
+    assert category_key("Telefon/Internet") == "telefon-internet"
