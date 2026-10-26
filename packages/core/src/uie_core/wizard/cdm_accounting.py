@@ -110,30 +110,33 @@ def documents_from_rows(  # noqa: C901, PLR0912, PLR0915
         skipped.append(ExcludedRow(row=i + 1, reason=reason, kind=kind))
 
     used = [i for i in range(len(rows)) if any(rows[i].values())]
-    # même numéro de facture plusieurs fois : contenu identique = saisie en double ; sinon conflit
-    by_number: dict[str, list[int]] = {}
+    # même numéro de facture plusieurs fois : contenu identique = saisie en double ; sinon conflit. Achat : le
+    # numéro est celui du FOURNISSEUR, unique chez lui seulement (deux fournisseurs peuvent avoir « 1001 »)
+    by_number: dict[tuple[str, str], list[int]] = {}
     for i in used:
         if val(i, "document_number"):
-            by_number.setdefault(val(i, "document_number"), []).append(i)
+            key = (val(i, pkey) if purchase else "", val(i, "document_number"))
+            by_number.setdefault(key, []).append(i)
     content_keys = ("document_date", pkey, "net_amount", "tax_rate", "tax_amount", "gross_amount")
     # ligne → (motif, sorte) : « duplicate » = lignes IDENTIQUES (écrite une fois) ; même numéro pour des
     # factures différentes = « probable_duplicate » (aucune n'est écrite)
     twice: dict[int, tuple[str, str]] = {}
-    for number, idx in by_number.items():
+    for (supplier, number), idx in by_number.items():
         if len(idx) < 2:
             continue
         same = all(
             tuple(val(j, k) for k in content_keys) == tuple(val(idx[0], k) for k in content_keys) for j in idx
         )
+        of = f" of supplier {supplier}" if supplier else ""
         for j in idx[1:] if same else idx:
             twice[j] = (
                 (
-                    f"Invoice {number} entered twice (same content as row {idx[0] + 1}): exported once.",
+                    f"Invoice {number}{of} entered twice (same content as row {idx[0] + 1}): exported once.",
                     "duplicate",
                 )
                 if same
                 else (
-                    f"Invoice number {number} is used for different invoices: none of them is exported.",
+                    f"Invoice number {number}{of} is used for different invoices: none of them is exported.",
                     "probable_duplicate",
                 )
             )

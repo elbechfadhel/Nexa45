@@ -354,3 +354,23 @@ def test_purchase_invoices_are_bills_of_the_supplier_booked_on_the_other_side():
     assert gross_bookings(bill).bookings[0].amount == Decimal("1190")
     assert t.scope == "PURCHASE" and t.categories == {"purchase:19": "purchases at 19 % VAT"}
     assert [(e.row, e.reason) for e in t.skipped] == [(3, "Invoice H-200: no supplier number: not exported.")]
+
+
+def test_a_purchase_invoice_number_is_unique_only_at_its_supplier():
+    rows = [
+        _buy("500", "2026-08-10", "500", "19", "95", "595"),
+        _buy("500", "2026-08-12", "800", "19", "152", "952", supplier="3002"),  # autre fournisseur : exportée
+        _buy("500", "2026-08-10", "500", "19", "95", "595"),  # saisie double : exportée une fois
+    ]
+    t = documents_from_rows(INVOICES, rows, {}, "EUR", purchase=True)
+    assert [d.source_ref for d in t.documents] == ["file:purchase:3001:500", "file:purchase:3002:500"]
+    assert [(e.row, e.kind, e.reason) for e in t.skipped] == [
+        (3, "duplicate", "Invoice 500 of supplier 3001 entered twice (same content as row 1): exported once.")
+    ]
+    # ventes : inchangé, le numéro de facture est unique dans tout le journal
+    sales = documents_from_rows(
+        INVOICES, [_i("RE-1", "2026-09-01", "1", "19", "0.19", "1.19")] * 2, {}, "EUR"
+    )
+    assert [e.reason for e in sales.skipped] == [
+        "Invoice RE-1 entered twice (same content as row 1): exported once."
+    ]
