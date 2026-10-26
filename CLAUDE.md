@@ -1098,6 +1098,21 @@ réponses gardées en `sessionStorage`), puis structure cible + Excel d'exemple.
   (`Fill.hint`) ou « I don't know » (`Fill.unknown`) → rien d'écrit, avertissement conservé. Prompt de structure
   1.6.0 (référence avec valeur par défaut raisonnable = facultative). Test réel : `temp/wizard_guided_check.py`.
 
+## Parcours Steuerberater (« Prepare data for DATEV ») — feuille de route
+
+Détail et décisions : **`docs/ROADMAP_STEUERBERATER.md`** (à lire avant tout nouveau domaine DATEV). En bref :
+- Démo 1 validée (Debitoren/Kreditoren 5, Buchungsstapel 13 depuis Excel, `/portal/prepare-datev`) ; étiquettes
+  `demo-1-base` (état initial, jamais déplacée) et `demo-1`.
+- Un module par public = une CONFIGURATION (`lib/wizard/entries.mjs`, catalogue des use cases), jamais une copie
+  des composants du mode Simple.
+- Ordre : factures d'achat → TVA dans les écritures (§13b, UE, hors UE) → caisse ; point d'étape ; puis banque
+  (CAMT, MT940), paie (rien avant la documentation officielle, protection des données des salariés d'abord).
+- Hors périmètre : déclarations fiscales (bilan, E-Bilanz, KSt, GewSt).
+- Méthode : fichier réaliste + vérité terrain jamais retouchée ; mesurer puis corriger (un commit par point,
+  avec test) ; chemin fichier → tableau de source → CDM → binding DATEV → EXTF → journal ; Simple = rien de ce
+  qui se lit ou se déduit, ≤ 3 questions présélectionnées, aucune correction silencieuse, aucun numéro de
+  conseiller ou de mandant inventé ; test manuel de l'utilisateur et non-régression par groupes à chaque domaine.
+
 ## DATEV D1 — Registry des formats EXTF (2026-10-02)
 
 Plan : `temp/PLAN_DATEV_D1.md` ; détail : `temp/RESULTAT_DATEV_D1.md`. Registry seulement : ni OAuth, ni sandbox,
