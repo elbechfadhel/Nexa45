@@ -72,22 +72,28 @@ export function StartScreen({
   // point d'entrée d'un système : le format est choisi dès le dépôt du fichier (règles du serveur, sans LLM)
   const detect = useWizardDetect();
   const [auto, setAuto] = useState(false);
-  const picked = useRef<File | null>(null);
-  function pick(f: File) {
-    onFile(f);
-    picked.current = f;
-    if (!entry.detect || !sole) return;
+  // fichier déjà soumis à la détection : elle part dès que le fichier ET les formats sont là (un fichier déposé
+  // avant la fin du chargement des formats est détecté ensuite, jamais oublié)
+  const detected = useRef<File | null>(null);
+  const candidates = sole ? detectCandidates(sole).join("|") : "";
+  useEffect(() => {
+    if (!entry.detect || !candidates || !file || detected.current === file) return;
+    detected.current = file;
+    const f = file;
     detect.mutate(
-      { file: f, targets: detectCandidates(sole) },
+      { file: f, targets: candidates.split("|") },
       {
         onSuccess: (result) => {
-          if (picked.current !== f) return; // un autre fichier a été déposé entre-temps
+          if (detected.current !== f) return; // un autre fichier a été déposé entre-temps
           const next = afterDetect(target, auto, result);
           setAuto(next.auto);
           if (next.target !== target) onTarget(next.target);
         },
       },
     );
+  }, [entry.detect, candidates, file, detect, target, auto, onTarget]);
+  function pick(f: File) {
+    onFile(f);
   }
   function choose(value: string) {
     setAuto(false);
