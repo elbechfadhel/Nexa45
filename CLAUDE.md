@@ -1096,6 +1096,10 @@ Détail et décisions : **`docs/ROADMAP_STEUERBERATER.md`** (à lire avant tout 
   `demo-1-base` (état initial, jamais déplacée) et `demo-1`.
 - Un module par public = une CONFIGURATION (`lib/wizard/entries.mjs`, catalogue des use cases), jamais une copie
   des composants du mode Simple.
+- Domaine 2 (TVA dans les écritures, 2026-10-26) : nature « Leistungsart » (question si absente, jamais
+  devinée), zone lue dans les listes de partenaires exportées (`eu_members`, état `non_eu`), comptes dans la
+  table de données `domain-packs/accounting/datev/skr03_vat_accounts.yaml` (à valider par le Steuerberater),
+  refus avec motif (0 % national, TVA étrangère, UE sans USt-IdNr, importation) ; détail dans la feuille de route.
 - Ordre : factures d'achat → TVA dans les écritures (§13b, UE, hors UE) → caisse ; point d'étape ; puis banque
   (CAMT, MT940), paie (rien avant la documentation officielle, protection des données des salariés d'abord).
 - Hors périmètre : déclarations fiscales (bilan, E-Bilanz, KSt, GewSt).

@@ -23,7 +23,8 @@ Décisions de l'utilisateur, enregistrées le 2026-10-26. Ce fichier fait foi po
 ## Ordre des domaines
 
 1. **Factures d'achat (Eingangsrechnungen)** : Kreditoren, comptes de charges, TVA déductible.
-2. **TVA dans les écritures** : autoliquidation §13b, achats UE, pays hors UE.
+2. **TVA dans les écritures** : autoliquidation §13b, achats UE, pays hors UE. Codé (2026-10-26), test manuel
+   à faire ; voir « Domaine 2 » ci-dessous.
 3. **Caisse (Kassenbuch)**.
 4. **Banque** : formats CAMT et MT940, rapprochement avec les factures.
 5. **Paie (LODAS / Lohn und Gehalt)** :
@@ -52,3 +53,24 @@ le métier du Steuerberater. Nexa45 fournit des données propres en amont.
 - Test manuel dans le navigateur par l'utilisateur à la fin de chaque domaine.
 - Suite de non-régression par groupes après chaque domaine : Core, connecteurs, domain-packs, `apps/api/tests`, `tests/`, web.
   - Si la mémoire de la machine est juste, découper domain-packs et `apps/api/tests` en lots courts, lancés au premier plan.
+
+## Domaine 2 — la TVA dans les écritures (2026-10-26)
+
+Décisions D1-D7 validées par l'utilisateur ; mesure avant / après : `temp/RESULTAT_DOMAINE2_MESURE.md`,
+`temp/RESULTAT_DOMAINE2.md`.
+
+- **Nature de l'opération** : colonne « Leistungsart » (Ware / Dienstleistung…), Accounting CDM 1.2.0
+  (`DocumentLine.supply_kind`). Vide, inconnue ou absente (démo 1 comprise) : UNE question par fichier
+  « goods or services? », jamais présélectionnée ; jamais déduite d'une catégorie ni d'une remarque.
+- **Zone du partenaire** : lue dans la liste des clients / fournisseurs exportée (état TVA retenu à l'export) ;
+  pays de l'UE = liste explicite `eu_members` du tableau de source PARTNER ; hors UE = état `non_eu` (numéro
+  « CHE-… MWST » jamais traité comme une USt-IdNr invalide, jamais écrit en EU-UStID).
+- **Comptes** : table de DONNÉES `domain-packs/accounting/datev/skr03_vat_accounts.yaml`, « à valider par le
+  Steuerberater », présélection seulement : vente UE 8125 (Ware) / 8336 (service), hors UE 8120 / 8338 ; achat
+  UE 3425 / 3123, hors UE service 3125 (comptes automatiques, aucune clé de taxe).
+- **Refus avec motif, jamais de question « exporter quand même »** : vente nationale à 0 % ; client ou
+  fournisseur pas encore exporté ; USt-IdNr invalide ou absente d'un partenaire de l'UE ; marchandise achetée
+  hors UE (TVA à l'importation) ; TVA étrangère facturée par un fournisseur étranger (taux > 0 %, règle simple,
+  aucune table des taux étrangers).
+- **Adresses étrangères vers DATEV** : la Postleitzahl de Debitoren/Kreditoren 5 n'admet que des chiffres (spec
+  locale) : un code postal NL, PL, IE est laissé vide avec avertissement. Caractères hors cp1252 : plus tard.
