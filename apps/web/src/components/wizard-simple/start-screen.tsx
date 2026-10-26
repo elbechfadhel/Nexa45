@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
+import { RadioList } from "@/components/ui/radio-list";
 import { Card, CardContent } from "@/components/ui/card";
 import { useWizardDetect, useWizardTargets } from "@/lib/api/wizard-hooks";
 import { cn } from "@/lib/utils";
@@ -225,6 +226,26 @@ function Choices({
   label?: string;
 }) {
   const { main, others } = formatChoices(tile.formats);
+  if (label !== undefined) {
+    // choix seuls à l'écran : radio group (style commun de la console), versions plus anciennes repliées
+    return (
+      <div className="space-y-3">
+        <RadioList options={main} value={target} onChange={onTarget} label={label} />
+        {others.length > 0 && (
+          <details className="meta" open={others.some((f) => f.value === target)}>
+            <summary className="cursor-pointer text-muted-foreground">{L.otherVersions}</summary>
+            <RadioList
+              className="mt-2.5"
+              options={others}
+              value={target}
+              onChange={onTarget}
+              label={L.otherVersions}
+            />
+          </details>
+        )}
+      </div>
+    );
+  }
   return (
     <div className={cn("space-y-2", framed && "rounded-lg border border-border p-3")}>
       {label === undefined && (
