@@ -31,7 +31,7 @@ export const WIZARD_ENTRIES = {
   datev: {
     title: "Prepare data for DATEV",
     intro:
-      "Add your customer list or your invoices, choose what DATEV should receive, and download the file prepared for DATEV. Nothing is written to your systems.",
+      "Add your customer or supplier list, or your sales or purchase invoices, check what DATEV should receive, and download the file prepared for DATEV. Nothing is written to your systems.",
     targetHeading: "2. What do you want to prepare?",
     systems: ["datev"],
     groups: ["registry"],

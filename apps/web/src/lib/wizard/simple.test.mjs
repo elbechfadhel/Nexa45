@@ -471,6 +471,8 @@ test("an entry point reuses the Simple screens: only its title, introduction and
     assert.match(entry.intro, /Nothing is written to your systems\./);
   }
   assert.equal(WIZARD_ENTRIES.datev.title, "Prepare data for DATEV");
+  // les deux sens : clients et fournisseurs, factures de vente et d'achat
+  assert.match(WIZARD_ENTRIES.datev.intro, /customer or supplier list, or your sales or purchase invoices/);
   // la question de l'étape 2 : propre au parcours ; le Wizard garde la sienne
   assert.equal(WIZARD_ENTRIES.datev.targetHeading, "2. What do you want to prepare?");
   assert.equal(WIZARD_ENTRIES.general.targetHeading, undefined);
