@@ -181,6 +181,13 @@ export function currencyCode(text) {
 /** Lignes montrées par problème avant « … et N autres » (la liste complète est dans le fichier préparé). */
 export const ROWS_SHOWN = 12;
 
+/** Clé d'affichage d'un problème : sorte, colonne ET message (plusieurs avertissements de la cible ont la même
+ * sorte et aucune colonne : un message par avertissement).
+ * @param {{ kind: string, column: string, message: string }} issue */
+export function issueKey(issue) {
+  return `${issue.kind}-${issue.column}-${issue.message}`;
+}
+
 /** Lignes concernées par un problème, en clair : « Row 4 », « Rows 2, 5, 9 and 37 more » ; `count` = total.
  * @param {number[]} rows
  * @param {number} count

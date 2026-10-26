@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type { PreparedFile, QuickStart } from "@/lib/api/wizard-hooks";
 import { cn } from "@/lib/utils";
-import { problemGroups, rowsText } from "@/lib/wizard/review.mjs";
+import { issueKey, problemGroups, rowsText } from "@/lib/wizard/review.mjs";
 import {
   alreadyExportedText,
   currencyNoticeText,
@@ -219,7 +219,7 @@ function IssueList({ title, help, issues }: { title: string; help?: string; issu
       </div>
       <ul className="space-y-3">
         {issues.map((i) => (
-          <li key={`${i.kind}-${i.column}`} className="space-y-0.5">
+          <li key={issueKey(i)} className="space-y-0.5">
             <p>{i.message}</p>
             {i.rows.length > 0 && <p className="meta text-muted-foreground">{rowsText(i.rows, i.count)}</p>}
             {i.fix && (

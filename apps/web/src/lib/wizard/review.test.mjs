@@ -10,6 +10,7 @@ import {
   answerLabel,
   clip,
   currencyCode,
+  issueKey,
   currentDecision,
   currentQuestion,
   EXPERT_EXAMPLE_MAX,
@@ -214,4 +215,19 @@ test("problems: rows in plain words, in two groups, nothing hidden", () => {
     [groups.notWritten.map((i) => i.kind), groups.toCheck.map((i) => i.kind)],
     [["barcode_invalid", "invalid", "left_out"], ["missing_price"]],
   );
+});
+
+test("each issue has its own key, even several target warnings without a column", () => {
+  const issues = [
+    { kind: "target_warning", column: "", message: "Postleitzahl does not have the format expected by the target: left out" },
+    { kind: "target_warning", column: "", message: "Straße contains characters that cannot be written in cp1252: left out" },
+    { kind: "vat_non_eu", column: "USt-IdNr.", message: "1 tax number of a country outside the EU is not an EU VAT ID" },
+  ];
+  assert.equal(new Set(issues.map(issueKey)).size, issues.length);
+  const page = readFileSync(
+    join(dirname(fileURLToPath(import.meta.url)), "..", "..", "components", "wizard-simple", "result-screen.tsx"),
+    "utf8",
+  );
+  assert.match(page, /key=\{issueKey\(i\)\}/);
+  assert.doesNotMatch(page, /key=\{`\$\{i\.kind\}-\$\{i\.column\}`\}/);
 });
