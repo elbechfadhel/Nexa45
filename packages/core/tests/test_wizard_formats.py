@@ -68,6 +68,7 @@ def test_german_headers_are_known_columns_of_the_file_tables():
         "tax_rate",
         "tax_amount",
         "gross_amount",
+        "remark",  # reconnue (jamais envoyée à l'IA), jamais exportée
     }
 
 

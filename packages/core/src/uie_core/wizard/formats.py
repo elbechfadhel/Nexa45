@@ -37,7 +37,7 @@ from uie_core.mapping import (
 from uie_core.sources.table import FileTableRegistry, FileTableSpec
 from uie_core.wizard.missing import MissingChoice, MissingKind, MissingQuestion
 from uie_core.wizard.model import TargetField, TargetProposal, Verification
-from uie_core.wizard.quick import QuickQuestion
+from uie_core.wizard.quick import INVOICES, PURCHASE_INVOICES, QuickQuestion
 from uie_core.wizard.values import ValueQuestion
 
 MODEL_DOMAIN = {"partner": DomainKey.PARTNER, "accounting": DomainKey.ACCOUNTING}
@@ -95,10 +95,17 @@ def format_target(system: str, product: str, version: str, label: str) -> Format
 
 def data_type_of_file(fmt: FormatTarget, headers: list[str]) -> str | None:
     """Type de données d'après les en-têtes, parmi ceux du tableau : toutes les colonnes OBLIGATOIRES du
-    tableau trouvées (alias exacts, ≥ 0,90) ; pour des partenaires, le rôle vient des colonnes de numéro."""
+    tableau trouvées (alias exacts, ≥ 0,90) ; pour des partenaires, le rôle vient des colonnes de numéro ;
+    pour des factures, le sens aussi (numéro de client : ventes, numéro de fournisseur : achats ; ni l'un ni
+    l'autre, ou les deux : non tranché)."""
     found = matched_keys(fmt.table, headers)
     if not {c.key for c in fmt.table.columns if c.required} <= found:
         return None
+    if fmt.domain == DomainKey.ACCOUNTING and len(fmt.table.data_types) > 1:
+        customer, supplier = "partner_number" in found, "supplier_number" in found
+        label = INVOICES if customer and not supplier else None
+        label = PURCHASE_INVOICES if supplier and not customer else label
+        return label if label in fmt.table.data_types else None
     if fmt.domain == DomainKey.PARTNER:
         customer, supplier = "customer_number" in found, "supplier_number" in found
         label = (

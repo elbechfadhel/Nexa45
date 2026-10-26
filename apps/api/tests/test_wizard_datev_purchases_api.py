@@ -70,3 +70,29 @@ def test_a_purchase_journal_goes_to_bookings_as_purchase_invoices_without_a_ques
     # le type est reconnu par les règles, jamais demandé
     assert (body["data_type"], body["data_type_from"]) == ("Purchase invoices", "rules")
     assert "data_type" not in {q["decision"] for q in body["questions"]}
+
+
+def test_every_column_of_a_purchase_journal_is_known_by_the_rules(world):  # noqa: F811
+    """Aucune colonne laissée à l'IA : numéro de facture du fournisseur, numéro et nom du fournisseur,
+    catégorie de charge, montants, et la remarque (reconnue, jamais exportée ni lue pour décider)."""
+    c = world["client"]
+    files = {"file": ("Rechnungseingang.csv", PURCHASES.encode("cp1252"), "text/csv")}
+    start = c.post(
+        "/api/wizard/quick-start",
+        files=files,
+        data={"payload": json.dumps({"target": _target(c, "Buchungsstapel 13")})},
+    )
+    assert start.status_code == 200, start.text
+    columns = {col["header"]: (col["target"], col["status"]) for col in start.json()["mapping"]["columns"]}
+    assert columns == {
+        "Beleg-Nr. Lieferant": ("document_number", "matched"),
+        "Rechnungsdatum": ("document_date", "matched"),
+        "Lief-Nr.": ("supplier_number", "matched"),
+        "Lieferant": ("partner_name", "matched"),
+        "Kostenart": ("expense_category", "matched"),
+        "Netto €": ("net_amount", "matched"),
+        "USt %": ("tax_rate", "matched"),
+        "USt €": ("tax_amount", "matched"),
+        "Brutto €": ("gross_amount", "matched"),
+        "Bemerkung": ("remark", "matched"),
+    }

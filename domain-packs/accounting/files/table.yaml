@@ -7,7 +7,7 @@
 # le net et la TVA servent au CONTRÔLE (net + TVA = brut, à 0,01 près ; jamais corrigé).
 # Taux de TVA admis : ceux du pays à la date de la facture (16 % / 5 % : taux temporaires de 2020, plus admis).
 
-table_version: "1.1.0"   # 1.1.0 : factures d'achat
+table_version: "1.2.0"   # 1.1.0 : factures d'achat ; 1.2.0 : leurs colonnes
 domain: ACCOUNTING
 data_types: ["Invoices", "Purchase invoices"]
 home_country: DE
@@ -18,23 +18,37 @@ columns:
     description: Number of the invoice or credit note (Belegfeld 1).
     required: true
     aliases: [re nr, rechnungsnr, rechnungsnummer, rechnung nr, beleg nr, belegnr, belegnummer, belegfeld 1,
-              invoice no, invoice number, invoice, document number, numéro de facture]
+              invoice no, invoice number, invoice, document number, numéro de facture,
+              beleg nr lieferant, rechnungsnr lieferant, rechnungsnummer lieferant, fremdbeleg, fremdbelegnummer,
+              supplier invoice number, vendor invoice number, numéro de facture fournisseur]
   - key: document_date
     label: Invoice date
     data_type: date
     group: dates
     required: true
     aliases: [re datum, rechnungsdatum, belegdatum, datum, invoice date, document date, date, date de facture]
+  # numéro du client (ventes) OU du fournisseur (achats) : l'un des deux est exigé selon le type du fichier
   - key: partner_number
     label: Customer number
     description: Number of the customer in the source; the same number as in the customer list.
-    required: true
     aliases: [kd nr, kdnr, kunden nr, kundennr, kundennummer, debitor, debitor nr, debitorennummer,
               customer no, customer number, numéro client]
+  - key: supplier_number
+    label: Supplier number
+    description: Number of the supplier in the source; the same number as in the supplier list.
+    aliases: [lief nr, liefnr, lieferanten nr, lieferantennr, lieferantennummer, kreditor, kreditor nr,
+              kreditorennummer, supplier no, supplier number, vendor no, vendor number, numéro fournisseur]
   - key: partner_name
-    label: Customer name
-    description: Name of the customer as written on the invoice (booking text).
-    aliases: [kunde, kundenname, name, firma, empfänger, customer, customer name, client]
+    label: Customer or supplier name
+    description: Name of the customer or of the supplier as written on the invoice (booking text).
+    aliases: [kunde, kundenname, name, firma, empfänger, customer, customer name, client,
+              lieferant, lieferantenname, supplier, supplier name, vendor, vendor name, fournisseur]
+  - key: expense_category
+    label: Expense category
+    description: Kind of expense of a purchase invoice (Kostenart); its account is confirmed once, never
+      guessed.
+    aliases: [kostenart, aufwandsart, aufwand, ausgabenart, kostenkategorie, buchungskategorie, kategorie,
+              expense category, expense type, category, nature de charge, catégorie]
   - key: net_amount
     label: Net amount
     data_type: decimal
@@ -61,6 +75,13 @@ columns:
   - key: currency
     label: Currency
     aliases: [währung, waehrung, wkz, currency, devise]
+  # texte libre de la source : reconnu (jamais envoyé à l'IA), jamais exporté ni lu pour décider quoi que ce
+  # soit (une exonération ne se déduit jamais d'un commentaire)
+  - key: remark
+    label: Remark
+    description: Free text of the source; never exported, never used to decide anything.
+    aliases: [bemerkung, bemerkungen, notiz, kommentar, anmerkung, hinweis, remark, remarks, note, notes,
+              comment, comments, remarque]
 
 tax_rates:
   - {country: DE, since: 2021-01-01, rates: [19, 7, 0]}
