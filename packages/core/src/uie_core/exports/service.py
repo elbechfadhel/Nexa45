@@ -18,7 +18,7 @@ from __future__ import annotations
 import hashlib
 import re
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date
 from types import SimpleNamespace
 from typing import Any
@@ -252,8 +252,11 @@ class ExportProfileService:
 class AccountPlan:
     numbers: dict[tuple[str, str], str]  # (source_ref, rôle) → numéro
     new: set[tuple[str, str]]  # attribués par cet aperçu / cette génération
-    origin: dict[tuple[str, str], str]  # ASSIGNED | REUSED
+    origin: dict[tuple[str, str], str]  # ASSIGNED | REUSED | OFFSET
     exhausted: set[str]  # rôles dont la plage est pleine
+    # règle « décalage + numéro de la source » donnée mais pas appliquée : pourquoi, et le numéro donné à la
+    # place (jamais un repli silencieux)
+    notes: dict[tuple[str, str], str] = field(default_factory=dict)
 
 
 def strong_identity(partner: Partner) -> str | None:
@@ -291,7 +294,6 @@ def plan_accounts(
     values = profile.values
     length = int(values[acc.length_from]) + acc.plus
     reuse = bool(values.get(acc.reuse_param)) if acc.reuse_param else False
-    offset = values.get(acc.offset_param) if acc.offset_param else None
     cursor: dict[str, int] = {}
     for partner, role in sorted(needs, key=lambda n: (_sort_ref(n[0].source_ref), n[1].value)):
         key = (partner.source_ref, role.value)
@@ -303,6 +305,8 @@ def plan_accounts(
             continue
         source = partner.mapping_view(role).get(acc.reuse_from.get(role.value, ""))
         candidate = source if reuse else None
+        param = acc.offset_for(role.value)
+        offset = values.get(param) if param else None
         shifted = (
             str(int(offset) + int(source))
             if offset not in (None, "") and source and re.fullmatch(r"\d+", str(source))
@@ -327,6 +331,18 @@ def plan_accounts(
                 continue
             cursor[role.value] = n + 1
             number, origin = str(n), "ASSIGNED"
+            if shifted:
+                why = (
+                    f"is outside the range {rng[0]}-{rng[1]}"
+                    if not rng[0] <= int(shifted) <= rng[1]
+                    else f"does not have {length} digits"
+                    if len(shifted) != length
+                    else "is already used"
+                )
+                plan.notes[key] = (
+                    f"{offset} + {source} = {shifted} {why}: account {number} given instead (check the rule "
+                    "in your settings)"
+                )
         used.add(number)
         plan.numbers[key], plan.origin[key] = number, origin
         plan.new.add(key)
@@ -637,6 +653,8 @@ class PartnerExportService:
             issues = list(rec.issues)
             if key in duplicates:
                 issues.insert(0, duplicates[key])
+            if key in accounts.notes and key in accounts.new:
+                issues.insert(0, TargetIssue(level=IssueLevel.WARNING, message=accounts.notes[key]))
             if number is None and role.value in accounts.exhausted:
                 issues.insert(
                     0,

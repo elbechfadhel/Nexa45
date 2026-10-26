@@ -13,7 +13,8 @@
 # Les plages de numéros débiteurs / créanciers ne figurent pas dans ces sources : paramètres du profil, saisis
 # selon la configuration comptable (cabinet), sans valeur par défaut.
 
-binding_version: "1.1.0"   # 1.1.0 : Ansprechpartner (102), numérotation « décalage + numéro du client »
+binding_version: "1.2.0"   # 1.1.0 : Ansprechpartner (102), « décalage + numéro du client » ; 1.2.0 : un
+                           # décalage par rôle (débiteurs, créanciers)
 name: DATEV Debitoren/Kreditoren (EXTF)
 source: {model: partner, version: "1"}
 target:
@@ -33,7 +34,7 @@ account:
   ranges: {CUSTOMER: debtor_range, SUPPLIER: creditor_range}
   reuse_from: {CUSTOMER: identifiers.customer_number, SUPPLIER: identifiers.supplier_number}
   reuse_param: reuse_partner_numbers
-  offset_param: account_offset
+  offset_param: {CUSTOMER: account_offset, SUPPLIER: creditor_offset}
 
 fields:
   - {field: "001", source: target.account_number, identity: true}
@@ -119,8 +120,12 @@ profile:
      help: "CP1252 works for every DATEV import; UTF-8 (with BOM) only for manual import or the DATEV API."}
   - {name: reuse_partner_numbers, label: Use the customer / supplier number as account number when it fits,
      type: boolean, default: false}
-  # numérotation d'usage chez les cabinets : 10000 + numéro du client (1001 → 11001) ; sans valeur, les comptes
-  # sont numérotés dans l'ordre de la plage ; un numéro hors de la plage du rôle prend le premier libre
-  - {name: account_offset, label: Account number = this number + the customer / supplier number, type: integer,
+  # numérotation d'usage chez les cabinets, UN décalage par rôle : 10000 + numéro du client (1001 → 11001),
+  # 70000 + numéro du fournisseur (2001 → 72001) ; sans valeur, les comptes sont numérotés dans l'ordre de la
+  # plage ; un numéro hors de la plage du rôle prend le premier libre, et c'est signalé
+  - {name: account_offset, label: Customer account number = this number + the customer number, type: integer,
      help: "For example 10000: customer 1001 gets the account 11001. Leave it empty to number the accounts in
+       order."}
+  - {name: creditor_offset, label: Supplier account number = this number + the supplier number, type: integer,
+     help: "For example 70000: supplier 2001 gets the account 72001. Leave it empty to number the accounts in
        order."}

@@ -54,6 +54,7 @@ ASKED = (
     "debtor_range",
     "creditor_range",
     "account_offset",
+    "creditor_offset",
     "currency",
     "lock_bookings",
 )
@@ -179,6 +180,7 @@ def _usual(name: str, length: int, data_year: int) -> str | None:
         "debtor_range": f"{first}-{7 * first - 1}",
         "creditor_range": f"{7 * first}-{10 * first - 1}",
         "account_offset": str(first),
+        "creditor_offset": str(7 * first),
         "currency": "EUR",
     }.get(name)
 

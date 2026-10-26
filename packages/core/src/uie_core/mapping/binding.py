@@ -175,8 +175,15 @@ class AccountSpec(_Spec):
     reuse_from: dict[str, str] = {}  # rôle → chemin de la vue (numéro de la source, si autorisé)
     reuse_param: str | None = None  # paramètre BOOLEAN qui autorise la reprise
     # paramètre INTEGER : numéro = ce nombre + numéro de la source (« 10000 + 1001 » → 11001), s'il tient dans
-    # la plage du rôle et n'est pas déjà attribué ; sinon le premier libre de la plage
-    offset_param: str | None = None
+    # la plage du rôle et n'est pas déjà attribué ; sinon le premier libre de la plage, et c'est DIT. Un
+    # paramètre pour tous les rôles, ou un par rôle (rôle → paramètre : débiteurs 10000, créanciers 70000)
+    offset_param: str | dict[str, str] | None = None
+
+    def offset_for(self, role: str) -> str | None:
+        """Paramètre du décalage de ce rôle (None : aucun)."""
+        if isinstance(self.offset_param, dict):
+            return self.offset_param.get(role)
+        return self.offset_param
 
 
 class TargetProductRef(_Spec):
@@ -291,6 +298,9 @@ class TargetBinding(_Spec):
             missing = {self.account.length_from, *self.account.ranges.values()} - set(params)
             if self.account.reuse_param:
                 missing |= {self.account.reuse_param} - set(params)
+            offsets = self.account.offset_param
+            named = set(offsets.values()) if isinstance(offsets, dict) else {offsets} - {None}
+            missing |= named - set(params)
             if missing:
                 raise ValueError(f"paramètres de profil inconnus : {sorted(missing)}")
         if (self.records in ("per_booking", "per_document")) != (self.booking is not None):

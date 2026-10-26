@@ -226,6 +226,38 @@ def test_account_numbers_follow_offset_plus_customer_number_when_it_fits(session
     assert numbers["file:1002"] == ("11002", "OFFSET")
     assert numbers["file:99999"] == ("10000", "ASSIGNED")  # 109999 hors de la plage : premier libre
     assert numbers["file:row-4"] == ("10001", "ASSIGNED")
+    # jamais un repli silencieux : la règle non appliquée est dite
+    assert plan.notes[("file:99999", "CUSTOMER")] == (
+        "10000 + 99999 = 109999 is outside the range 10000-69999: account 10000 given instead "
+        "(check the rule in your settings)"
+    )
+    assert ("file:1001", "CUSTOMER") not in plan.notes
+
+
+def test_supplier_accounts_follow_their_own_offset(session):  # noqa: ANN001
+    """Un décalage par rôle : 70000 + numéro du fournisseur (2001 → 72001), jamais celui des clients."""
+    binding = TargetBindingRegistry.find("datev", "debitoren-kreditoren")
+    profile = SimpleNamespace(
+        id=None,
+        values={
+            "account_length": 4,
+            "debtor_range": {"start": 10000, "end": 69999},
+            "creditor_range": {"start": 70000, "end": 99999},
+            "account_offset": 10000,
+            "creditor_offset": 70000,
+        },
+    )
+    rows = [
+        {"supplier_number": "2001", "name": "Papier GmbH"},
+        {"supplier_number": "45000", "name": "Groß AG"},
+    ]
+    built = partners_from_rows(PARTNERS, rows, {}, PartnerRole.SUPPLIER, {})
+    needs = [(p, PartnerRole.SUPPLIER) for p in built.partners]
+    plan = plan_accounts(session, profile, binding, None, needs)  # type: ignore[arg-type]
+    assert plan.numbers[("file:2001", "SUPPLIER")] == "72001"
+    assert plan.origin[("file:2001", "SUPPLIER")] == "OFFSET"
+    assert plan.numbers[("file:45000", "SUPPLIER")] == "70000"
+    assert plan.notes[("file:45000", "SUPPLIER")].startswith("70000 + 45000 = 115000 is outside the range")
 
 
 def test_invoice_headers_name_the_data_type_only_when_the_target_takes_invoices():
