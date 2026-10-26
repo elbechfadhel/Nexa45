@@ -314,7 +314,8 @@ def test_invoices_to_datev_buchungsstapel_with_every_trap_and_no_double_export(w
 def test_an_unknown_data_type_is_chosen_by_the_user_and_the_targets_say_what_they_receive(world):
     c = world["client"]
     targets = {t["format"]: t for t in c.get("/api/wizard/targets").json() if t.get("system") == "datev"}
-    assert targets["Buchungsstapel 13"]["latest"] and targets["Buchungsstapel 13"]["receives"] == ["Invoices"]
+    assert targets["Buchungsstapel 13"]["latest"]
+    assert targets["Buchungsstapel 13"]["receives"] == ["Invoices", "Purchase invoices"]
     assert targets["Buchungsstapel 13"]["product_name"] == "Buchungsstapel"
     assert targets["Debitoren/Kreditoren 5"]["receives"] == [
         "Customers & suppliers",
@@ -345,16 +346,23 @@ def test_an_unknown_data_type_is_chosen_by_the_user_and_the_targets_say_what_the
     assert other.status_code == 422 and other.json()["detail"]["code"] == "data_type_unknown"
 
 
-def test_a_target_that_takes_one_kind_of_data_never_asks_for_it(world):
+def test_a_journal_that_names_neither_customers_nor_suppliers_lets_the_user_choose(world):
+    """Buchungsstapel reçoit des ventes ET des achats : un journal aux en-têtes inhabituels ne dit pas lequel,
+    l'utilisateur choisit (jamais deviné, jamais un arrêt sans issue)."""
     c = world["client"]
     odd = "Nummer;Tag;Wer;Summe\nA-1;01.09.2026;1001;119,00\n".encode("cp1252")  # en-têtes inhabituels
-    res = c.post(
+    files = {"file": ("journal.csv", odd, "text/csv")}
+    target = _target(c, "Buchungsstapel 13")
+    res = c.post("/api/wizard/quick-start", files=files, data={"payload": json.dumps({"target": target})})
+    assert res.status_code == 422
+    assert res.json()["detail"]["data_types"] == ["Invoices", "Purchase invoices"]
+    chosen = c.post(
         "/api/wizard/quick-start",
-        files={"file": ("journal.csv", odd, "text/csv")},
-        data={"payload": json.dumps({"target": _target(c, "Buchungsstapel 13")})},
+        files=files,
+        data={"payload": json.dumps({"target": target, "data_type": "Invoices"})},
     )
-    assert res.status_code == 200, res.text
-    assert (res.json()["data_type"], res.json()["data_type_from"]) == ("Invoices", "target")
+    assert chosen.status_code == 200, chosen.text
+    assert (chosen.json()["data_type"], chosen.json()["data_type_from"]) == ("Invoices", "user")
 
 
 def test_invoices_before_the_customer_list_still_finish_the_analysis(world):
@@ -382,7 +390,8 @@ def test_a_file_of_another_kind_is_never_forced_into_the_only_kind_a_target_take
     res = c.post("/api/wizard/quick-start", files=files, data={"payload": json.dumps({"target": target})})
     assert res.status_code == 422
     detail = res.json()["detail"]
-    assert detail["code"] == "data_type_unknown" and detail["data_types"] == ["Invoices"]
+    assert detail["code"] == "data_type_unknown"
+    assert detail["data_types"] == ["Invoices", "Purchase invoices"]
     assert "looks like a list of customers" in detail["message"]
     assert "Choose another target" in detail["message"]
     forced = c.post(

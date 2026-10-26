@@ -27,6 +27,7 @@ const CHECKS = {
   Suppliers: "Names, addresses, VAT IDs, bank accounts and account numbers.",
   "Customers & suppliers": "Names, addresses, VAT IDs, bank accounts and account numbers.",
   Invoices: "Amounts, VAT rates, dates, accounts and invoices already exported.",
+  "Purchase invoices": "Suppliers, amounts, VAT rates, dates, expense accounts and invoices already exported.",
 };
 
 /** @param {string[]} receives */
@@ -68,6 +69,7 @@ export const SIMPLE_LABELS = {
   /** Ce que reçoit un format, d'après les types de données qu'il accepte (le nom du format suit entre parenthèses). */
   formatKinds: {
     Invoices: "Bookings",
+    "Purchase invoices": "Bookings",
     "Customers & suppliers": "Customers and suppliers",
     Customers: "Customers",
     Suppliers: "Suppliers",
@@ -145,6 +147,7 @@ export const SIMPLE_LABELS = {
     Suppliers: { one: "supplier", many: "suppliers" },
     "Customers & suppliers": { one: "customer or supplier", many: "customers and suppliers" },
     Invoices: { one: "invoice", many: "invoices" },
+    "Purchase invoices": { one: "purchase invoice", many: "purchase invoices" },
   },
   nounFallback: { one: "record", many: "records" },
 

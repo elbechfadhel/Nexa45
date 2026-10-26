@@ -293,3 +293,26 @@ def test_the_target_follows_the_kind_of_file_only_when_exactly_one_takes_it():
     assert target_for_data_type(None, receives) is None
     assert target_for_data_type("Products", receives) is None
     assert target_for_data_type("Invoices", receives | {"ledger": ["Invoices"]}) is None
+
+
+def test_a_purchase_journal_is_named_purchase_invoices_by_its_supplier_headers():
+    from uie_core.wizard.quick import infer_data_type
+
+    purchases = [
+        "Beleg-Nr. Lieferant",
+        "Rechnungsdatum",
+        "Lief-Nr.",
+        "Lieferant",
+        "Kostenart",
+        "Netto €",
+        "USt %",
+        "USt €",
+        "Brutto €",
+        "Bemerkung",
+    ]
+    assert infer_data_type(purchases) == "Purchase invoices"
+    assert infer_data_type(purchases, ["Invoices", "Purchase invoices"]) == "Purchase invoices"
+    assert infer_data_type(purchases, ["Invoices"]) is None  # cible sans factures d'achat : jamais imposé
+    # un journal de ventes reste un journal de ventes (le client est nommé)
+    sales = ["Re-Nr.", "Re-Datum", "Kd-Nr.", "Kunde", "Netto €", "USt %", "USt €", "Brutto €"]
+    assert infer_data_type(sales, ["Invoices", "Purchase invoices"]) == "Invoices"

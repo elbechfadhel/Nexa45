@@ -65,8 +65,12 @@ INVOICE_WORDS = frozenset(
     """invoice invoices invoiceno invoicenumber net gross total amount vat tax taxrate credit creditnote due
     rechnung rechnungen rechnungsnummer rechnungsnr renr redatum rechnungsdatum rechnungsbetrag beleg
     belegnr belegnummer belegdatum belegfeld netto nettobetrag brutto bruttobetrag ust mwst umsatzsteuer
-    steuersatz gesamtbetrag betrag gutschrift faellig fälligkeit""".split()
+    steuersatz gesamtbetrag betrag gutschrift faellig fälligkeit
+    rechnungseingang eingangsrechnung eingangsrechnungen eingangsdatum kostenart kostenarten aufwand
+    aufwandsart""".split()
 )
+# types de données des journaux de factures : ventes (factures de sortie) et achats (factures d'achat)
+INVOICES, PURCHASE_INVOICES = "Invoices", "Purchase invoices"
 MIN_SCORE = 3  # en-têtes reconnus au minimum, et au moins deux fois plus que l'autre sorte
 
 # type de données affiché → domaine du domain pack qui donne la structure
@@ -94,7 +98,10 @@ def infer_data_type(headers: list[str], options: list[str] | None = None) -> str
     partner = sum(1 for w in words if w & PARTNER_WORDS)
     invoice = sum(1 for w in words if w & INVOICE_WORDS)
     if invoice >= MIN_SCORE and invoice >= 2 * max(product, partner):
-        return "Invoices" if options is None or "Invoices" in options else None
+        # journal d'ACHAT : le fournisseur est nommé (Lieferant, Kreditor…) et aucun client ne l'est
+        every = set().union(*words) if words else set()
+        kind = PURCHASE_INVOICES if every & SUPPLIER_WORDS and not every & CUSTOMER_WORDS else INVOICES
+        return kind if options is None or kind in options else None
     if product >= MIN_SCORE and product >= 2 * partner:
         return "Products"
     if partner >= MIN_SCORE and partner >= 2 * product:

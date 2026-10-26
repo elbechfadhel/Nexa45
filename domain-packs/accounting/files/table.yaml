@@ -1,15 +1,15 @@
 # Tableau de source FICHIER du domaine ACCOUNTING : colonnes d'un journal de factures de sortie (Rechnungs-
-# ausgangsbuch, export d'un logiciel de facturation) et ce qu'elles veulent dire. Une ligne = une facture (ou
-# un avoir) à UN taux de TVA. Aucun système ici ; HORS des vocabulaires des systèmes (aucune analyse ne change).
-# Toute modification : incrémenter table_version.
+# ausgangsbuch, export d'un logiciel de facturation) ou de factures d'ACHAT (Rechnungseingangsbuch) et ce
+# qu'elles veulent dire. Une ligne = une facture (ou un avoir) à UN taux de TVA. Aucun système ici ; HORS des
+# vocabulaires des systèmes (aucune analyse ne change). Toute modification : incrémenter table_version.
 #
 # Montants : « Netto », « USt », « Brutto » ; le brut fait foi pour l'écriture (un brut négatif = un avoir),
 # le net et la TVA servent au CONTRÔLE (net + TVA = brut, à 0,01 près ; jamais corrigé).
 # Taux de TVA admis : ceux du pays à la date de la facture (16 % / 5 % : taux temporaires de 2020, plus admis).
 
-table_version: "1.0.0"
+table_version: "1.1.0"   # 1.1.0 : factures d'achat
 domain: ACCOUNTING
-data_types: ["Invoices"]
+data_types: ["Invoices", "Purchase invoices"]
 home_country: DE
 
 columns:
