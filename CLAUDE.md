@@ -50,8 +50,8 @@ Mapping             → WHERE DOES IT GO?    (futur)
   (`.input`), `Field` (`.label` 12px majuscules), `Card` (`.card`, 12px), `Table` (`.tbl`), `Badge` (`.badge-*`),
   `Dialog` (`.modal-overlay`, 16px), `DropdownMenu` / popup de `Select` (`.menu`, `.menu-item`). Bleu brand
   (`--brand` = `#1A56DB`) : focus, liens, navigation active. DM Sans / DM Mono par next/font (pas de Google Fonts au
-  chargement). Header : logo Nexa45 en image `apps/web/public/brand/nexa45-logo.png` (source
-  `captures/NEXA45 Universal Integration Platform.png`, recadré, fond rendu transparent, 779×144 = 3× l'affichage),
+  chargement). Header : logo Nexa45 en image `apps/web/public/brand/nexa45-logo.png` (recadré,
+  fond rendu transparent, 779×144 = 3× l'affichage),
   36px de haut via next/image (logo Transliate NON utilisé) ; nom affiché « Nexa45 · Universal Integration Platform » (onglet, carte de login) ; la NAVIGATION du
   projet est conservée (liens typographiques, actif = texte + trait bleu, menu sous 900px), pas celle du pack.
   Fond de page = celui de la landing GO45 (`go45-fe`) : slate-50 + deux halos en haut (bleu 16 % à gauche, ardoise
@@ -237,39 +237,33 @@ Pour une nouvelle migration : `cd packages/core && uv run alembic revision --aut
   (aucun LLM, aucune dépendance vers packages/ai), page supplier `/instances/[id]/catalog` « Product Catalog
   Analysis ». Voir « Semantic Enrichment V1b » ci-dessous.
 - ✅ **V1b.1** (2026-09-28) : réduction des POSSIBLE par règles génériques R11-R18, sans LLM, champs protégés
-  jamais exclus (125 → 23 POSSIBLE sur customer17, 3 questions, 0 faux négatif). Détail :
-  `temp/RESULTAT_PRODUCT_DOMAIN_V1b1.md`.
+  jamais exclus (125 → 23 POSSIBLE sur customer17, 3 questions, 0 faux négatif).
 - ✅ **V1c** (2026-09-28) : proposition sémantique par LLM derrière `SemanticEnrichmentService`
-  (« Ask AI »), voir « LLM (V1c) » ci-dessous. Détail : `temp/RESULTAT_PRODUCT_DOMAIN_V1c.md`.
+  (« Ask AI »), voir « LLM (V1c) » ci-dessous.
 - ✅ **V1d** (2026-09-29) : comptes fournisseurs et isolation multi-tenant, voir « Comptes et isolation
-  multi-tenant (V1d) » ci-dessous. Détail : `temp/RESULTAT_V1d.md`.
+  multi-tenant (V1d) » ci-dessous.
 - ✅ **V2a — Real Catalog** (2026-09-29) : lecture des vrais produits de l'ERP via les semantic bindings,
   CatalogProduct canonique, pages Catalog et fiche produit du fournisseur, voir « Catalogue réel (V2a) »
-  ci-dessous. Détail : `temp/RESULTAT_V2a.md`.
+  ci-dessous.
 - ✅ **V2b.1 — Connect my system** (2026-09-29) : le fournisseur connecte lui-même son Odoo (My systems →
-  Connect a system → Test connection → Save). Détail : `temp/RESULTAT_V2b1.md`. ✅ V2b.2 : Analyze côté
-  fournisseur (`temp/RESULTAT_V2b2.md`).
+  Connect a system → Test connection → Save). ✅ V2b.2 : Analyze côté
+  fournisseur.
 - ✅ **V2c.1 — Catalog file compatibility** (2026-09-30) : UPLOAD .xlsx / .csv → système cible → rapport de
   compatibilité des colonnes, sans écriture vers l'ERP. Voir « Imports de fichiers (V2c.1) » ci-dessous.
-  Plan : `temp/PLAN_V2c1.md` ; détail : `temp/RESULTAT_V2c1.md`.
 - ✅ **V2c.2 — Learned Mapping Memory** (2026-09-30) : les choix explicites du fournisseur (Choose / Change
   target, Confirm) sont réappliqués aux imports suivants de SON organisation, sans LLM ni action en plus.
-  Plan : `temp/PLAN_V2c2.md` ; détail : `temp/RESULTAT_V2c2.md`.
 - ✅ **V2c.2b — Learned Not Relevant** (2026-09-30) : un Ignore explicite (colonne REVIEW / UNMATCHED, Ignore all
-  unmatched) est mémorisé pour l'organisation ET le système cible, puis réappliqué d'office. Plan :
-  `temp/PLAN_V2c2b.md` ; détail : `temp/RESULTAT_V2c2b.md`.
+  unmatched) est mémorisé pour l'organisation ET le système cible, puis réappliqué d'office.
 - ✅ **V2c.3 — LLM fallback for first-time imports** (2026-09-30) : après mémoire et règles, les colonnes
   restantes partent en UN appel LLM ; TARGET ≥ 0.95 résolu (V2c.5b), le reste (dont « Probably not needed ») proposé au
-  fournisseur. Plan : `temp/PLAN_V2c3.md` ; détail : `temp/RESULTAT_V2c3.md`.
+  fournisseur.
 - ✅ **V2c.4 — Target Catalog Coverage** (2026-10-01) : cibles d'import = clés PLATES du Product Domain
   (`IMPORT_KEYS`), séparées de l'affichage V2a ; tags, coût, ventes / achats, descriptions, image principale par
-  URL. Plan : `temp/PLAN_V2c4.md` ; détail : `temp/RESULTAT_V2c4.md`. ⬜ Suite : variantes (tranche à part).
+  URL. ⬜ Suite : variantes (tranche à part).
 - ✅ **V2d.1 — Import Preview** (2026-10-01) : ce que l'import essaierait de faire, en LECTURE SEULE (plan
-  d'import + lignes préparées réutilisables par l'import réel). Plan : `temp/PLAN_V2d1.md` ; détail :
-  `temp/RESULTAT_V2d1.md`.
+  d'import + lignes préparées réutilisables par l'import réel).
 - ✅ **V2d.2 — Real Odoo Import** (2026-10-01) : première écriture dans l'Odoo d'un client, idempotente
-  (request_key, items commités avant l'appel, identifiant externe Odoo). Plan : `temp/PLAN_V2d2.md` ; détail :
-  `temp/RESULTAT_V2d2.md` (bout en bout réel préparé, pas encore exécuté).
+  (request_key, items commités avant l'appel, identifiant externe Odoo) ; bout en bout réel préparé, pas encore exécuté.
   ⬜ Suite : V2d.2.1 (images), variantes, offre fournisseur.
 
 Concepts V1a :
@@ -416,7 +410,7 @@ openai / gpt-5.6-sol, 2026-09-28) :
 
 ## Catalogue réel (V2a) — concepts
 
-Plan : `temp/PLAN_V2.md` (V2a validée le 2026-09-29 ; V2b = onboarding et workspace). Lecture seule vers l'ERP.
+V2a validée le 2026-09-29 (V2b = onboarding et workspace). Lecture seule vers l'ERP.
 
     Odoo ──► OdooCatalogReader ──► CatalogReadPlan (semantic bindings) ──► CatalogProduct ──► /api ──► portail
 
@@ -456,7 +450,7 @@ Plan : `temp/PLAN_V2.md` (V2a validée le 2026-09-29 ; V2b = onboarding et works
 - **Données de démo** : `docker/customer-customize.py` ajoute à `odoo17-customer` un mini catalogue INVENTÉ
   et idempotent (8 produits, 16 variantes, images PNG générées, fournisseur, produit archivé).
   Mesure réelle (2026-09-29) : sync 8 produits / 16 variantes / 5 catégories / 5 images en 0,7 s ; 2e sync :
-  0 changement. Détail : `temp/RESULTAT_V2a.md`.
+  0 changement.
 
 ## Connect my system (V2b.1) — concepts
 
@@ -537,7 +531,7 @@ Plan : `temp/PLAN_V2.md` (V2a validée le 2026-09-29 ; V2b = onboarding et works
   AUTO | LEARNED | SUPPLIER. Apprise uniquement dans `choose_target`, jamais si les règles donnent déjà ce
   résultat (`match_by_rules`), remplacée par une nouvelle décision ; rien d'Ignore / EMPTY / MATCHED auto. KPI
   figés à l'analyse (resolved_auto, resolved_learned, needs_attention) → API `analysis`, provenance `source`.
-  Benchmark `temp/benchmark_v2c2_learning.py` : décisions humaines requises 29 → 28 (1er → 2e import) ; le reste
+  Benchmark : décisions humaines requises 29 → 28 (1er → 2e import) ; le reste
   = colonnes ignorées (Ignore non mémorisé en V2c.2, voir V2c.2b).
 - **NOT_RELEVANT appris (V2c.2b)** : même table (migration `42b6c816119f`), colonne `decision` MAPPED |
   NOT_RELEVANT (CHECK `decision_shape`) : MAPPED = semantic_key, `system_id` NULL (toute l'organisation) ;
@@ -565,14 +559,13 @@ Plan : `temp/PLAN_V2.md` (V2a validée le 2026-09-29 ; V2b = onboarding et works
   parents « A / B ». API `POST|GET /api/imports/{id}/runs`, `GET .../runs/{run_id}`, `POST .../resume`,
   `ImportOut.last_run` ; commit par ligne (`session.commit`). Portail : confirmation (clé générée à
   l'ouverture), page de résultat `/portal/imports/[id]/runs/[runId]`, statut de la dernière exécution dans la
-  liste. Migration `8928c745e1c7`. Bout en bout réel : `temp/e2e_v2d2_import.py` sur une base Docker locale de
+  liste. Migration `8928c745e1c7`. Bout en bout réel sur une base Docker locale de
   test (`customer17` par défaut, choix de l'utilisateur, ou `customer17_import`), sauvegarde Odoo prise avant
   toute écriture.
 - **Preview d'import (V2d.1)** : `uie_core.imports.plan` (PUR) — `build_import_plan` (décisions VALIDÉES de
   l'import × cibles COURANTES de l'instance → colonnes importées + sort de chaque colonne : IMPORTED, IGNORED,
   NO_TARGET, EMPTY, TARGET_GONE ; une décision validée reste importée tant que sa cible existe : le type DÉTECTÉ
-  de la colonne ne l'annule jamais, les valeurs sont vérifiées ligne par ligne (correctif « Sales Price »,
-  `temp/DIAGNOSTIC_V2d1_sales_price.md`) ; résumé : `rows_present` ≠ `rows_valid` ; empreinte = plan + empreinte
+  de la colonne ne l'annule jamais, les valeurs sont vérifiées ligne par ligne (correctif « Sales Price ») ; résumé : `rows_present` ≠ `rows_valid` ; empreinte = plan + empreinte
   du fichier), `normalize_rows`
   (`NormalizedRow.records` groupe → champ technique → valeur préparée : nombre, booléen, date, clé de sélection,
   `Ref(label)`, `Labels`, `MediaUrl` ; vide = rien à écrire ; jamais résolu, créé, lu ni téléchargé) et
@@ -584,7 +577,7 @@ Plan : `temp/PLAN_V2.md` (V2a validée le 2026-09-29 ; V2b = onboarding et works
   `PlannedField.required` est hors JSON et hors checksum (plan de lecture V2a inchangé). API
   `GET /api/imports/{id}/preview` (phrases métier, aucun nom technique) ; portail `/portal/imports/[id]/preview`
   (Summary, Data to import, Issues, Not imported ; « Will be processed during import », jamais de promesse sur
-  l'écriture). Benchmark `temp/benchmark_v2d1_preview.py` : chaque nombre = comptage indépendant du CSV.
+  l'écriture). Benchmark : chaque nombre = comptage indépendant du CSV.
 - **Couverture du catalogue cible (V2c.4)** : les CIBLES d'import ne viennent plus des clés d'affichage V2a
   (`READ_KEYS`) mais de `IMPORT_KEYS` (`uie_core.imports.matching`) = `READ_KEYS` + clés plates importables
   (`tags` en sorte `labels` = collection lue par libellés, `cost_price`, `can_be_sold`, `can_be_purchased`,
@@ -595,7 +588,7 @@ Plan : `temp/PLAN_V2.md` (V2a validée le 2026-09-29 ; V2b = onboarding et works
   seulement ; clé de mémoire = en-tête complet). Hors périmètre : variantes (Option Name / Value, regroupement
   par Handle, SKU multi-variantes, prix de variante, price_extra). Constat ouvert : le prompt 1.0.0 classe
   « aucune cible offerte » en NOT_RELEVANT (Option1 Name / Value « probably not needed ») ; correction générique
-  proposée, non faite. Benchmarks `temp/benchmark_v2c4_coverage.py` (vérité terrain avant l'appel) : Shopify
+  proposée, non faite. Benchmarks (vérité terrain avant l'appel) : Shopify
   30 décisions → 5 actions, Image Src → main_image, Tags → tags (règles), MPN compris sans cible ; WooCommerce
   sans régression (Images devient une vraie cible).
 - **Fallback LLM (V2c.3)** : EMPTY → NOT_RELEVANT appris → mapping appris → règles → LLM. Candidats = UNMATCHED
@@ -618,19 +611,19 @@ Plan : `temp/PLAN_V2.md` (V2a validée le 2026-09-29 ; V2b = onboarding et works
   cache (migration `4dc519d971e5`). API : `analysis.ai_matched / ai_suggested /
   ai_not_relevant`, colonne `source = ai`, `confidence_pct`, `probably_not_needed`, route
   `/ignore-ai-not-relevant` ; ni fournisseur, ni modèle, ni raison du LLM côté fournisseur.
-  Benchmark WooCommerce (`temp/benchmark_v2c3_llm.py`, vérité terrain `temp/benchmark_v2c3/expected.json` écrite
+  Benchmark WooCommerce (vérité terrain écrite
   avant l'appel, openai / gpt-5.6-sol) : 1er import 4 règles + 1 AI auto (Description) + 27 « probably not
   needed » → 2 actions humaines au lieu de 29 décisions ; 29 / 29 réponses justes ; 1 appel, 2 987 + 1 297
   tokens, 15 s ; 2e import READY sans manipulation et sans appel (cache par colonne).
-- **Benchmark réel** (à ne pas « optimiser ») : `captures/liquidweb-woocommerce-product-sample-data.csv`
-  (WooCommerce, 191 produits, 54 colonnes) sur customer17, script `temp/benchmark_v2c1_woocommerce.py` :
+- **Benchmark réel** (à ne pas « optimiser ») : export WooCommerce public
+  (191 produits, 54 colonnes) sur customer17 :
   avant 3 Matched / 3 Review / 48 Unmatched ; après 4 / 2 / 27 + 21 Empty (27 Unmatched légitimes : champs de
   boutique web et réglages de thème). Vocabulaire 1.4.0 (alias `regular price` sur `list_price`, pack Odoo
   1.5.0) : 0 décision V1 modifiée sur les 4 snapshots de mesure (`temp/measure_v1_vocabulary.py`).
 
 ## Comptes et isolation multi-tenant (V1d) — concepts
 
-Plan : `temp/PLAN_V1d.md` (validé le 2026-09-28). Principe : **même Core, contexte explicite, DTO différents**.
+Plan validé le 2026-09-28. Principe : **même Core, contexte explicite, DTO différents**.
 
 - **Modèle** (migration `4f8732b8e3a3`, aucun secret, aucun compte) : `organizations` (supplier : name, slug
   UNIQUE, status), `users` (email normalisé UNIQUE, hash argon2id jamais exposé, `platform_role` NONE | ADMIN),
@@ -712,7 +705,7 @@ Plan : `temp/PLAN_V1d.md` (validé le 2026-09-28). Principe : **même Core, cont
 
 ## Domaine PARTNER — Odoo res.partner → Partner CDM → DATEV Debitoren/Kreditoren (2026-10-02)
 
-Plan : `temp/PLAN_PARTNER.md` ; détail : `temp/RESULTAT_PARTNER.md`. PARTNER seulement : ni PRODUCT vers DATEV, ni
+PARTNER seulement : ni PRODUCT vers DATEV, ni
 Buchungsstapel, ni OAuth / API DATEV, ni écriture dans Odoo, ni envoi automatique vers DATEV.
 
     Odoo ─(lecture seule)─► bindings PARTNER ─► Partner CDM 1.0 ─► binding cible (YAML + Registry v5) ─► EXTF
@@ -763,10 +756,9 @@ Buchungsstapel, ni OAuth / API DATEV, ni écriture dans Odoo, ni envoi automatiq
 
 ## Domaine ACCOUNTING — Odoo account.move → Accounting CDM → fichier DATEV Buchungsstapel (phases 1-5)
 
-Plan : `temp/PLAN_ACCOUNTING_BUCHUNGSSTAPEL.md` (D2 = modèle brut, BU-Schlüssel configuré explicitement, jamais
-déduit) ; détail : `temp/RESULTAT_ACCOUNTING_PHASE2.md`, `…_PHASE3.md`, `…_PHASE3_1.md`, `…_PHASE4.md`. Phase 4 =
-préparation validée (aperçu) ; phase 5 = fichier EXTF Buchungsstapel téléchargé (`…_PHASE5.md`). Jamais d'envoi
-à DATEV (API / OAuth), jamais d'écriture dans Odoo. D11 (idempotence par pièce) : `…_D11.md`. Travail DATEV
+Décision D2 : modèle brut, BU-Schlüssel configuré explicitement, jamais déduit. Phase 4 =
+préparation validée (aperçu) ; phase 5 = fichier EXTF Buchungsstapel téléchargé. Jamais d'envoi
+à DATEV (API / OAuth), jamais d'écriture dans Odoo. D11 = idempotence par pièce. Travail DATEV
 GELÉ après D11 (2026-10-06) : prochain format cible = Lexware Office (non commencé).
 
 - **Instance de test accounting17** (customer17 n'est JAMAIS modifié) : service compose `odoo17-accounting`
@@ -869,8 +861,8 @@ GELÉ après D11 (2026-10-06) : prochain format cible = Lexware Office (non comm
 
 ## Lexware Office — phase 0 : étude (2026-10-06), RIEN n'est implémenté
 
-Détail : `temp/RESULTAT_LEXWARE_PHASE0.md` (sources officielles lues : `https://developers.lexware.io/docs/`,
-journal des changements au 11.08.2026 ; copies dans `temp/lexware_phase0/`, hors git). Terminologie : « Lexware
+Sources officielles lues : `https://developers.lexware.io/docs/`,
+journal des changements au 11.08.2026 (copies hors git). Terminologie : « Lexware
 Office », code de système `lexware` (plus jamais « lexoffice »). DATEV reste GELÉ.
 
 - **Pas une API comptable au sens DATEV** : ni écriture de journal, ni compte, ni Soll / Haben. La comptabilité
@@ -904,7 +896,7 @@ Office », code de système `lexware` (plus jamais « lexoffice »). DATEV reste
 
 ## Lexware Office — phase 1a : cible générique PARTNER → contact, lecture seule et aperçu (2026-10-06)
 
-Détail : `temp/RESULTAT_LEXWARE_PHASE1A.md`. **Principe d'universalité (règle dure)** : UIE n'a AUCUNE source
+**Principe d'universalité (règle dure)** : UIE n'a AUCUNE source
 privilégiée ; on ne construit jamais « Odoo → X », mais « n'importe quelle source → CDM → cible X ». La cible
 Lexware ne dépend d'aucune source : tests d'architecture (`test_partner_lexware_preview.py`) interdisant tout
 import d'un autre connecteur, du CDM ou d'un domaine dans `uie_connectors/lexware/`, et les mots d'une source
@@ -961,7 +953,6 @@ import d'un autre connecteur, du CDM ou d'un domaine dans `uie_connectors/lexwar
 
 ## Lexware Office — articles (domaine PRODUCT) : aperçu 1a (2026-10-16) et envoi 1b (2026-10-19)
 
-Détail : `temp/RESULTAT_LEXWARE_ARTICLES_PHASE1A.md`, `…_PHASE1A_VERIFICATION.md`, `…_PHASE1B.md`.
 - **1a** : Product CDM 1.0.0 (`uie_cdm.product`), lecture générique `uie_core.products.ProductReadService` (plan de
   lecture du catalogue), binding `domain-packs/catalog/targets/lexware_articles.yaml` (`delivery: api`, EUR, un
   article par unité vendable, n° = SKU obligatoire), décisions explicites `PRICE_BASIS` / `TAX_RATE`
@@ -1025,7 +1016,7 @@ Détail : `temp/RESULTAT_LEXWARE_ARTICLES_PHASE1A.md`, `…_PHASE1A_VERIFICATION
 
 ## AI Migration Wizard (POC, 2026-10-19)
 
-Détail : `temp/RESULTAT_AI_WIZARD.md`. Page `/portal/wizard` (onglet « AI Wizard » du portail, use case
+Page `/portal/wizard` (onglet « AI Wizard » du portail, use case
 `migration.wizard` experimental). Une question à la fois (radios, Other libre, Back / Continue, progression,
 réponses gardées en `sessionStorage`), puis structure cible + Excel d'exemple. Aucun envoi vers un système.
 
@@ -1115,7 +1106,7 @@ Détail et décisions : **`docs/ROADMAP_STEUERBERATER.md`** (à lire avant tout 
 
 ## DATEV D1 — Registry des formats EXTF (2026-10-02)
 
-Plan : `temp/PLAN_DATEV_D1.md` ; détail : `temp/RESULTAT_DATEV_D1.md`. Registry seulement : ni OAuth, ni sandbox,
+Registry seulement : ni OAuth, ni sandbox,
 ni Mandant, ni domaine PARTNER, ni export, ni connecteur d'exécution ; aucune migration.
 
     datev ─┬─ buchungsstapel (Buchungsstapel, catégorie 21)       ─ 10 │ 11 │ 12 │ 13 ─ extf [file] @1.0.0
