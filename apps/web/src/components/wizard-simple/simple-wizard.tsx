@@ -17,6 +17,7 @@ import {
   useWizardQuickStart,
   useWizardTargets,
 } from "@/lib/api/wizard-hooks";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { WIZARD_ENTRIES, type WizardEntry } from "@/lib/wizard/entries.mjs";
 import { type Edits, initialEdits, requestOf } from "@/lib/wizard/simple.mjs";
@@ -131,6 +132,17 @@ export function SimpleWizard({
         <div className="space-y-1.5">
           <h1 className="hero-badge">{entry.title}</h1>
           <p className="page-description text-muted-foreground">{entry.intro}</p>
+          {/* ce que le point d'entrée sait préparer (sa configuration) : des étiquettes d'information */}
+          {entry.prepares && entry.prepares.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <span className="meta text-muted-foreground">{L.preparesHeading}</span>
+              {entry.prepares.map((p) => (
+                <Badge key={p} variant="secondary">
+                  {p}
+                </Badge>
+              ))}
+            </div>
+          )}
         </div>
         {toggle}
       </div>

@@ -16,10 +16,13 @@ import { SIMPLE_LABELS as L } from "./simple-labels.mjs";
  *   systems?: string[],
  *   groups?: TargetChoice["group"][],
  *   detect?: boolean,
+ *   prepares?: string[],
  * }} WizardEntry
  * `targetHeading` : intitulé du choix de la cible (absent : celui du Wizard, « 2. Where should your data go? ») ;
  * `systems` : codes des systèmes du Registry affichés (tous si absent) ; `groups` : groupes de cibles affichés
- * (tous si absent) ; `detect` : dès le dépôt du fichier, le format est choisi d'après le type reconnu.
+ * (tous si absent) ; `detect` : dès le dépôt du fichier, le format est choisi d'après le type reconnu ;
+ * `prepares` : ce que la page sait préparer, affiché sous l'introduction (domaines VALIDÉS seulement : ajouter
+ * un domaine = une ligne ici, jamais un « coming soon »).
  */
 
 /** @type {{ general: WizardEntry, datev: WizardEntry }} */
@@ -36,6 +39,7 @@ export const WIZARD_ENTRIES = {
     systems: ["datev"],
     groups: ["registry"],
     detect: true,
+    prepares: ["Customers", "Suppliers", "Sales invoices", "Purchase invoices"],
   },
 };
 

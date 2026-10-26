@@ -638,3 +638,16 @@ test("the accounts table uses the page text size in every column", () => {
   const decisions = readFileSync(join(here, "..", "..", "components", "wizard-simple", "decisions.tsx"), "utf8");
   assert.doesNotMatch(decisions, /<TableCell className="[^"]*\btech\b/);
 });
+
+test("what an entry point can prepare comes from its configuration, validated domains only", () => {
+  assert.deepEqual(WIZARD_ENTRIES.datev.prepares, ["Customers", "Suppliers", "Sales invoices", "Purchase invoices"]);
+  assert.equal(WIZARD_ENTRIES.general.prepares, undefined); // Wizard général inchangé
+  assert.equal(SIMPLE_LABELS.preparesHeading, "What you can prepare here:");
+  const wizard = readFileSync(join(here, "..", "..", "components", "wizard-simple", "simple-wizard.tsx"), "utf8");
+  // étiquettes d'information rendues depuis la configuration : aucun bouton, aucune liste dans le composant
+  assert.match(wizard, /entry\.prepares\.map\(\(p\) => \(\s*<Badge/);
+  assert.doesNotMatch(wizard, /Sales invoices|Purchase invoices|coming soon/i);
+  for (const entry of Object.values(WIZARD_ENTRIES)) {
+    assert.ok(!(entry.prepares ?? []).some((p) => /soon/i.test(p)));
+  }
+});

@@ -41,6 +41,7 @@ export const SIMPLE_LABELS = {
   // ------------------------------------------------------------------ en-tête
   title: "AI Migration Wizard",
   intro: "Add your file, choose where it goes, and download it prepared. Nothing is written to your systems.",
+  preparesHeading: "What you can prepare here:",
 
   // ------------------------------------------------------------------ écran 1 : fichier et cible
   progress: "Progress",
