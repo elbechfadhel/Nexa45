@@ -311,6 +311,7 @@ class ExcludedDocument(_Model):
     reasons: list[str]
     # exclue par l'historique d'export (déjà exportée, modifiée non autorisée) ; None : exclue par son statut
     export_state: DocumentExportState | None = None
+    previous_exported_at: datetime | None = None  # date de l'export précédent (historique)
 
 
 class ExportFilePlan(_Model):
@@ -1339,6 +1340,7 @@ def _serialize(
             )
             excluded.append(
                 ExcludedDocument(
+                    previous_exported_at=c.previous_exported_at if c else None,
                     document_ref=d.source_ref,
                     number=d.number,
                     reference=d.reference,

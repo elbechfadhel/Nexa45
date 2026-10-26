@@ -397,21 +397,22 @@ export function resultTitle(preview, dataType) {
   return L.prepared(preview.rows, noun);
 }
 
-/** @typedef {"currency" | "duplicate" | "probable_duplicate" | "other"} ExcludedKind */
+/** @typedef {"currency" | "duplicate" | "probable_duplicate" | "other" | "already_exported"} ExcludedKind */
 /** Lignes écartées regroupées par motif (devise, lignes identiques, doublon probable, autre), chaque groupe avec
  * ses lignes.
  * @param {{ row: number, reason: string, kind?: string }[]} rows
  * @returns {{ kind: ExcludedKind, title: string, rows: number[], reasons: { row: number, reason: string }[] }[]} */
 export function excludedGroups(rows) {
   /** @type {ExcludedKind[]} */
-  const order = ["currency", "duplicate", "probable_duplicate", "other"];
+  const order = ["currency", "duplicate", "probable_duplicate", "other", "already_exported"];
   /** @param {string | undefined} kind @returns {ExcludedKind} */
   const groupOf = (kind) => order.find((k) => k === kind) ?? "other";
+  // déjà exportées : résumées sur UNE ligne (par date), le détail par ligne seulement dans un bloc dépliable
   return order
     .map((kind) => {
       const found = rows.filter((r) => groupOf(r.kind) === kind);
       // doublon probable, autres raisons : chaque ligne avec SON motif (jamais des numéros sans explication)
-      const explained = kind === "other" || kind === "probable_duplicate";
+      const explained = kind === "other" || kind === "probable_duplicate" || kind === "already_exported";
       return {
         kind,
         title: L.excludedKinds[kind],
@@ -420,6 +421,14 @@ export function excludedGroups(rows) {
       };
     })
     .filter((g) => g.rows.length > 0);
+}
+
+/** Ligne de résumé des pièces déjà exportées (« 27 invoices already exported on 2026-10-26: not exported
+ * again »), d'après le décompte COMPLET du serveur ; vide s'il n'y en a pas.
+ * @param {{ already_exported?: { date: string, count: number }[] }} preview @param {string} dataType */
+export function alreadyExportedText(preview, dataType) {
+  const groups = preview.already_exported ?? [];
+  return groups.length ? L.alreadyExported(groups, nounOf(dataType)) : "";
 }
 
 /** Ordre d'import en étapes simples (numérotées) : feuilles « (import first) » d'abord, puis les données ;

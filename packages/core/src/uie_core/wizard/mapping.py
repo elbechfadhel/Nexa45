@@ -201,6 +201,13 @@ class ValueConversion(_Model):
     written: str
 
 
+class AlreadyExported(_Model):
+    """Pièces déjà exportées par un fichier précédent, à une date (jamais réécrites)."""
+
+    date: str  # AAAA-MM-JJ ; vide : date inconnue
+    count: int
+
+
 class PreparedFile(_Model):
     rows: int
     headers: list[str]  # champs cibles, dans l'ordre de la structure
@@ -228,6 +235,10 @@ class PreparedFile(_Model):
     currency_column: str | None = None  # colonne de devises du fichier, si un montant est mappé
     currency: str | None = None  # devise du système cible choisie par l'utilisateur
     excluded_rows: list[ExcludedRow] = []  # lignes non importées (autre devise, doublon), listées
+    # pièces déjà exportées, comptées par date de l'export précédent (sur la liste COMPLÈTE) ; `nothing_new` :
+    # rien de neuf à écrire, tout ce qui pouvait l'être l'a déjà été
+    already_exported: list[AlreadyExported] = []
+    nothing_new: bool = False
     # enregistrements liés à créer AVANT les lignes (choix « créer » de l'utilisateur), une feuille chacun
     created_records: list[CreatedRecords] = []
     # références laissées à la valeur par défaut de la cible (choix de l'utilisateur) : libellés

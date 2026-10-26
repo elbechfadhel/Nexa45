@@ -366,6 +366,11 @@ class ValueQuestionOut(_Out):
     answer: str | None = None
 
 
+class AlreadyExportedOut(_Out):
+    date: str  # AAAA-MM-JJ de l'export précédent ; vide : inconnue
+    count: int
+
+
 class ExcludedRowOut(_Out):
     row: int
     reason: str
@@ -420,6 +425,9 @@ class PreparedFileOut(_Out):
     currency: str | None = None
     excluded_count: int = 0  # lignes non importées (autre devise)
     excluded_rows: list[ExcludedRowOut] = []  # les premières, la liste complète est dans le fichier
+    # pièces déjà exportées par date de l'export précédent (liste complète) ; rien de neuf à exporter
+    already_exported: list[AlreadyExportedOut] = []
+    nothing_new: bool = False
     created_records: list[CreatedRecordsOut] = []  # à importer avant les lignes, dans cet ordre
     left_to_target: list[
         str
@@ -688,9 +696,13 @@ def prepared_out(p: PreparedFile, proposal: TargetProposal) -> PreparedFileOut:
         if p.currency_notice
         else None,
         excluded_count=len(p.excluded_rows),
+        # les autres motifs d'abord : les pièces déjà exportées (résumées par date) ne les masquent jamais
         excluded_rows=[
-            ExcludedRowOut(row=e.row, reason=e.reason, kind=e.kind) for e in p.excluded_rows[:EXCLUDED_SHOWN]
+            ExcludedRowOut(row=e.row, reason=e.reason, kind=e.kind)
+            for e in sorted(p.excluded_rows, key=lambda e: e.kind == "already_exported")[:EXCLUDED_SHOWN]
         ],
+        already_exported=[AlreadyExportedOut(date=a.date, count=a.count) for a in p.already_exported],
+        nothing_new=p.nothing_new,
         created_records=[
             CreatedRecordsOut(
                 field=FieldRefOut(name=c.field, label=labels.get(c.field, c.field)),

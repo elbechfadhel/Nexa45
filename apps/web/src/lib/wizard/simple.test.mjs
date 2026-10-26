@@ -7,6 +7,7 @@ import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
 import {
+  alreadyExportedText,
   answerText,
   appliedThemes,
   rowTaxKey,
@@ -601,4 +602,33 @@ test("decided for you is grouped by kind of decision: settings, accounts by cate
   // compte automatique : aucune clé de taxe écrite, quelle que soit la clé du taux
   assert.equal(rowTaxKey(themes.rows[0], themes.taxes[0], {}), "none (automatic account)");
   assert.equal(rowTaxKey(themes.rows[1], themes.taxes[0], {}), "0009");
+});
+
+test("invoices already exported are one summary line by date, the detail only in a collapsed block", () => {
+  const rows = [
+    { row: 2, reason: "Invoice A: 16 % is not a valid VAT rate: not exported.", kind: "rate" },
+    { row: 1, reason: "Invoice B: Already exported on 2026-10-26: not exported again.", kind: "already_exported" },
+  ];
+  const groups = excludedGroups(rows);
+  assert.deepEqual(groups.map((g) => g.kind), ["other", "already_exported"]);
+  assert.equal(groups[1].reasons.length, 1); // le détail reste disponible (bloc dépliable)
+  const one = { already_exported: [{ date: "2026-10-26", count: 27 }] };
+  assert.equal(
+    alreadyExportedText(one, "Purchase invoices"),
+    "27 purchase invoices already exported on 2026-10-26: not exported again",
+  );
+  const two = { already_exported: [{ date: "2026-10-25", count: 12 }, { date: "2026-10-26", count: 15 }] };
+  assert.equal(
+    alreadyExportedText(two, "Invoices"),
+    "27 invoices already exported (12 on 2026-10-25, 15 on 2026-10-26): not exported again",
+  );
+  assert.equal(alreadyExportedText({}, "Invoices"), "");
+  assert.equal(
+    SIMPLE_LABELS.nothingNewHelp({ one: "invoice", many: "invoices" }),
+    "Nothing new to export: every invoice of this file was already exported.",
+  );
+  // rien de neuf : jamais « Your file is prepared », aucun bouton de téléchargement
+  const folder = join(here, "..", "..", "components", "wizard-simple");
+  assert.match(readFileSync(join(folder, "result-screen.tsx"), "utf8"), /preview\.nothing_new\s*\?\s*L\.nothingNewHelp/);
+  assert.match(readFileSync(join(folder, "download-card.tsx"), "utf8"), /\{!preview\.nothing_new && \(\s*<Button/);
 });

@@ -2921,6 +2921,13 @@ export interface components {
             /** Value */
             value: string;
         };
+        /** AlreadyExportedOut */
+        AlreadyExportedOut: {
+            /** Count */
+            count: number;
+            /** Date */
+            date: string;
+        };
         /** AnalyzeImportIn */
         AnalyzeImportIn: {
             /**
@@ -5673,6 +5680,11 @@ export interface components {
         /** PreparedFileOut */
         PreparedFileOut: {
             /**
+             * Already Exported
+             * @default []
+             */
+            already_exported: components["schemas"]["AlreadyExportedOut"][];
+            /**
              * Auto Filled
              * @default []
              */
@@ -5739,6 +5751,11 @@ export interface components {
              * @default []
              */
             not_imported: string[];
+            /**
+             * Nothing New
+             * @default false
+             */
+            nothing_new: boolean;
             /**
              * Notices
              * @default []

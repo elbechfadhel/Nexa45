@@ -1283,6 +1283,25 @@
         "title": "AllowedValueOut",
         "type": "object"
       },
+      "AlreadyExportedOut": {
+        "additionalProperties": false,
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "date": {
+            "title": "Date",
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "count"
+        ],
+        "title": "AlreadyExportedOut",
+        "type": "object"
+      },
       "AnalyzeImportIn": {
         "additionalProperties": false,
         "properties": {
@@ -8929,6 +8948,14 @@
       "PreparedFileOut": {
         "additionalProperties": false,
         "properties": {
+          "already_exported": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/AlreadyExportedOut"
+            },
+            "title": "Already Exported",
+            "type": "array"
+          },
           "auto_filled": {
             "default": [],
             "items": {
@@ -9058,6 +9085,11 @@
             },
             "title": "Not Imported",
             "type": "array"
+          },
+          "nothing_new": {
+            "default": false,
+            "title": "Nothing New",
+            "type": "boolean"
           },
           "notices": {
             "default": [],

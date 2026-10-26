@@ -294,3 +294,23 @@ def test_a_long_decision_key_is_never_cut(world):  # noqa: F811
     payload = dict(flow["payload"], choices={"x" * 161: "1"})
     refused = c.post("/api/wizard/file/preview", files=flow["files"], data={"payload": json.dumps(payload)})
     assert refused.status_code == 422
+
+
+def test_a_file_exported_again_says_nothing_new_and_counts_by_date(world):  # noqa: F811
+    """Second passage du même fichier : les factures déjà exportées sont comptées par date (liste complète),
+    rien de neuf → « nothing new » (aucun fichier)."""
+    c = world["client"]
+    _suppliers_exported(c)
+    choices = {"map:CATEGORY:purchase:strom:19": "4240", "setting:lock_bookings": "0"}
+    first = _flow(c, "Buchungsstapel 13", PURCHASES, "Rechnungseingang.csv", choices)
+    assert first["preview"]["already_exported"] == [] and first["preview"]["nothing_new"] is False
+    res = _download(c, first)
+    assert res.status_code == 200, res.text
+    written = len(_rows(res.content)[1])
+    again = _flow(c, "Buchungsstapel 13", PURCHASES, "Rechnungseingang.csv", choices)["preview"]
+    (group,) = again["already_exported"]
+    assert group["count"] == written and len(group["date"]) == 10  # AAAA-MM-JJ
+    assert again["nothing_new"] is True and again["rows"] == 0
+    # les autres motifs passent avant les pièces déjà exportées dans la liste détaillée
+    kinds = [e["kind"] for e in again["excluded_rows"]]
+    assert kinds.index("already_exported") > max(i for i, k in enumerate(kinds) if k != "already_exported")

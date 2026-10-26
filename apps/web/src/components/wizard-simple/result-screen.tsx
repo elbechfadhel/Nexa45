@@ -11,7 +11,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import type { PreparedFile, QuickStart } from "@/lib/api/wizard-hooks";
 import { cn } from "@/lib/utils";
 import { problemGroups, rowsText } from "@/lib/wizard/review.mjs";
-import { currencyNoticeText, type Edits, excludedGroups, resultTitle } from "@/lib/wizard/simple.mjs";
+import {
+  alreadyExportedText,
+  currencyNoticeText,
+  type Edits,
+  excludedGroups,
+  nounOf,
+  resultTitle,
+} from "@/lib/wizard/simple.mjs";
 import { SIMPLE_LABELS as L } from "@/lib/wizard/simple-labels.mjs";
 
 import { Columns } from "./columns";
@@ -53,8 +60,14 @@ export function ResultScreen({
   onDownload: () => void;
   onRestart: () => void;
 }) {
-  const help =
-    preview.status === "ready" ? L.readyHelp : preview.status === "to_complete" ? L.toCompleteHelp : L.preparedHelp;
+  // rien de neuf : tout ce qui pouvait être écrit l'a déjà été (jamais « Your file is prepared »)
+  const help = preview.nothing_new
+    ? L.nothingNewHelp(nounOf(start.data_type))
+    : preview.status === "ready"
+      ? L.readyHelp
+      : preview.status === "to_complete"
+        ? L.toCompleteHelp
+        : L.preparedHelp;
   const excluded = excludedGroups(preview.excluded_rows);
   const problems = problemGroups(preview.value_issues) as { notWritten: Issue[]; toCheck: Issue[] };
   const currencyNotice = currencyNoticeText(preview, start.data_type);
@@ -95,7 +108,22 @@ export function ResultScreen({
                 {L.excludedHeading} · {L.excludedCount(preview.excluded_count)}
               </h3>
               <ul className="space-y-1.5">
-                {excluded.map((g) => (
+                {excluded.map((g) =>
+                  g.kind === "already_exported" ? (
+                    <li key={g.kind}>
+                      <span className="font-medium">{alreadyExportedText(preview, start.data_type)}</span>
+                      <details className="meta mt-1">
+                        <summary className="cursor-pointer text-muted-foreground">{L.alreadyExportedDetails}</summary>
+                        <ul className="mt-1 space-y-1 pl-4">
+                          {g.reasons.map((r) => (
+                            <li key={`${r.row}-${r.reason}`}>
+                              <span className="text-muted-foreground">{L.rowLabel(r.row)}</span> {r.reason}
+                            </li>
+                          ))}
+                        </ul>
+                      </details>
+                    </li>
+                  ) : (
                   <li key={g.kind}>
                     <span className="font-medium">{g.title}</span>
                     {g.reasons.length === 0 ? (
@@ -110,7 +138,8 @@ export function ResultScreen({
                       </ul>
                     )}
                   </li>
-                ))}
+                  ),
+                )}
               </ul>
               {preview.excluded_count > preview.excluded_rows.length && (
                 <p className="meta text-muted-foreground">

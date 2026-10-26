@@ -51,10 +51,13 @@ export function DownloadCard({
         </section>
         {error && <p className="rounded-md border border-danger/35 bg-danger/10 p-3 text-danger">{error.message}</p>}
         <div className="flex flex-wrap items-center gap-3">
-          <Button onClick={onDownload} disabled={busy}>
-            {downloading ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
-            {downloading ? L.downloading : L.download}
-          </Button>
+          {/* rien de neuf à exporter : aucun fichier à télécharger */}
+          {!preview.nothing_new && (
+            <Button onClick={onDownload} disabled={busy}>
+              {downloading ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
+              {downloading ? L.downloading : L.download}
+            </Button>
+          )}
           {learning && <span className="meta text-muted-foreground">{L.learnNote}</span>}
         </div>
       </CardContent>

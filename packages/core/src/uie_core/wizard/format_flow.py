@@ -15,6 +15,7 @@ from uie_core.accounting.service import AccountingReadItem, AccountingReadResult
 from uie_core.accounting.target import AccountingTargetNotReady, ExportInvalid, PeriodSpan
 from uie_core.db.base import utcnow
 from uie_core.domains.model import DomainKey
+from uie_core.exports.documents import DocumentExportState
 from uie_core.exports.records import ExportAccountAssignmentRecord, ExportValueMappingRecord
 from uie_core.exports.service import DEFAULT_CLIENT, ExportError, ExportNotReady
 from uie_core.identity.context import TenantContext
@@ -37,7 +38,7 @@ from uie_core.wizard.formats import (
     settings_questions,
     structure,
 )
-from uie_core.wizard.mapping import ColumnStatus, MappingDecision, PreparedFile, prepare
+from uie_core.wizard.mapping import AlreadyExported, ColumnStatus, MappingDecision, PreparedFile, prepare
 from uie_core.wizard.model import (
     ChoiceSource,
     TargetProposal,
@@ -322,6 +323,8 @@ class FormatFlow:
         notices: list[str] = []
         content, filename = b"", ""
         status = "prepared"
+        already: dict[str, int] = {}  # date de l'export précédent → pièces déjà exportées
+        nothing_new = False
         warnings: dict[str, list[int]] = defaultdict(list)
         if self.fmt.domain == DomainKey.PARTNER:
             result = PartnerReadResult(
@@ -416,7 +419,11 @@ class FormatFlow:
                                 kind="already_exported",
                             )
                         )
+                        if x.export_state == DocumentExportState.ALREADY_EXPORTED:
+                            on = x.previous_exported_at.date().isoformat() if x.previous_exported_at else ""
+                            already[on] = already.get(on, 0) + 1
                 written = plan.exported_documents
+                nothing_new = written == 0 and bool(already)
                 notices.append(
                     say("{n} [invoice|invoices] in the file", written)
                     + f" ({count(plan.row_count, 'booking')}, period {plan.period_text or span.text})."
@@ -457,6 +464,8 @@ class FormatFlow:
                 "delivery": "format",
                 "notices": notices,
                 "created_records": [],
+                "already_exported": [AlreadyExported(date=d, count=n) for d, n in sorted(already.items())],
+                "nothing_new": nothing_new,
             }
         )
         return out, content, filename

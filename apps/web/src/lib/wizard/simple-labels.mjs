@@ -159,7 +159,21 @@ export const SIMPLE_LABELS = {
     duplicate: "Duplicate rows (imported once)",
     probable_duplicate: "Probable duplicates (not exported)",
     other: "Other reasons",
+    already_exported: "Already exported",
   },
+  /** Pièces déjà exportées, résumées par date de l'export précédent.
+   * @param {{ date: string, count: number }[]} groups @param {{ one: string, many: string }} noun */
+  alreadyExported: (groups, noun) => {
+    const total = groups.reduce((n, g) => n + g.count, 0);
+    const what = `${num(total)} ${total === 1 ? noun.one : noun.many}`;
+    const on = (/** @type {string} */ d) => (d ? `on ${d}` : "on an earlier date");
+    if (groups.length === 1) return `${what} already exported ${on(groups[0].date)}: not exported again`;
+    const dates = groups.map((g) => `${num(g.count)} ${on(g.date)}`).join(", ");
+    return `${what} already exported (${dates}): not exported again`;
+  },
+  alreadyExportedDetails: "Show them",
+  /** @param {{ one: string, many: string }} noun */
+  nothingNewHelp: (noun) => `Nothing new to export: every ${noun.one} of this file was already exported.`,
   /** @param {number} shown @param {number} total */
   excludedMore: (shown, total) =>
     `The first ${num(shown)} of ${count(total, "row")} are listed here; the prepared file lists them all (sheet “Rows not imported”).`,
