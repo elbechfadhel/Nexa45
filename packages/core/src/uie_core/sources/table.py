@@ -33,6 +33,19 @@ class TableColumn(_Model):
     group: FieldGroup = FieldGroup.IDENTITY
     required: bool = False  # sans elle, aucun enregistrement ne peut être construit
     aliases: list[str] = []
+    # valeurs admises : valeur → graphies courantes (« Ware », « Lieferung » → goods) ; une autre valeur
+    # n'est jamais devinée
+    values: dict[str, list[str]] = {}
+
+    def value_of(self, text: str | None) -> str | None:
+        """Valeur admise d'une cellule (casse et espaces ignorés) ; None : vide ou inconnue."""
+        found = " ".join((text or "").split()).casefold()
+        if not found:
+            return None
+        for value, names in self.values.items():
+            if found in {" ".join(n.split()).casefold() for n in names}:
+                return value
+        return None
 
 
 class TaxRates(_Model):

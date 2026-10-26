@@ -16,6 +16,10 @@ et par taux) garde ses lignes ITEM avec leur `category`, sans compte (`account` 
 ligne ITEM qui a une catégorie) et leur TVA par taux (`tax_rate`, `tax_amount`). Aucune ligne TAX ni
 OPEN_ITEM n'est inventée : une telle pièce n'est pas une écriture complète (`missing_accounts`) tant qu'une
 correspondance catégorie → compte n'a pas été confirmée.
+
+1.2.0 (ADDITIF) : une ligne ITEM peut dire la NATURE de l'opération (`supply_kind` : marchandise ou prestation
+de service) quand la source la donne ; la TVA d'une opération internationale en dépend. Absente : inconnue,
+jamais déduite.
 """
 
 from __future__ import annotations
@@ -28,7 +32,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from uie_cdm.partner import PartnerRole
 
-ACCOUNTING_MODEL_VERSION = "1.1.0"
+ACCOUNTING_MODEL_VERSION = "1.2.0"
 
 
 class _Model(BaseModel):
@@ -63,6 +67,13 @@ class LineKind(StrEnum):
     TAX = "TAX"  # ligne de taxe
     OPEN_ITEM = "OPEN_ITEM"  # partie client / fournisseur (montant dû)
     ROUNDING = "ROUNDING"  # arrondi de la pièce
+
+
+class SupplyKind(StrEnum):
+    """Nature d'une opération (1.2.0) : livraison de marchandises ou prestation de service."""
+
+    GOODS = "GOODS"
+    SERVICES = "SERVICES"
 
 
 class TaxComputation(StrEnum):
@@ -116,15 +127,19 @@ class DocumentLine(_Model):
     category: PostingCategoryRef | None = None  # 1.1.0 : ITEM, catégorie de la source
     tax_rate: Decimal | None = None  # 1.1.0 : ITEM, taux en % quand la source ne donne qu'un taux
     tax_amount: Decimal | None = None  # 1.1.0 : ITEM, TVA de la ligne, même signe que `amount`
+    supply_kind: SupplyKind | None = None  # 1.2.0 : ITEM, nature de l'opération quand la source la donne
 
     @model_validator(mode="after")
     def _classified(self) -> DocumentLine:
         if self.account is None and not (self.kind == LineKind.ITEM and self.category is not None):
             raise ValueError("une ligne a un compte (ou, pour une ligne ITEM, au moins une catégorie)")
         if self.kind != LineKind.ITEM and (
-            self.category is not None or self.tax_rate is not None or self.tax_amount is not None
+            self.category is not None
+            or self.tax_rate is not None
+            or self.tax_amount is not None
+            or self.supply_kind is not None
         ):
-            raise ValueError("catégorie et TVA par taux ne s'appliquent qu'à une ligne ITEM")
+            raise ValueError("catégorie, TVA par taux et nature ne s'appliquent qu'à une ligne ITEM")
         return self
 
 

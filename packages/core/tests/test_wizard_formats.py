@@ -452,3 +452,21 @@ def test_a_space_in_an_invoice_number_becomes_a_hyphen_only_by_decision():
     assert done.transforms[0].examples == [["Miete 07/2026", "Miete-07/2026"]]
     kept = documents_from_rows(INVOICES, rows, {}, "EUR", {NUMBER_SPACES_KEY: "keep"}, purchase=True)
     assert kept.documents[0].number == "Miete 07/2026" and kept.transforms == []
+
+
+def test_the_kind_of_supply_is_read_from_its_column_and_never_guessed():
+    from uie_cdm import SupplyKind
+
+    headers = ["Re-Nr.", "Re-Datum", "Kd-Nr.", "Kunde", "Leistungsart", "Netto €", "USt %", "Brutto €"]
+    assert "supply_kind" in matched_keys(INVOICES, headers)
+    rows = [
+        {**_i("RE-1", "2026-10-05", "100", "19", "19", "119"), "supply_kind": "Ware"},
+        {**_i("RE-2", "2026-10-06", "100", "19", "19", "119"), "supply_kind": " dienstleistung "},
+        {**_i("RE-3", "2026-10-07", "100", "19", "19", "119"), "supply_kind": ""},
+        {**_i("RE-4", "2026-10-08", "100", "19", "19", "119"), "supply_kind": "Montage"},
+    ]
+    t = documents_from_rows(INVOICES, rows, {"supply_kind": "Leistungsart"}, "EUR", {})
+    kinds = {d.number: d.lines[0].supply_kind for d in t.documents}
+    assert kinds == {"RE-1": SupplyKind.GOODS, "RE-2": SupplyKind.SERVICES, "RE-3": None, "RE-4": None}
+    (issue,) = [i for i in t.issues if i.kind == "supply_kind_unknown"]
+    assert (issue.rows, issue.examples, issue.severity) == ([4], ["Montage"], "to_check")

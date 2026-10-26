@@ -36,6 +36,7 @@ from uie_cdm import (
     PartnerRef,
     PartnerRole,
     PostingCategoryRef,
+    SupplyKind,
 )
 
 from uie_core.mapping.suggestions import category_key
@@ -202,6 +203,17 @@ def documents_from_rows(  # noqa: C901, PLR0912, PLR0915
                 )
             )
 
+    # nature de l'opération (colonne « Leistungsart ») : valeur reconnue, sinon inconnue (jamais devinée)
+    kind_column = table.column("supply_kind")
+    unknown_kinds: list[int] = []
+
+    def supply_kind(i: int) -> SupplyKind | None:
+        raw = val(i, "supply_kind")
+        found = kind_column.value_of(raw) if kind_column else None
+        if raw and found is None:
+            unknown_kinds.append(i)
+        return SupplyKind(found) if found else None
+
     zero_rows: list[int] = []
     zero_docs: list[tuple[int, AccountingDocument]] = []
     candidates: list[tuple[int, AccountingDocument]] = []
@@ -280,6 +292,7 @@ def documents_from_rows(  # noqa: C901, PLR0912, PLR0915
             tax_amount=sign * abs(tax),
             category=purchase_category(rate, expense or None) if purchase else category(rate),
             description=val(i, "partner_name") or None,
+            supply_kind=supply_kind(i),
         )
         doc = AccountingDocument(
             # achat : le numéro n'est unique que chez son fournisseur
@@ -376,6 +389,25 @@ def documents_from_rows(  # noqa: C901, PLR0912, PLR0915
                 )
             zero_docs = [(i, d) for i, d in candidates if i in zero_rows]
             candidates = [(i, d) for i, d in candidates if i not in zero_rows]
+
+    if unknown_kinds:
+        found = list(dict.fromkeys(val(i, "supply_kind") for i in unknown_kinds))
+        issues.append(
+            ValueIssue(
+                field="supply_kind",
+                column=columns.get("supply_kind", "supply_kind"),
+                kind="supply_kind_unknown",
+                count=len(unknown_kinds),
+                examples=found[:5],
+                message=say(
+                    "{n} kind of supply [is|are] neither goods nor services: treated as unknown, never "
+                    "guessed.",
+                    len(unknown_kinds),
+                ),
+                rows=[i + 1 for i in unknown_kinds],
+                severity="to_check",
+            )
+        )
 
     every = [line for _, d in candidates for line in d.lines] + [
         line for i, d in zero_docs for line in d.lines

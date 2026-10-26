@@ -7,7 +7,7 @@
 # le net et la TVA servent au CONTRÔLE (net + TVA = brut, à 0,01 près ; jamais corrigé).
 # Taux de TVA admis : ceux du pays à la date de la facture (16 % / 5 % : taux temporaires de 2020, plus admis).
 
-table_version: "1.2.0"   # 1.1.0 : factures d'achat ; 1.2.0 : leurs colonnes
+table_version: "1.3.0"   # 1.1.0 : factures d'achat ; 1.2.0 : leurs colonnes ; 1.3.0 : Leistungsart
 domain: ACCOUNTING
 data_types: ["Invoices", "Purchase invoices"]
 home_country: DE
@@ -49,6 +49,18 @@ columns:
       guessed.
     aliases: [kostenart, aufwandsart, aufwand, ausgabenart, kostenkategorie, buchungskategorie, kategorie,
               expense category, expense type, category, nature de charge, catégorie]
+  # nature de l'opération : la TVA d'une vente ou d'un achat avec l'étranger en dépend ; vide ou autre
+  # valeur → jamais devinée (ni depuis la catégorie, ni depuis une remarque)
+  - key: supply_kind
+    label: Kind of supply
+    description: Goods or services (Leistungsart); the VAT of a cross-border invoice depends on it.
+    aliases: [leistungsart, art der leistung, umsatzart, lieferart, ware dienstleistung, kind of supply,
+              type of supply, supply type, goods or services, nature de l opération, type d opération]
+    values:
+      GOODS: [ware, waren, warenlieferung, lieferung, goods, good, delivery of goods, marchandise,
+              marchandises, livraison, livraison de biens]
+      SERVICES: [dienstleistung, dienstleistungen, sonstige leistung, leistung, service, services,
+                 prestation, prestations, prestation de service, prestation de services]
   - key: net_amount
     label: Net amount
     data_type: decimal
