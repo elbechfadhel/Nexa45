@@ -117,8 +117,7 @@ def test_a_purchase_invoice_is_booked_on_the_creditor_account_of_its_supplier(wo
     c = world["client"]
     _suppliers_exported(c)
     accounts = {
-        "map:CATEGORY:purchase:19": "3400",
-        "map:CATEGORY:purchase:7": "3300",
+        "map:CATEGORY:purchase:strom:19": "4240",  # catégorie inconnue de la table : saisie par l'utilisateur
         "map:TAX:rate:PURCHASE:19": "none",
         "map:TAX:rate:PURCHASE:7": "none",
         "setting:lock_bookings": "0",
@@ -137,3 +136,37 @@ def test_a_purchase_invoice_is_booked_on_the_creditor_account_of_its_supplier(wo
         "2809",
         '"H-100"',
     ]
+
+
+def test_the_expense_account_is_preselected_by_category_never_guessed_and_remembered(world):  # noqa: F811
+    """Kostenart → compte : présélection d'usage (table SKR03, à valider) ; catégorie inconnue sans
+    présélection ; catégorie vide : facture non exportée ; la réponse est mémorisée pour le dossier."""
+    c = world["client"]
+    _suppliers_exported(c)
+    first = _flow(c, "Buchungsstapel 13", PURCHASES, "Rechnungseingang.csv", {"setting:lock_bookings": "0"})
+    start = first["start"]
+    every = {q["decision"]: q for q in start["questions"] + start["applied"]}
+    wares = every["map:CATEGORY:purchase:wareneinkauf:19"]
+    assert (wares["default"], wares["default_from"]) == ("3400", "usual_default")
+    assert "to be confirmed by your tax advisor" in wares["question"]["help"]
+    assert every["map:CATEGORY:purchase:wareneinkauf:7"]["default"] == "3300"
+    assert every["map:CATEGORY:purchase:strom:19"]["default"] is None  # inconnue : jamais devinée
+    reasons = {e["row"]: e["reason"] for e in first["preview"]["excluded_rows"]}
+    assert (
+        reasons[14]
+        == "Invoice H-103: no expense category (Kostenart): its account is never guessed, not exported."
+    )
+    # téléchargement avec la réponse de l'utilisateur, puis un nouveau fichier : réponse reprise
+    extra = {
+        "map:CATEGORY:purchase:strom:19": "4240",
+        "map:TAX:rate:PURCHASE:19": "none",
+        "map:TAX:rate:PURCHASE:7": "none",
+        "setting:lock_bookings": "0",
+    }
+    flow = _flow(c, "Buchungsstapel 13", PURCHASES, "Rechnungseingang.csv", extra)
+    assert _download(c, flow).status_code == 200
+    again = _flow(c, "Buchungsstapel 13", PURCHASES, "Rechnungseingang-2.csv")["start"]
+    strom = next(
+        q for q in again["questions"] + again["applied"] if q["decision"] == "map:CATEGORY:purchase:strom:19"
+    )
+    assert (strom["default"], strom["default_from"]) == ("4240", "your_settings")

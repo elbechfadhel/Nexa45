@@ -1,0 +1,24 @@
+# Comptes de CHARGE d'usage en SKR03 par catégorie de charge (« Kostenart ») d'un journal de factures d'achat,
+# pour DATEV Buchungsstapel. USAGE COURANT, À VALIDER PAR LE STEUERBERATER : cette table ne sert qu'à
+# PRÉSÉLECTIONNER la réponse à l'unique question « catégorie → compte » ; une catégorie absente n'est jamais
+# devinée (la question reste sans réponse). Pas un domain pack (`kind: category_accounts`).
+# Toute modification : incrémenter table_version.
+#
+# 3400 / 3300 (Wareneingang 19 % / 7 % Vorsteuer) sont des comptes automatiques (la TVA déductible est
+# calculée par DATEV) ; 4210 (Miete) : loyer sans TVA ; les autres comptes reçoivent la clé de Vorsteuer.
+
+kind: category_accounts
+table_version: "1.0.0"
+target: {system: datev, product: buchungsstapel}
+chart: "03"
+scope: PURCHASE
+status: usual practice, to be confirmed by your tax advisor
+
+categories:
+  - {names: [Wareneinkauf, Wareneingang, Waren, Handelswaren], rate: 19, account: "3400"}
+  - {names: [Wareneinkauf, Wareneingang, Waren, Handelswaren], rate: 7, account: "3300"}
+  - {names: [Bürobedarf, Büromaterial, Büroartikel], rate: 19, account: "4930"}
+  - {names: [Telefon/Internet, Telefon, Internet, Telekommunikation], rate: 19, account: "4920"}
+  - {names: [Kfz-Kraftstoff, Kraftstoff, Treibstoff, Tankrechnung], rate: 19, account: "4530"}
+  - {names: [Werbung, Werbekosten], rate: 19, account: "4600"}
+  - {names: [Miete, Raummiete, Mietaufwand], rate: 0, account: "4210"}

@@ -13,8 +13,9 @@ from uie_cdm import DocumentStatus, PartnerRole
 
 from uie_core.accounting.service import AccountingReadItem, AccountingReadResult, CompanyRef
 from uie_core.accounting.target import AccountingTargetNotReady, ExportInvalid, PeriodSpan
+from uie_core.db.base import utcnow
 from uie_core.domains.model import DomainKey
-from uie_core.exports.records import ExportAccountAssignmentRecord
+from uie_core.exports.records import ExportAccountAssignmentRecord, ExportValueMappingRecord
 from uie_core.exports.service import DEFAULT_CLIENT, ExportError, ExportNotReady
 from uie_core.identity.context import TenantContext
 from uie_core.mapping import IssueLevel, RecordStatus
@@ -23,6 +24,7 @@ from uie_core.wizard.cdm_accounting import FILE_REF, category, documents_from_ro
 from uie_core.wizard.cdm_partners import partners_from_rows
 from uie_core.wizard.formats import (
     MAPPING,
+    NO_VALUE,
     SETTING,
     FormatTarget,
     blocked_reasons,
@@ -198,7 +200,60 @@ class FormatFlow:
         built = state["built"]
         cats, rates = built.categories, built.rates
         chart = choices.get(SETTING + "chart_of_accounts") or self._saved()[1].get("chart_of_accounts")
-        return mapping_questions(self.fmt, cats, rates, chart, choices, scope=built.scope)
+        return mapping_questions(
+            self.fmt, cats, rates, chart, choices, scope=built.scope, saved=self._saved_mappings()
+        )
+
+    def _saved_mappings(self) -> dict[str, str]:
+        """Correspondances mémorisées pour ce dossier (source fichier, sans instance) au téléchargement
+        précédent : décision (« map:SORTE:référence ») → valeur ; {} hors d'un tenant."""
+        if not isinstance(self.svc.ctx, TenantContext):
+            return {}
+        t = self.fmt.binding.target
+        return {
+            f"{MAPPING}{r.kind}:{r.source_ref}": r.target_value or NO_VALUE
+            for r in self._mapping_rows(self.svc.ctx.organization_id, t.system, t.product)
+        }
+
+    def _mapping_rows(self, org: Any, system: str, product: str) -> list[ExportValueMappingRecord]:
+        return list(
+            self.svc.s.scalars(
+                select(ExportValueMappingRecord).where(
+                    ExportValueMappingRecord.organization_id == org,
+                    ExportValueMappingRecord.target_system == system,
+                    ExportValueMappingRecord.target_product == product,
+                    ExportValueMappingRecord.instance_id.is_(None),
+                    ExportValueMappingRecord.client_key == self.client,
+                )
+            )
+        )
+
+    def _remember_mappings(self, org: Any, choices: dict[str, str]) -> None:
+        """Correspondances confirmées par le téléchargement (catégorie → compte, taux → clé de taxe) :
+        mémorisées pour le dossier, présélectionnées au fichier suivant (« from your settings »)."""
+        t = self.fmt.binding.target
+        rows = {(r.kind, r.source_ref): r for r in self._mapping_rows(org, t.system, t.product)}
+        user = getattr(self.svc.ctx, "user_id", None)
+        for key, value in choices.items():
+            if not key.startswith(MAPPING) or not value:
+                continue
+            kind, _, ref = key[len(MAPPING) :].partition(":")
+            row = rows.get((kind, ref))
+            if row is None:
+                row = ExportValueMappingRecord(
+                    organization_id=org,
+                    target_system=t.system,
+                    target_product=t.product,
+                    instance_id=None,
+                    client_key=self.client,
+                    kind=kind,
+                    source_ref=ref,
+                    origin="MANUAL",
+                )
+                self.svc.s.add(row)
+            row.target_value = None if value == NO_VALUE else value.strip()
+            row.decided_by, row.updated_at = user, utcnow()
+        self.svc.s.flush()
 
     # ------------------------------------------------------------------ #
     def _state(
@@ -372,6 +427,7 @@ class FormatFlow:
                 )
             if gen is not None:
                 content, filename = gen.content, gen.filename
+                self._remember_mappings(org, choices)
         for message, idx in warnings.items():
             issues.append(
                 ValueIssue(

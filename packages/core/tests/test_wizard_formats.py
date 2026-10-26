@@ -406,3 +406,21 @@ def test_a_purchase_invoice_number_is_unique_only_at_its_supplier():
     assert [e.reason for e in sales.skipped] == [
         "Invoice RE-1 entered twice (same content as row 1): exported once."
     ]
+
+
+def test_the_usual_expense_accounts_are_data_and_an_unknown_category_has_none():
+    from uie_core.mapping.suggestions import CategoryAccountRegistry
+
+    table = CategoryAccountRegistry.find("datev", "buchungsstapel", "03", "PURCHASE")
+    assert table is not None and "to be confirmed" in table.status
+    assert table.account_for("Telefon/Internet", Decimal("19")) == "4920"
+    assert table.account_for("wareneinkauf", Decimal("7")) == "3300"
+    assert table.account_for("Druckkosten", Decimal("0")) is None  # « à définir » : jamais devinée
+    assert CategoryAccountRegistry.find("datev", "buchungsstapel", "04", "PURCHASE") is None
+    rows = [
+        {**_buy("H-1", "2026-09-01", "100", "19", "19", "119"), "expense_category": "Telefon/Internet"},
+        {**_buy("H-2", "2026-09-02", "100", "19", "19", "119"), "expense_category": ""},
+    ]
+    t = documents_from_rows(INVOICES, rows, {"expense_category": "Kostenart"}, "EUR", purchase=True)
+    assert t.categories == {"purchase:telefon-internet:19": "Telefon/Internet at 19 % VAT"}
+    assert [(e.row, e.kind) for e in t.skipped] == [(2, "missing_category")]

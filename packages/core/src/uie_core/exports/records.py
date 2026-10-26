@@ -22,7 +22,17 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, String, UniqueConstraint, event
+from sqlalchemy import (
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    UniqueConstraint,
+    event,
+    text,
+)
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -124,7 +134,8 @@ class ExportValueMappingRecord(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     """Correspondance de VALEUR décidée explicitement pour un format cible : (organisation, format, système
     source, sorte, référence source opaque) → valeur cible. Seules les décisions sont stockées (une suggestion
     n'est jamais enregistrée comme un choix) ; `target_value` NULL = « aucune valeur » décidée (ex. aucune clé
-    de taxe). Données de configuration, jamais des montants ni des données de partenaire."""
+    de taxe). Données de configuration, jamais des montants ni des données de partenaire. Source FICHIER :
+    aucune instance, la décision vaut pour le dossier (`client_key`, mandant) de l'organisation."""
 
     __tablename__ = "export_value_mappings"
     __table_args__ = (
@@ -137,6 +148,18 @@ class ExportValueMappingRecord(UUIDPrimaryKeyMixin, TimestampMixin, Base):
             "source_ref",
             name="uq_export_value_mappings_scope",  # nom explicite : le nom généré dépasse 63 caractères
         ),
+        # source fichier (sans instance) : une décision par dossier (mandant)
+        Index(
+            "uq_export_value_mappings_file_scope",
+            "organization_id",
+            "target_system",
+            "target_product",
+            "client_key",
+            "kind",
+            "source_ref",
+            unique=True,
+            postgresql_where=text("instance_id IS NULL"),
+        ),
     )
 
     organization_id: Mapped[uuid.UUID] = mapped_column(
@@ -144,10 +167,12 @@ class ExportValueMappingRecord(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     )
     target_system: Mapped[str] = mapped_column(String(80), nullable=False)
     target_product: Mapped[str] = mapped_column(String(80), nullable=False)
-    instance_id: Mapped[uuid.UUID] = mapped_column(
-        _UUID, ForeignKey("instances.id", ondelete="CASCADE"), nullable=False, index=True
+    # NULL : source FICHIER (aucune instance)
+    instance_id: Mapped[uuid.UUID | None] = mapped_column(
+        _UUID, ForeignKey("instances.id", ondelete="CASCADE"), index=True
     )
-    kind: Mapped[str] = mapped_column(String(20), nullable=False)  # ACCOUNT | TAX
+    client_key: Mapped[str | None] = mapped_column(String(60))  # dossier (mandant) d'une source fichier
+    kind: Mapped[str] = mapped_column(String(20), nullable=False)  # ACCOUNT | TAX | CATEGORY
     source_ref: Mapped[str] = mapped_column(String(120), nullable=False)  # identifiant opaque de la source
     source_code: Mapped[str | None] = mapped_column(String(120))  # libellé de la source au moment du choix
     source_name: Mapped[str | None] = mapped_column(String(200))

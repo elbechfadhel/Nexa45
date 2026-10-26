@@ -37,6 +37,7 @@ from uie_cdm import (
     PostingCategoryRef,
 )
 
+from uie_core.mapping.suggestions import category_key
 from uie_core.sources.table import FileTableSpec
 from uie_core.wizard.text import say
 from uie_core.wizard.values import ExcludedRow, QuestionOption, ValueIssue, ValueQuestion
@@ -69,9 +70,14 @@ def category(rate: Decimal) -> PostingCategoryRef:
     return PostingCategoryRef(source_ref=f"sale:{r:f}", name=f"sales at {r:f} % VAT")
 
 
-def purchase_category(rate: Decimal) -> PostingCategoryRef:
-    """Catégorie d'un achat à ce taux : la cible lui fait correspondre un compte de charges."""
+def purchase_category(rate: Decimal, expense: str | None = None) -> PostingCategoryRef:
+    """Catégorie d'un achat : sa catégorie de charge (« Kostenart ») à ce taux, sinon le taux seul (fichier
+    sans colonne de catégorie). La cible lui fait correspondre un compte de charges, jamais deviné."""
     r = rate.normalize()
+    if expense:
+        return PostingCategoryRef(
+            source_ref=f"purchase:{category_key(expense)}:{r:f}", name=f"{expense} at {r:f} % VAT"
+        )
     return PostingCategoryRef(source_ref=f"purchase:{r:f}", name=f"purchases at {r:f} % VAT")
 
 
@@ -99,6 +105,10 @@ def documents_from_rows(  # noqa: C901, PLR0912, PLR0915
     choices = choices or {}
     # ventes : numéro du client ; achats : numéro du fournisseur
     pkey, who_kind = ("supplier_number", "supplier") if purchase else ("partner_number", "customer")
+    # achats avec une colonne de catégorie de charge : chaque facture doit en avoir une (compte jamais deviné)
+    with_expense = purchase and (
+        "expense_category" in columns or any(r.get("expense_category") for r in rows)
+    )
     skipped: list[ExcludedRow] = []
     issues: list[ValueIssue] = []
     questions: list[ValueQuestion] = []
@@ -195,6 +205,15 @@ def documents_from_rows(  # noqa: C901, PLR0912, PLR0915
                 "rate",
             )
             continue
+        expense = val(i, "expense_category")
+        if with_expense and not expense:
+            skip(
+                i,
+                f"Invoice {number}: no expense category (Kostenart): its account is never guessed, not "
+                "exported.",
+                "missing_category",
+            )
+            continue
         credit = gross < 0
         if purchase:
             sign = Decimal(-1) if credit else Decimal(1)  # charge au débit, avoir fournisseur au crédit
@@ -208,7 +227,7 @@ def documents_from_rows(  # noqa: C901, PLR0912, PLR0915
             gross_amount=sign * abs(gross),
             tax_rate=rate,
             tax_amount=sign * abs(tax),
-            category=purchase_category(rate) if purchase else category(rate),
+            category=purchase_category(rate, expense or None) if purchase else category(rate),
             description=val(i, "partner_name") or None,
         )
         doc = AccountingDocument(

@@ -19,6 +19,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date
+from decimal import Decimal
 from types import SimpleNamespace
 from typing import Any
 
@@ -34,6 +35,7 @@ from uie_core.mapping import (
     TargetBindingError,
     TargetBindingRegistry,
 )
+from uie_core.mapping.suggestions import CategoryAccountRegistry
 from uie_core.sources.table import FileTableRegistry, FileTableSpec
 from uie_core.wizard.missing import MissingChoice, MissingKind, MissingQuestion
 from uie_core.wizard.model import TargetField, TargetProposal, Verification
@@ -273,34 +275,58 @@ def mapping_questions(
     chart: str | None,
     choices: dict[str, str],
     scope: str = "SALE",
+    saved: dict[str, str] | None = None,
 ) -> list[QuickQuestion]:
-    """Compte de chaque catégorie (« ventes à 19 % ») et clé de taxe de chaque taux, selon le sens des pièces
-    (`scope` : SALE | PURCHASE) : réponses PRÉSÉLECTIONNÉES d'après le plan comptable du dossier (données du
-    binding), à confirmer."""
+    """Compte de chaque catégorie (« ventes à 19 % », « Bürobedarf à 19 % ») et clé de taxe de chaque taux,
+    selon le sens des pièces (`scope` : SALE | PURCHASE). Réponses PRÉSÉLECTIONNÉES : celles du dossier,
+    mémorisées au téléchargement précédent (`saved` : décision → valeur), sinon celles d'usage du plan
+    comptable du dossier (données du binding ; pour les achats, table des comptes par catégorie), à confirmer.
+    Une catégorie inconnue n'est jamais devinée."""
     b = fmt.binding
+    saved = saved or {}
     hint = b.suggestions.get(chart or "")
+    table = CategoryAccountRegistry.find(b.target.system, b.target.product, chart, scope)
     lookup = b.lookup(LookupKind.CATEGORY)
     account = lookup.label if lookup else "Account"
     out = []
     for ref, name in sorted(categories.items()):
-        default = hint.categories.get(ref) if hint else None
+        decision = f"{MAPPING}CATEGORY:{ref}"
+        usual = hint.categories.get(ref) if hint else None
+        from_table = None
+        if usual is None and table is not None and ref.count(":") == 2:
+            _, key, rate = ref.split(":")
+            usual = from_table = table.account_for(key, Decimal(rate))
+        default = saved.get(decision) or usual
+        if saved.get(decision):
+            help_text = "Your account from a previous file, preselected."
+        elif from_table and table is not None:
+            help_text = f"Usual account of your chart of accounts ({table.status}), preselected."
+        elif usual:
+            help_text = (
+                "Usual account of your chart of accounts, preselected: confirm it with your tax advisor."
+            )
+        else:
+            help_text = (
+                "Enter the account given by your tax advisor: an unknown category is never guessed."
+                if scope == "PURCHASE"
+                else "Enter the account given by your tax advisor."
+            )
         out.append(
             QuickQuestion(
                 question=MissingQuestion(
-                    field=f"{MAPPING}CATEGORY:{ref}",
+                    field=decision,
                     label=f"{account} for {name}",
                     kind=MissingKind.TEXT,
                     title=f"{account} for {name}",
-                    help="Usual account of your chart of accounts, preselected: confirm it with your tax "
-                    "advisor."
-                    if default
-                    else "Enter the account given by your tax advisor.",
+                    help=help_text,
                     choices=[MissingChoice(value=default, label=default)] if default else [],
                     free_text=True,
                 ),
                 default=default,
-                default_from="usual_default" if default else None,
-                decision=f"{MAPPING}CATEGORY:{ref}",
+                default_from=(
+                    ("your_settings" if saved.get(decision) else "usual_default") if default else None
+                ),
+                decision=decision,
             )
         )
     tax_lookup = b.lookup(LookupKind.TAX)
@@ -309,7 +335,8 @@ def mapping_questions(
     what = "purchases" if scope == "PURCHASE" else "sales"
     for rate in rates:
         ref = f"rate:{scope}:{rate}"
-        default = NO_VALUE if scope == "SALE" and hint and hint.no_tax_key else None
+        usual = NO_VALUE if scope == "SALE" and hint and hint.no_tax_key else None
+        default = saved.get(f"{MAPPING}TAX:{ref}") or usual
         out.append(
             QuickQuestion(
                 question=MissingQuestion(
