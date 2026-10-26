@@ -46,6 +46,7 @@ from uie_core.wizard.model import (
 )
 from uie_core.wizard.quick import (
     MAX_BLOCKING,
+    PURCHASE_INVOICES,
     QuickQuestion,
     QuickStart,
     data_type_mismatch,
@@ -197,7 +198,7 @@ class FormatFlow:
         built = state["built"]
         cats, rates = built.categories, built.rates
         chart = choices.get(SETTING + "chart_of_accounts") or self._saved()[1].get("chart_of_accounts")
-        return mapping_questions(self.fmt, cats, rates, chart, choices)
+        return mapping_questions(self.fmt, cats, rates, chart, choices, scope=built.scope)
 
     # ------------------------------------------------------------------ #
     def _state(
@@ -226,7 +227,13 @@ class FormatFlow:
         else:
             currency = own.get("currency") or summary.currency or "EUR"
             built = documents_from_rows(
-                self.fmt.table, table_rows, columns, currency, choices, partner_vat=self._partner_vat()
+                self.fmt.table,
+                table_rows,
+                columns,
+                currency,
+                choices,
+                partner_vat=self._partner_vat(),
+                purchase=data_type == PURCHASE_INVOICES,
             )
         return {
             "summary": summary,

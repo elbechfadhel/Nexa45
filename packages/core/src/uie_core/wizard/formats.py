@@ -270,9 +270,11 @@ def mapping_questions(
     rates: list[str],
     chart: str | None,
     choices: dict[str, str],
+    scope: str = "SALE",
 ) -> list[QuickQuestion]:
-    """Compte de chaque catégorie (« ventes à 19 % ») et clé de taxe de chaque taux : réponses
-    PRÉSÉLECTIONNÉES d'après le plan comptable du dossier (données du binding), à confirmer."""
+    """Compte de chaque catégorie (« ventes à 19 % ») et clé de taxe de chaque taux, selon le sens des pièces
+    (`scope` : SALE | PURCHASE) : réponses PRÉSÉLECTIONNÉES d'après le plan comptable du dossier (données du
+    binding), à confirmer."""
     b = fmt.binding
     hint = b.suggestions.get(chart or "")
     lookup = b.lookup(LookupKind.CATEGORY)
@@ -302,16 +304,17 @@ def mapping_questions(
     tax_lookup = b.lookup(LookupKind.TAX)
     tax = tax_lookup.label if tax_lookup else "Tax key"
     none = (tax_lookup.none_label if tax_lookup else None) or "No value"
+    what = "purchases" if scope == "PURCHASE" else "sales"
     for rate in rates:
-        ref = f"rate:SALE:{rate}"
-        default = NO_VALUE if hint and hint.no_tax_key else None
+        ref = f"rate:{scope}:{rate}"
+        default = NO_VALUE if scope == "SALE" and hint and hint.no_tax_key else None
         out.append(
             QuickQuestion(
                 question=MissingQuestion(
                     field=f"{MAPPING}TAX:{ref}",
-                    label=f"{tax} for sales at {rate} % VAT",
+                    label=f"{tax} for {what} at {rate} % VAT",
                     kind=MissingKind.CHOICE,
-                    title=f"{tax} for sales at {rate} % VAT",
+                    title=f"{tax} for {what} at {rate} % VAT",
                     help="The usual revenue accounts calculate the VAT themselves: no tax key."
                     if default
                     else "Enter the tax key given by your tax advisor.",

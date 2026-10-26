@@ -317,3 +317,40 @@ def test_a_purchase_journal_is_named_purchase_invoices_by_its_supplier_headers()
     # un journal de ventes reste un journal de ventes (le client est nommé)
     sales = ["Re-Nr.", "Re-Datum", "Kd-Nr.", "Kunde", "Netto €", "USt %", "USt €", "Brutto €"]
     assert infer_data_type(sales, ["Invoices", "Purchase invoices"]) == "Invoices"
+
+
+def _buy(
+    number: str, day: str, net: str, rate: str, tax: str, gross: str, supplier: str = "3001"
+) -> dict[str, str]:
+    return {
+        "document_number": number,
+        "document_date": day,
+        "supplier_number": supplier,
+        "partner_name": "Holz",
+        "net_amount": net,
+        "tax_rate": rate,
+        "tax_amount": tax,
+        "gross_amount": gross,
+    }
+
+
+def test_purchase_invoices_are_bills_of_the_supplier_booked_on_the_other_side():
+    from uie_core.accounting.bookings import Side, gross_bookings
+
+    rows = [
+        _buy("H-100", "2026-09-28", "1000", "19", "190", "1190"),
+        _buy("GS-1", "2026-09-21", "-150", "19", "-28.5", "-178.5", supplier="3002"),
+        _buy("H-200", "2026-09-22", "35", "19", "6.65", "41.65", supplier=""),
+    ]
+    t = documents_from_rows(INVOICES, rows, {}, "EUR", purchase=True)
+    bill, credit = t.documents
+    assert (bill.document_type, bill.partner.role) == (DocumentType.VENDOR_BILL, PartnerRole.SUPPLIER)
+    assert credit.document_type == DocumentType.VENDOR_CREDIT_NOTE
+    # référence = fournisseur + numéro : un numéro n'est unique que chez son fournisseur
+    assert (bill.source_ref, bill.partner.source_ref) == ("file:purchase:3001:H-100", "file:3001")
+    # charge au débit : le fournisseur au crédit (H) ; l'avoir en sens inverse
+    assert [b.partner_side for b in gross_bookings(bill).bookings] == [Side.CREDIT]
+    assert [b.partner_side for b in gross_bookings(credit).bookings] == [Side.DEBIT]
+    assert gross_bookings(bill).bookings[0].amount == Decimal("1190")
+    assert t.scope == "PURCHASE" and t.categories == {"purchase:19": "purchases at 19 % VAT"}
+    assert [(e.row, e.reason) for e in t.skipped] == [(3, "Invoice H-200: no supplier number: not exported.")]

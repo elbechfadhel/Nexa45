@@ -1,4 +1,5 @@
-"""Lignes d'un journal de factures de sortie → Accounting CDM 1.1 (source FICHIER, aucun système).
+"""Lignes d'un journal de factures de sortie, ou d'achat, → Accounting CDM 1.1 (source FICHIER, aucun
+système).
 
 Une ligne = une facture (ou un avoir) à UN taux de TVA, sans plan comptable : une ligne ITEM classée par
 CATÉGORIE (« ventes à 19 % »), avec son taux et sa TVA ; la cible fait confirmer la correspondance
@@ -14,6 +15,9 @@ Rien n'est corrigé ni deviné ; une facture qui ne peut pas être écrite est L
   différent → aucune des deux ;
 - taux de 0 % : livraison intracommunautaire (ou autre exonération) à justifier par l'USt-IdNr du client,
   que ce fichier ne contient pas → DÉCISION de l'utilisateur pour ces factures, jamais automatique.
+Factures d'ACHAT (`purchase`) : fournisseur (numéro de fournisseur), pièces VENDOR_BILL / VENDOR_CREDIT_NOTE,
+charge au débit (le fournisseur au crédit), avoir fournisseur en sens inverse ; référence de la pièce = numéro
+du fournisseur + numéro de sa facture (un numéro n'est unique que chez un fournisseur).
 Références de la source préfixées « file: » : jamais confondues avec celles d'un système connecté."""
 
 from __future__ import annotations
@@ -56,12 +60,19 @@ class InvoiceTable(_Model):
     # sont demandés une fois, présélectionnés
     categories: dict[str, str] = {}
     rates: list[str] = []
+    scope: str = "SALE"  # SALE | PURCHASE : sens des pièces (clés de taxe différentes chez une cible)
 
 
 def category(rate: Decimal) -> PostingCategoryRef:
     """Catégorie d'une vente à ce taux : la cible lui fait correspondre un compte de produits."""
     r = rate.normalize()
     return PostingCategoryRef(source_ref=f"sale:{r:f}", name=f"sales at {r:f} % VAT")
+
+
+def purchase_category(rate: Decimal) -> PostingCategoryRef:
+    """Catégorie d'un achat à ce taux : la cible lui fait correspondre un compte de charges."""
+    r = rate.normalize()
+    return PostingCategoryRef(source_ref=f"purchase:{r:f}", name=f"purchases at {r:f} % VAT")
 
 
 def _amount(text: str) -> Decimal | None:
@@ -78,6 +89,7 @@ def documents_from_rows(  # noqa: C901, PLR0912, PLR0915
     currency: str,
     choices: dict[str, str] | None = None,
     partner_vat: dict[str, tuple[str | None, str | None]] | None = None,
+    purchase: bool = False,
 ) -> InvoiceTable:
     """`rows` : une entrée par ligne (clé du tableau → valeur mise en forme : nombres en notation standard,
     dates ISO) ; `currency` : devise des montants (choisie ou lue) ; `choices` : réponses aux décisions ;
@@ -85,6 +97,8 @@ def documents_from_rows(  # noqa: C901, PLR0912, PLR0915
     0 % est écrite d'office si le client a un numéro de TVA VALIDE d'un autre pays de l'UE, refusée s'il est
     invalide ou absent, sinon décidée par l'utilisateur."""
     choices = choices or {}
+    # ventes : numéro du client ; achats : numéro du fournisseur
+    pkey, who_kind = ("supplier_number", "supplier") if purchase else ("partner_number", "customer")
     skipped: list[ExcludedRow] = []
     issues: list[ValueIssue] = []
     questions: list[ValueQuestion] = []
@@ -101,7 +115,7 @@ def documents_from_rows(  # noqa: C901, PLR0912, PLR0915
     for i in used:
         if val(i, "document_number"):
             by_number.setdefault(val(i, "document_number"), []).append(i)
-    content_keys = ("document_date", "partner_number", "net_amount", "tax_rate", "tax_amount", "gross_amount")
+    content_keys = ("document_date", pkey, "net_amount", "tax_rate", "tax_amount", "gross_amount")
     # ligne → (motif, sorte) : « duplicate » = lignes IDENTIQUES (écrite une fois) ; même numéro pour des
     # factures différentes = « probable_duplicate » (aucune n'est écrite)
     twice: dict[int, tuple[str, str]] = {}
@@ -135,9 +149,9 @@ def documents_from_rows(  # noqa: C901, PLR0912, PLR0915
         if not number:
             skip(i, "No invoice number (Belegfeld 1 is required): not exported.", "missing_number")
             continue
-        partner = val(i, "partner_number")
+        partner = val(i, pkey)
         if not partner:
-            skip(i, f"Invoice {number}: no customer number: not exported.", "missing_partner")
+            skip(i, f"Invoice {number}: no {who_kind} number: not exported.", "missing_partner")
             continue
         try:
             when = date.fromisoformat(val(i, "document_date"))
@@ -179,19 +193,25 @@ def documents_from_rows(  # noqa: C901, PLR0912, PLR0915
             )
             continue
         credit = gross < 0
-        sign = Decimal(1) if credit else Decimal(-1)  # vente au crédit, avoir client au débit
+        if purchase:
+            sign = Decimal(-1) if credit else Decimal(1)  # charge au débit, avoir fournisseur au crédit
+            kind = DocumentType.VENDOR_CREDIT_NOTE if credit else DocumentType.VENDOR_BILL
+        else:
+            sign = Decimal(1) if credit else Decimal(-1)  # vente au crédit, avoir client au débit
+            kind = DocumentType.CUSTOMER_CREDIT_NOTE if credit else DocumentType.CUSTOMER_INVOICE
         line = DocumentLine(
             kind=LineKind.ITEM,
             amount=sign * abs(net),
             gross_amount=sign * abs(gross),
             tax_rate=rate,
             tax_amount=sign * abs(tax),
-            category=category(rate),
+            category=purchase_category(rate) if purchase else category(rate),
             description=val(i, "partner_name") or None,
         )
         doc = AccountingDocument(
-            source_ref=FILE_REF + number,
-            document_type=DocumentType.CUSTOMER_CREDIT_NOTE if credit else DocumentType.CUSTOMER_INVOICE,
+            # achat : le numéro n'est unique que chez son fournisseur
+            source_ref=FILE_REF + (f"purchase:{partner}:{number}" if purchase else number),
+            document_type=kind,
             status=DocumentStatus.POSTED,
             number=number,
             accounting_date=when,
@@ -199,13 +219,17 @@ def documents_from_rows(  # noqa: C901, PLR0912, PLR0915
             currency=currency,
             partner=PartnerRef(
                 source_ref=FILE_REF + partner,
-                role=PartnerRole.CUSTOMER,
+                role=PartnerRole.SUPPLIER if purchase else PartnerRole.CUSTOMER,
                 name=val(i, "partner_name") or partner,
             ),
             total_amount=abs(gross),
             tax_amount=abs(tax),
             lines=[line],
         )
+        if rate == 0 and purchase:
+            # achat sans TVA : traitement selon le fournisseur (pays, exonération), pas encore pris en charge
+            skip(i, f"Invoice {number}: 0 % VAT on a purchase: not supported yet, not exported.", "zero_rate")
+            continue
         if rate == 0:
             # état du numéro de TVA du client, retenu à l'export de la liste des clients (même source fichier)
             status, country = (partner_vat or {}).get(partner, (None, None))
@@ -228,8 +252,7 @@ def documents_from_rows(  # noqa: C901, PLR0912, PLR0915
 
     if zero_rows:
         listed = ", ".join(
-            f"{val(i, 'document_number')} ({val(i, 'partner_name') or val(i, 'partner_number')})"
-            for i in zero_rows[:5]
+            f"{val(i, 'document_number')} ({val(i, 'partner_name') or val(i, pkey)})" for i in zero_rows[:5]
         )
         q = ValueQuestion(
             key=ZERO_RATE_KEY,
@@ -267,6 +290,7 @@ def documents_from_rows(  # noqa: C901, PLR0912, PLR0915
         {f"{x.tax_rate.normalize():f}" for x in every if x.tax_rate is not None}, key=float, reverse=True
     )
     return InvoiceTable(
+        scope="PURCHASE" if purchase else "SALE",
         categories={
             x.category.source_ref: x.category.name or x.category.source_ref for x in every if x.category
         },
@@ -279,4 +303,11 @@ def documents_from_rows(  # noqa: C901, PLR0912, PLR0915
     )
 
 
-__all__ = ["FILE_REF", "ZERO_RATE_KEY", "InvoiceTable", "category", "documents_from_rows"]
+__all__ = [
+    "FILE_REF",
+    "ZERO_RATE_KEY",
+    "InvoiceTable",
+    "category",
+    "documents_from_rows",
+    "purchase_category",
+]
