@@ -92,6 +92,8 @@ export function RadioItem({
   className?: string;
   children: ReactNode;
 }) {
+  // nom accessible = le libellé seul ; la précision est une description
+  const id = useId();
   return (
     <label
       className={cn(
@@ -107,6 +109,8 @@ export function RadioItem({
         checked={checked}
         disabled={disabled}
         onChange={() => onSelect(value)}
+        aria-labelledby={`${id}-label`}
+        aria-describedby={hint ? `${id}-hint` : undefined}
         className="peer sr-only"
       />
       <span
@@ -120,8 +124,14 @@ export function RadioItem({
         {checked && <span className="size-1.5 rounded-full bg-card" />}
       </span>
       <span className="min-w-0">
-        <span className="block">{children}</span>
-        {hint && <span className="meta block text-muted-foreground">{hint}</span>}
+        <span id={`${id}-label`} className="block">
+          {children}
+        </span>
+        {hint && (
+          <span id={`${id}-hint`} className="meta block text-muted-foreground">
+            {hint}
+          </span>
+        )}
       </span>
     </label>
   );
