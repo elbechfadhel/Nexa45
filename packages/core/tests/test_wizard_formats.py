@@ -601,3 +601,54 @@ def test_a_tax_number_outside_the_eu_is_never_an_invalid_eu_vat_id():
     (issue,) = t.issues
     assert issue.kind == "vat_non_eu" and issue.kind != "vat_invalid" and issue.rows == [1]
     assert issue.message.startswith("1 tax number of a country outside the EU is not an EU VAT ID")
+
+
+def test_a_cross_border_purchase_at_zero_rate_follows_the_zone_and_the_kind_of_supply():
+    from uie_core.wizard.cdm_accounting import SUPPLY_KIND_KEY
+
+    def buy(number: str, supplier: str, kind: str) -> dict[str, str]:
+        return {**_buy(number, "2026-10-02", "100", "0", "0", "100", supplier=supplier), "supply_kind": kind}
+
+    rows = [
+        buy("PL/0412", "2021", "Ware"),  # PL, USt-IdNr valide : acquisition intracommunautaire
+        buy("CD-77812", "2022", "Dienstleistung"),  # IE : prestation UE, autoliquidation
+        buy("SS-31", "2020", "Dienstleistung"),  # CH : prestation hors UE, autoliquidation
+        buy("CH-GOODS", "2020", "Ware"),  # CH, marchandise : TVA à l'importation
+        buy("ES-81", "2007", "Dienstleistung"),  # ES sans USt-IdNr
+        buy("PL/0430", "2021", ""),  # nature inconnue
+        buy("M-1", "2001", ""),  # fournisseur allemand sans TVA (loyer) : inchangé
+    ]
+    vat = {
+        "2021": ("valid", "PL"),
+        "2022": ("valid", "IE"),
+        "2020": ("non_eu", "CH"),
+        "2007": ("missing", "ES"),
+        "2001": ("valid", "DE"),
+    }
+    t = documents_from_rows(INVOICES, rows, {}, "EUR", {}, partner_vat=vat, purchase=True)
+    cats = {d.number: d.lines[0].category.source_ref for d in t.documents}
+    assert cats == {
+        "PL/0412": "vat:purchase:eu:goods:0",
+        "CD-77812": "vat:purchase:eu:services:0",
+        "SS-31": "vat:purchase:non_eu:services:0",
+        "M-1": "purchase:0",
+    }
+    reasons = {e.row: (e.kind, e.reason) for e in t.skipped}
+    assert (
+        reasons[4][0] == "import_vat" and "import VAT (Einfuhrumsatzsteuer) is not supported" in reasons[4][1]
+    )
+    assert reasons[5][0] == "vat_abroad" and "its VAT ID is missing in your supplier list" in reasons[5][1]
+    assert reasons[6][0] == "supply_kind"
+    (q,) = t.questions
+    assert q.key == SUPPLY_KIND_KEY and q.count == 1
+    # réponse « Goods » pour un fournisseur hors UE : importation, jamais exportée
+    ch = documents_from_rows(
+        INVOICES,
+        [buy("CH-2", "2020", "")],
+        {},
+        "EUR",
+        {SUPPLY_KIND_KEY: "GOODS"},
+        partner_vat=vat,
+        purchase=True,
+    )
+    assert ch.documents == [] and ch.skipped[0].kind == "import_vat" and "(CH)" in ch.skipped[0].reason

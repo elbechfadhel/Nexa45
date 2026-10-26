@@ -235,9 +235,11 @@ def test_a_number_with_spaces_kept_as_it_is_is_refused_by_the_target_with_its_re
     )  # jamais corrigé
 
 
-def test_purchases_from_another_country_are_left_to_the_vat_domain_and_flagged(world):  # noqa: F811
-    """0 % d'un fournisseur autrichien ou espagnol : relève de la TVA des achats à l'étranger (domaine 2), non
-    exporté, jamais une question d'exonération ; fournisseur de l'UE sans USt-IdNr signalé dans la liste."""
+def test_purchases_from_another_country_follow_the_zone_and_the_kind_of_supply(world):  # noqa: F811
+    """0 % d'un fournisseur autrichien (ATU valide) : acquisition intracommunautaire, dont la nature (fichier
+    sans Leistungsart) est UNE question jamais présélectionnée ; « Goods » → 3425, compte automatique sans
+    clé. Fournisseur espagnol sans USt-IdNr : signalé dans la liste, jamais exporté (autoliquidation
+    injustifiable)."""
     c = world["client"]
     suppliers = _flow(c, "Debitoren/Kreditoren 5", SUPPLIERS, "Lieferanten.csv")
     flagged = [i for i in suppliers["preview"]["value_issues"] if i["kind"] == "vat_missing_eu"]
@@ -245,13 +247,29 @@ def test_purchases_from_another_country_are_left_to_the_vat_domain_and_flagged(w
     assert flagged[0]["message"].startswith("1 supplier from another EU country has no VAT ID")
     assert _download(c, suppliers).status_code == 200
     flow = _flow(c, "Buchungsstapel 13", PURCHASES, "Rechnungseingang.csv", {"setting:lock_bookings": "0"})
+    assert "accounting:supply_kind" in {q["decision"] for q in flow["start"]["questions"]}
     reasons = {e["row"]: (e["kind"], e["reason"]) for e in flow["preview"]["excluded_rows"]}
     assert reasons[8] == (
-        "vat_abroad",
-        "Invoice AT-1: 0 % VAT from Farben Graz GmbH (AT): VAT on purchases from another country "
-        "(intra-community acquisition, reverse charge) is not supported yet, not exported.",
+        "supply_kind",
+        "Invoice AT-1: goods or services is not known (Leistungsart), waiting for your answer above.",
     )
-    assert reasons[9][0] == "vat_abroad" and "(ES)" in reasons[9][1]
+    assert reasons[9] == (
+        "vat_abroad",
+        "Invoice ES-1: 0 % VAT from Transportes Sur S.L. (ES), but its VAT ID is missing in your supplier "
+        "list: an intra-community acquisition or reverse charge cannot be justified, not exported.",
+    )
+    goods = _flow(
+        c,
+        "Buchungsstapel 13",
+        PURCHASES,
+        "Rechnungseingang.csv",
+        {"setting:lock_bookings": "0", "accounting:supply_kind": "GOODS"},
+    )
+    res = _download(c, goods)
+    assert res.status_code == 200, res.text
+    _, rows = _rows(res.content)
+    at = next(r for r in rows if r[10] == '"AT-1"')
+    assert [at[i] for i in (0, 1, 6, 7, 8)] == ["1200,00", '"H"', "73004", "3425", '""']
 
 
 def test_the_period_covers_only_the_months_written_and_last_year_is_refused(world):  # noqa: F811

@@ -108,6 +108,13 @@ def vat_category(scope: str, zone: str, nature: SupplyKind, rate: Decimal) -> Po
     )
 
 
+def _import_reason(number: str, who: str, where: str) -> str:
+    return (
+        f"Invoice {number}: goods bought from {who} outside the EU ({where}): import VAT "
+        "(Einfuhrumsatzsteuer) is not supported, not exported."
+    )
+
+
 def _amount(text: str) -> Decimal | None:
     try:
         return Decimal(text) if text else None
@@ -240,7 +247,7 @@ def documents_from_rows(  # noqa: C901, PLR0912, PLR0915
 
     zero_docs: list[tuple[int, AccountingDocument]] = []
     # opérations avec l'étranger dont la nature manque : ligne → (sens, zone, taux) ; une seule question
-    no_kind: dict[int, tuple[str, str, Decimal]] = {}
+    no_kind: dict[int, tuple[str, str, Decimal, str]] = {}
     # en attente de cette réponse : comptes des natures POSSIBLES demandés d'avance (présélectionnés), comme
     # ceux d'une facture à 0 % en attente ; jamais appliqués sans la réponse
     pending: dict[str, str] = {}
@@ -344,7 +351,7 @@ def documents_from_rows(  # noqa: C901, PLR0912, PLR0915
             # achat sans TVA d'un fournisseur du pays du dossier (loyer sans TVA, Kleinunternehmer) : charge
             # sans TVA déductible, exportée sans question ; pays lu dans la liste des fournisseurs exportée,
             # jamais dans une remarque
-            _, country = (partner_vat or {}).get(partner, (None, None))
+            status, country = (partner_vat or {}).get(partner, (None, None))
             who = val(i, "partner_name") or partner
             if country is None:
                 # fournisseur pas encore exporté (ou sans pays) : son pays n'est jamais deviné
@@ -356,16 +363,33 @@ def documents_from_rows(  # noqa: C901, PLR0912, PLR0915
                 )
                 continue
             if not (table.home_country and country == table.home_country):
-                # achat à l'étranger (acquisition intracommunautaire, autoliquidation §13b, import) : la TVA
-                # de ces achats relève du domaine suivant (TVA dans les écritures), jamais un achat national
-                skip(
-                    i,
-                    f"Invoice {number}: 0 % VAT from {who} ({country}): VAT on purchases from another "
-                    "country (intra-community acquisition, reverse charge) is not supported yet, not "
-                    "exported.",
-                    "vat_abroad",
-                )
-                continue
+                # achat à l'étranger : acquisition intracommunautaire ou autoliquidation (§ 13b), selon la
+                # zone du fournisseur et la NATURE de l'achat ; jamais un achat national sans TVA
+                if status in ("invalid", "missing"):
+                    what = "is not valid" if status == "invalid" else "is missing"
+                    skip(
+                        i,
+                        f"Invoice {number}: 0 % VAT from {who} ({country}), but its VAT ID {what} in your "
+                        "supplier list: an intra-community acquisition or reverse charge cannot be "
+                        "justified, not exported.",
+                        "vat_abroad",
+                    )
+                    continue
+                zone = "NON_EU" if status == "non_eu" else "EU"
+                nature = line.supply_kind
+                if nature is None:
+                    no_kind[i] = (
+                        "PURCHASE",
+                        zone,
+                        rate,
+                        country,
+                    )  # décision de l'utilisateur, jamais présélectionnée
+                elif ("PURCHASE", zone, nature.value) not in VAT_TREATMENTS:
+                    skip(i, _import_reason(number, who, country), "import_vat")
+                    continue
+                else:
+                    cat = vat_category("PURCHASE", zone, nature, rate)
+                    doc = doc.model_copy(update={"lines": [line.model_copy(update={"category": cat})]})
         elif rate == 0:
             # état du numéro de TVA du client, retenu à l'export de la liste des clients (même source fichier)
             status, country = (partner_vat or {}).get(partner, (None, None))
@@ -413,7 +437,12 @@ def documents_from_rows(  # noqa: C901, PLR0912, PLR0915
                 # jamais devinée (ni depuis une remarque, ni depuis le montant)
                 nature = line.supply_kind
                 if nature is None:
-                    no_kind[i] = ("SALE", zone, rate)  # décision de l'utilisateur, jamais présélectionnée
+                    no_kind[i] = (
+                        "SALE",
+                        zone,
+                        rate,
+                        country or "",
+                    )  # décision de l'utilisateur, jamais présélectionnée
                 else:
                     cat = vat_category("SALE", zone, nature, rate)
                     doc = doc.model_copy(update={"lines": [line.model_copy(update={"category": cat})]})
@@ -447,7 +476,11 @@ def documents_from_rows(  # noqa: C901, PLR0912, PLR0915
             answered = []
             for i, d in candidates:
                 if i in no_kind:
-                    scope, zone, rate = no_kind[i]
+                    scope, zone, rate, where = no_kind[i]
+                    if (scope, zone, nature.value) not in VAT_TREATMENTS:
+                        # marchandise achetée hors UE (TVA à l'importation) : non prise en charge
+                        skip(i, _import_reason(d.number or "", d.partner.name, where), "import_vat")
+                        continue
                     cat = vat_category(scope, zone, nature, rate)
                     d = d.model_copy(update={"lines": [d.lines[0].model_copy(update={"category": cat})]})
                 answered.append((i, d))
@@ -467,7 +500,7 @@ def documents_from_rows(  # noqa: C901, PLR0912, PLR0915
             zero_docs += [(i, d) for i, d in candidates if i in no_kind]
             candidates = [(i, d) for i, d in candidates if i not in no_kind]
             if q.answer is None:
-                for scope, zone, rate in no_kind.values():
+                for scope, zone, rate, _ in no_kind.values():
                     for nature in SupplyKind:
                         if (scope, zone, nature.value) in VAT_TREATMENTS:
                             cat = vat_category(scope, zone, nature, rate)
