@@ -84,6 +84,7 @@ from uie_core.mapping import (
     map_record,
     resolve_binding,
 )
+from uie_core.mapping.suggestions import CategoryAccountRegistry
 from uie_core.registry import SnapshotRef
 from uie_core.registry.service import NotFound, RegistryError, RegistryService
 
@@ -1776,6 +1777,13 @@ def _document(
                 )
 
     text = ", ".join(p for p in (doc.partner.name, doc.number) if p)
+    # comptes AUTOMATIQUES du plan comptable du dossier (données) : la cible calcule la taxe, aucune clé
+    scope = "SALE" if doc.partner.role == PartnerRole.CUSTOMER else "PURCHASE"
+    chart = values.get(b.chart_param) if b.chart_param else None
+    table = CategoryAccountRegistry.find(
+        b.target.system, b.target.product, str(chart) if chart else None, scope
+    )
+    automatic = set(table.automatic_accounts) if table else set()
     bookings = []
     for bk in bs.bookings:
         issues: list[TargetIssue] = [partner_issue] if partner_issue else []
@@ -1785,7 +1793,9 @@ def _document(
             issues.append(issue)
         tax_value, tax_none = None, False
         tax_key = _tax_key(bk, doc.partner.role)
-        if tax_key is not None:
+        if tax_key is not None and counter in automatic:
+            tax_none = True  # compte automatique : jamais de clé de taxe
+        elif tax_key is not None:
             mapping = mappings.get(tax_key[:2])
             tax_value, issue = _resolve(target, mappings, LookupKind.TAX, tax_key[1])
             tax_none = bool(mapping and mapping.status == MappingStatus.CONFIRMED and mapping.no_value)

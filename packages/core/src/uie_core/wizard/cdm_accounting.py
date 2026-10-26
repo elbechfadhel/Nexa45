@@ -249,10 +249,15 @@ def documents_from_rows(  # noqa: C901, PLR0912, PLR0915
             lines=[line],
         )
         if rate == 0 and purchase:
-            # achat sans TVA : traitement selon le fournisseur (pays, exonération), pas encore pris en charge
-            skip(i, f"Invoice {number}: 0 % VAT on a purchase: not supported yet, not exported.", "zero_rate")
-            continue
-        if rate == 0:
+            # achat sans TVA d'un fournisseur du pays du dossier (loyer sans TVA, Kleinunternehmer) : charge
+            # sans TVA déductible, exportée sans question ; pays lu dans la liste des fournisseurs exportée,
+            # jamais dans une remarque
+            _, country = (partner_vat or {}).get(partner, (None, None))
+            if not (table.home_country and country == table.home_country):
+                reason = f"Invoice {number}: 0 % VAT on a purchase: not supported yet, not exported."
+                skip(i, reason, "zero_rate")
+                continue
+        elif rate == 0:
             # état du numéro de TVA du client, retenu à l'export de la liste des clients (même source fichier)
             status, country = (partner_vat or {}).get(partner, (None, None))
             who = val(i, "partner_name") or partner

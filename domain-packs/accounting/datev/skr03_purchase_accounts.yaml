@@ -8,11 +8,17 @@
 # calculée par DATEV) ; 4210 (Miete) : loyer sans TVA ; les autres comptes reçoivent la clé de Vorsteuer.
 
 kind: category_accounts
-table_version: "1.0.0"
+table_version: "1.2.0"   # 1.1.0 : comptes automatiques et clés de Vorsteuer ; 1.2.0 : clés à 4 chiffres
 target: {system: datev, product: buchungsstapel}
 chart: "03"
 scope: PURCHASE
 status: usual practice, to be confirmed by your tax advisor
+
+# comptes automatiques : DATEV calcule la TVA déductible, aucune clé de taxe (BU-Schlüssel)
+automatic_accounts: ["3300", "3400"]
+# clé de Vorsteuer d'usage par taux pour les autres comptes (9 : 19 %, 8 : 7 %), écrite sur 4 chiffres comme
+# l'exige le format Buchungsstapel 13 (BU-Schlüssel, motif du Registry) ; 0 % : aucune clé
+tax_keys: {"19": "0009", "7": "0008"}
 
 categories:
   - {names: [Wareneinkauf, Wareneingang, Waren, Handelswaren], rate: 19, account: "3400"}

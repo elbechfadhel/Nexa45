@@ -336,6 +336,16 @@ def mapping_questions(
     for rate in rates:
         ref = f"rate:{scope}:{rate}"
         usual = NO_VALUE if scope == "SALE" and hint and hint.no_tax_key else None
+        tax_help = "The usual revenue accounts calculate the VAT themselves: no tax key."
+        if scope == "PURCHASE" and table is not None:
+            # achat : clé de Vorsteuer d'usage du taux ; 0 % : aucune taxe déductible, aucune clé
+            usual = NO_VALUE if Decimal(rate) == 0 else table.tax_key_for(Decimal(rate))
+            tax_help = (
+                f"Usual input-tax key for this rate ({table.status}); automatic accounts "
+                f"({', '.join(table.automatic_accounts) or 'none'}) never get a tax key."
+                if Decimal(rate)
+                else "No VAT on these purchases: no input tax, no tax key."
+            )
         default = saved.get(f"{MAPPING}TAX:{ref}") or usual
         out.append(
             QuickQuestion(
@@ -344,9 +354,7 @@ def mapping_questions(
                     label=f"{tax} for {what} at {rate} % VAT",
                     kind=MissingKind.CHOICE,
                     title=f"{tax} for {what} at {rate} % VAT",
-                    help="The usual revenue accounts calculate the VAT themselves: no tax key."
-                    if default
-                    else "Enter the tax key given by your tax advisor.",
+                    help=tax_help if default else "Enter the tax key given by your tax advisor.",
                     choices=[MissingChoice(value=NO_VALUE, label=none)],
                     free_text=True,
                 ),

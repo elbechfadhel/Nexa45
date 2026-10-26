@@ -43,6 +43,13 @@ class CategoryAccountTable(_Spec):
     scope: Literal["SALE", "PURCHASE"]
     status: str  # ex. « usage courant, à valider par le Steuerberater » : affiché avec la présélection
     categories: list[CategoryAccount]
+    # comptes AUTOMATIQUES : la cible calcule la taxe elle-même, aucune clé de taxe n'y est jamais écrite
+    automatic_accounts: list[str] = []
+    # taux → clé de taxe d'usage (présélection) ; un taux absent n'a pas de clé présélectionnée ; 0 % : aucune
+    tax_keys: dict[str, str] = {}
+
+    def tax_key_for(self, rate: Decimal) -> str | None:
+        return self.tax_keys.get(f"{rate.normalize():f}")
 
     def account_for(self, name: str, rate: Decimal) -> str | None:
         """Compte d'usage de cette catégorie à ce taux ; None : inconnue (jamais devinée)."""

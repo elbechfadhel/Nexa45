@@ -40,7 +40,8 @@ PURCHASES = (
     "500;10.08.2026;3001;Holz Großhandel GmbH;Wareneinkauf;500,00;19;95,00;595,00;\n"
     "500;12.08.2026;3002;Strom Nord AG;Strom;800,00;19;152,00;952,00;\n"
     "500;10.08.2026;3001;Holz Großhandel GmbH;Wareneinkauf;500,00;19;95,00;595,00;doppelt erfasst\n"
-    "Miete 09/2026;01.09.2026;3003;Hausverwaltung Ost GbR;Miete;1500,00;0;0,00;1500,00;\n"
+    "M-0926;01.09.2026;3003;Hausverwaltung Ost GbR;Miete;1500,00;0;0,00;1500,00;\n"
+    "Miete 08/2026;01.08.2026;3003;Hausverwaltung Ost GbR;Miete;1500,00;0;0,00;1500,00;\n"
     "AT-1;15.09.2026;3004;Farben Graz GmbH;Wareneinkauf;1200,00;0;0,00;1200,00;innergemeinschaftlich\n"
     "ES-1;16.09.2026;3005;Transportes Sur S.L.;Fremdleistungen;900,00;0;0,00;900,00;Reverse Charge\n"
     "S-7;18.09.2026;3002;Strom Nord AG;Strom;59,90;19;11,38;71,38;\n"
@@ -153,7 +154,7 @@ def test_the_expense_account_is_preselected_by_category_never_guessed_and_rememb
     assert every["map:CATEGORY:purchase:strom:19"]["default"] is None  # inconnue : jamais devinée
     reasons = {e["row"]: e["reason"] for e in first["preview"]["excluded_rows"]}
     assert (
-        reasons[14]
+        reasons[15]
         == "Invoice H-103: no expense category (Kostenart): its account is never guessed, not exported."
     )
     # téléchargement avec la réponse de l'utilisateur, puis un nouveau fichier : réponse reprise
@@ -170,3 +171,42 @@ def test_the_expense_account_is_preselected_by_category_never_guessed_and_rememb
         q for q in again["questions"] + again["applied"] if q["decision"] == "map:CATEGORY:purchase:strom:19"
     )
     assert (strom["default"], strom["default_from"]) == ("4240", "your_settings")
+
+
+def test_input_tax_keys_follow_the_account_and_a_domestic_purchase_without_vat_is_exported(world):  # noqa: F811
+    """Clé de Vorsteuer présélectionnée par taux (9 : 19 %, 8 : 7 %), jamais sur un compte automatique
+    (3400, 3300) ; loyer à 0 % d'un bailleur allemand : charge sans TVA déductible, sans question."""
+    c = world["client"]
+    _suppliers_exported(c)
+    flow = _flow(
+        c,
+        "Buchungsstapel 13",
+        PURCHASES,
+        "Rechnungseingang.csv",
+        {"map:CATEGORY:purchase:strom:19": "4240", "setting:lock_bookings": "0"},
+    )
+    start = flow["start"]
+    every = {q["decision"]: q["default"] for q in start["questions"] + start["applied"]}
+    # clés de Vorsteuer sur 4 chiffres (format Buchungsstapel 13)
+    assert every["map:TAX:rate:PURCHASE:19"] == "0009" and every["map:TAX:rate:PURCHASE:7"] == "0008"
+    assert every["map:TAX:rate:PURCHASE:0"] == "none"
+    assert "accounting:zero_rate" not in every  # jamais la question des livraisons intracommunautaires
+    res = _download(c, flow)
+    assert res.status_code == 200, res.text
+    _, rows = _rows(res.content)
+
+    def row(number: str, konto: str) -> list[str]:
+        return next(r for r in rows if r[10] == f'"{number}"' and r[6] == konto)
+
+    # Konto, Gegenkonto, BU-Schlüssel
+    assert [row("H-100", "73001")[i] for i in (6, 7, 8)] == [
+        "73001",
+        "3400",
+        '""',
+    ]  # automatique : aucune clé
+    assert [row("H-101", "73001")[i] for i in (6, 7, 8)] == ["73001", "3300", '""']
+    assert [row("500", "73002")[i] for i in (6, 7, 8)] == ["73002", "4240", '"0009"']
+    assert [row("M-0926", "73003")[i] for i in (0, 7, 8)] == ["1500,00", "4210", '""']
+    # un numéro avec une espace n'est pas un Belegfeld 1 DATEV : refusé avec son motif, jamais corrigé
+    reasons = {e["row"]: e["reason"] for e in flow["preview"]["excluded_rows"]}
+    assert "Invoice Miete 08/2026: Belegfeld 1 does not have the format expected" in reasons[7]
