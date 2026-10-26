@@ -528,6 +528,9 @@ test("an entry point reuses the Simple screens: only its title, introduction and
   assert.match(screen, /<Choices tile=\{sole\} [^>]*label=\{heading\}/);
   assert.match(screen, /\{label === undefined && \([^)]*?<h4[^]*?L\.formatHelp[^]*?<\/div>\s*\)\}/);
   assert.equal(SIMPLE_LABELS.formatHelp, "The most recent version is preselected."); // Wizard général inchangé
+  // fichier choisi : icône tableur sur fond bleu léger, le format dans la ligne méta (« XLSX · 8 KB »)
+  assert.match(screen, /<FileSpreadsheet /);
+  assert.doesNotMatch(screen, /FileBadge/);
   // la page du parcours ne fait que passer sa configuration aux composants du mode Simple : aucune copie
   const app = join(here, "..", "..", "app", "portal");
   const page = readFileSync(join(app, "prepare-datev", "page.tsx"), "utf8");

@@ -2,7 +2,7 @@
 
 /** Écran 1 du mode Simple : déposer le fichier et choisir la cible. Vos systèmes connectés d'abord, puis les
  *  systèmes du Registry, puis les autres (structure proposée par l'IA) ; recherche au-delà de quelques choix. */
-import { Loader2, Search, Upload } from "lucide-react";
+import { FileSpreadsheet, Loader2, Search, Upload } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { StatusBadge } from "@/components/status-badge";
@@ -286,10 +286,15 @@ function FileDrop({ file, onPick }: { file: File | null; onPick: (file: File) =>
     <div>
       {file ? (
         <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border p-4">
-          <FileBadge name={file.name} />
+          <span
+            aria-hidden
+            className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand"
+          >
+            <FileSpreadsheet className="size-5" strokeWidth={1.75} />
+          </span>
           <div className="min-w-0 flex-1">
             <div className="truncate font-medium">{file.name}</div>
-            <div className="meta text-muted-foreground">{size(file.size)}</div>
+            <div className="meta text-muted-foreground">{fileMeta(file)}</div>
           </div>
           <Button variant="outline" size="sm" onClick={() => input.current?.click()}>
             {L.fileChange}
@@ -335,17 +340,10 @@ function FileDrop({ file, onPick }: { file: File | null; onPick: (file: File) =>
   );
 }
 
-/** Tuile du fichier choisi : son format (CSV, XLSX) en DM Mono, sur le fond bleu léger de la charte. */
-function FileBadge({ name }: { name: string }) {
-  const ext = name.includes(".") ? name.split(".").pop()!.toUpperCase().slice(0, 4) : "";
-  return (
-    <span
-      aria-hidden
-      className="tech flex h-11 w-10 shrink-0 items-end justify-center rounded-md border border-brand/25 bg-brand/5 pb-1.5 text-[10px] font-semibold text-brand"
-    >
-      {ext}
-    </span>
-  );
+/** Ligne sous le nom du fichier choisi : son format puis sa taille (« XLSX · 8 KB »). */
+function fileMeta(file: File): string {
+  const ext = file.name.includes(".") ? file.name.split(".").pop()!.toUpperCase() : "";
+  return ext ? `${ext} · ${size(file.size)}` : size(file.size);
 }
 
 function size(bytes: number): string {
