@@ -652,3 +652,23 @@ def test_a_cross_border_purchase_at_zero_rate_follows_the_zone_and_the_kind_of_s
         purchase=True,
     )
     assert ch.documents == [] and ch.skipped[0].kind == "import_vat" and "(CH)" in ch.skipped[0].reason
+
+
+def test_foreign_vat_invoiced_by_a_supplier_abroad_is_never_input_tax():
+    rows = [
+        _buy("AT-951", "2026-10-06", "500", "20", "100", "600", supplier="2006"),  # USt autrichienne
+        _buy(
+            "AT-952", "2026-10-07", "500", "19", "95", "595", supplier="2006"
+        ),  # même taux qu'ici : étranger
+        _buy("R-99310", "2026-10-13", "1000", "19", "190", "1190", supplier="2001"),  # national : inchangé
+    ]
+    vat = {"2006": ("valid", "AT"), "2001": ("valid", "DE")}
+    t = documents_from_rows(INVOICES, rows, {}, "EUR", {}, partner_vat=vat, purchase=True)
+    assert [d.number for d in t.documents] == ["R-99310"]
+    reasons = {e.row: (e.kind, e.reason) for e in t.skipped}
+    assert reasons[1] == (
+        "foreign_vat",
+        "Invoice AT-951: 20 % VAT invoiced by Holz (AT): foreign VAT is not deductible in your country (DE), "
+        "never booked as input tax: not exported.",
+    )
+    assert reasons[2][0] == "foreign_vat"

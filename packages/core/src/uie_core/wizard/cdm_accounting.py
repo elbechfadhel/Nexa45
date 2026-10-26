@@ -294,6 +294,19 @@ def documents_from_rows(  # noqa: C901, PLR0912, PLR0915
         if rate is None:
             skip(i, f"Invoice {number}: no VAT rate: not exported.", "rate")
             continue
+        if purchase and rate > 0 and table.home_country:
+            # fournisseur d'un autre pays (liste des fournisseurs exportée) qui facture de la TVA : TVA de SON
+            # pays, jamais déductible comme Vorsteuer ici (règle simple, aucune table des taux étrangers)
+            _, abroad = (partner_vat or {}).get(partner, (None, None))
+            if abroad and abroad != table.home_country:
+                skip(
+                    i,
+                    f"Invoice {number}: {rate.normalize():f} % VAT invoiced by "
+                    f"{val(i, 'partner_name') or partner} ({abroad}): foreign VAT is not deductible in your "
+                    f"country ({table.home_country}), never booked as input tax: not exported.",
+                    "foreign_vat",
+                )
+                continue
         allowed = table.rates(table.home_country or "", when) if table.home_country else None
         if allowed is not None and rate not in allowed:
             skip(
