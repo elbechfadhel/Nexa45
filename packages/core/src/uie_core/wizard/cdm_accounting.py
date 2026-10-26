@@ -47,6 +47,7 @@ from uie_core.wizard.values import ExcludedRow, QuestionOption, ValueIssue, Valu
 FILE_REF = "file:"
 ZERO_RATE_KEY = "accounting:zero_rate"  # factures à 0 % : à exporter ou non (décision)
 NUMBER_SPACES_KEY = "accounting:number_spaces"  # numéros avec des espaces : tiret ou tels quels (décision)
+SUPPLY_KIND_KEY = "accounting:supply_kind"  # nature inconnue d'opérations avec l'étranger (décision)
 CENT = Decimal("0.01")
 
 
@@ -238,6 +239,11 @@ def documents_from_rows(  # noqa: C901, PLR0912, PLR0915
 
     zero_rows: list[int] = []
     zero_docs: list[tuple[int, AccountingDocument]] = []
+    # opérations avec l'étranger dont la nature manque : ligne → (sens, zone, taux) ; une seule question
+    no_kind: dict[int, tuple[str, str, Decimal]] = {}
+    # en attente de cette réponse : comptes des natures POSSIBLES demandés d'avance (présélectionnés), comme
+    # ceux d'une facture à 0 % en attente ; jamais appliqués sans la réponse
+    pending: dict[str, str] = {}
     candidates: list[tuple[int, AccountingDocument]] = []
     for i in used:
         number = val(i, "document_number")
@@ -390,16 +396,65 @@ def documents_from_rows(  # noqa: C901, PLR0912, PLR0915
                 # jamais devinée (ni depuis une remarque, ni depuis le montant)
                 nature = line.supply_kind
                 if nature is None:
-                    skip(
-                        i,
-                        f"Invoice {number}: 0 % VAT to {who} ({country}): goods or services is not known "
-                        "(Leistungsart), never guessed: not exported.",
-                        "supply_kind",
-                    )
-                    continue
-                cat = vat_category("SALE", zone, nature, rate)
-                doc = doc.model_copy(update={"lines": [line.model_copy(update={"category": cat})]})
+                    no_kind[i] = ("SALE", zone, rate)  # décision de l'utilisateur, jamais présélectionnée
+                else:
+                    cat = vat_category("SALE", zone, nature, rate)
+                    doc = doc.model_copy(update={"lines": [line.model_copy(update={"category": cat})]})
         candidates.append((i, doc))
+
+    if no_kind:
+        listed = ", ".join(
+            f"{val(i, 'document_number')} ({val(i, 'partner_name') or val(i, pkey)})"
+            for i in list(no_kind)[:5]
+        )
+        answer = choices.get(SUPPLY_KIND_KEY)
+        q = ValueQuestion(
+            key=SUPPLY_KIND_KEY,
+            kind="supply_kind",
+            field="supply_kind",
+            column=columns.get("supply_kind"),
+            title=say("{n} [invoice|invoices] with another country: goods or services?", len(no_kind)),
+            help=f"{listed}. The account depends on it and it is never guessed. If they differ, add a "
+            "Leistungsart column (Ware / Dienstleistung) to your file.",
+            count=len(no_kind),
+            options=[
+                QuestionOption(value=SupplyKind.GOODS.value, label="Goods (Ware)"),
+                QuestionOption(value=SupplyKind.SERVICES.value, label="Services (Dienstleistung)"),
+                QuestionOption(value="skip", label="Do not export them"),
+            ],
+            answer=answer if answer in (SupplyKind.GOODS.value, SupplyKind.SERVICES.value, "skip") else None,
+        )
+        questions.append(q)
+        if q.answer in (SupplyKind.GOODS.value, SupplyKind.SERVICES.value):
+            nature = SupplyKind(q.answer)
+            answered = []
+            for i, d in candidates:
+                if i in no_kind:
+                    scope, zone, rate = no_kind[i]
+                    cat = vat_category(scope, zone, nature, rate)
+                    d = d.model_copy(update={"lines": [d.lines[0].model_copy(update={"category": cat})]})
+                answered.append((i, d))
+            candidates = answered
+        else:
+            for i in no_kind:
+                skip(
+                    i,
+                    f"Invoice {val(i, 'document_number')}: goods or services is not known (Leistungsart), "
+                    + (
+                        "not exported (your choice)."
+                        if q.answer == "skip"
+                        else "waiting for your answer above."
+                    ),
+                    "supply_kind",
+                )
+            zero_docs += [(i, d) for i, d in candidates if i in no_kind]
+            candidates = [(i, d) for i, d in candidates if i not in no_kind]
+            if q.answer is None:
+                for scope, zone, rate in no_kind.values():
+                    for nature in SupplyKind:
+                        if (scope, zone, nature.value) in VAT_TREATMENTS:
+                            cat = vat_category(scope, zone, nature, rate)
+                            pending[cat.source_ref] = cat.name or cat.source_ref
 
     if zero_rows:
         listed = ", ".join(
@@ -430,7 +485,7 @@ def documents_from_rows(  # noqa: C901, PLR0912, PLR0915
                     + ": not exported.",
                     "zero_rate",
                 )
-            zero_docs = [(i, d) for i, d in candidates if i in zero_rows]
+            zero_docs += [(i, d) for i, d in candidates if i in zero_rows]
             candidates = [(i, d) for i, d in candidates if i not in zero_rows]
 
     if unknown_kinds:
@@ -453,18 +508,22 @@ def documents_from_rows(  # noqa: C901, PLR0912, PLR0915
         )
 
     every = [line for _, d in candidates for line in d.lines] + [
-        line for i, d in zero_docs for line in d.lines
+        line for i, d in zero_docs for line in d.lines if i not in no_kind
     ]
+    waiting = [line for i, d in zero_docs for line in d.lines if i in no_kind]
     documents = [d for _, d in candidates]
     rates = sorted(
-        {f"{x.tax_rate.normalize():f}" for x in every if x.tax_rate is not None}, key=float, reverse=True
+        {f"{x.tax_rate.normalize():f}" for x in [*every, *waiting] if x.tax_rate is not None},
+        key=float,
+        reverse=True,
     )
     return InvoiceTable(
         scope="PURCHASE" if purchase else "SALE",
         transforms=transforms,
         categories={
             x.category.source_ref: x.category.name or x.category.source_ref for x in every if x.category
-        },
+        }
+        | pending,
         rates=rates,
         documents=documents,
         row_of={d.source_ref: i + 1 for i, d in candidates},

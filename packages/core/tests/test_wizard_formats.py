@@ -538,5 +538,25 @@ def test_a_cross_border_sale_at_zero_rate_follows_the_zone_and_the_kind_of_suppl
     assert t.categories["vat:sale:eu:services:0"] == "Services to EU businesses at 0 % VAT"
     (skipped,) = t.skipped
     assert (skipped.row, skipped.kind) == (5, "supply_kind")
-    assert "goods or services is not known (Leistungsart), never guessed" in skipped.reason
+    assert skipped.reason.endswith(
+        "goods or services is not known (Leistungsart), waiting for your answer above."
+    )
     assert not any(q.key == ZERO_RATE_KEY for q in t.questions)
+
+
+def test_an_unknown_kind_of_supply_is_one_question_never_preselected():
+    from uie_core.wizard.cdm_accounting import SUPPLY_KIND_KEY
+
+    rows = [_i("RE-106", "2026-10-12", "780", "0", "0", "780", partner="1022")]  # sans colonne Leistungsart
+    vat = {"1022": ("valid", "DK")}
+    asked = documents_from_rows(INVOICES, rows, {}, "EUR", {}, partner_vat=vat)
+    (q,) = asked.questions
+    assert (q.key, q.suggested, q.answer, q.count) == (SUPPLY_KIND_KEY, None, None, 1)
+    assert [o.value for o in q.options] == ["GOODS", "SERVICES", "skip"]
+    assert "RE-106" in q.help and asked.documents == []
+    # comptes des deux natures possibles demandés d'avance (présélectionnés), utilisés après la réponse
+    assert set(asked.categories) == {"vat:sale:eu:goods:0", "vat:sale:eu:services:0"} and asked.rates == ["0"]
+    goods = documents_from_rows(INVOICES, rows, {}, "EUR", {SUPPLY_KIND_KEY: "SERVICES"}, partner_vat=vat)
+    assert goods.documents[0].lines[0].category.source_ref == "vat:sale:eu:services:0"
+    skipped = documents_from_rows(INVOICES, rows, {}, "EUR", {SUPPLY_KIND_KEY: "skip"}, partner_vat=vat)
+    assert skipped.documents == [] and skipped.skipped[0].reason.endswith("not exported (your choice).")
