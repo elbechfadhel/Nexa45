@@ -13,6 +13,7 @@ Rien n'est corrigé ni deviné ; une ligne qui ne peut pas être écrite est LIS
 - catégorie absente ;
 - taux de TVA absent (admis seulement pour une catégorie déclarée sans TVA par la table de la cible, `no_vat`)
   ou non admis dans le pays à la date de la ligne ;
+- paiement par CARTE inscrit en caisse (mot de données dans le texte de l'écriture, jamais dans la remarque) ;
 - même numéro de pièce deux fois : contenu identique → écrite une fois ; contenu différent → aucune des deux.
 Contrôles du LIVRE (tel qu'il est écrit, dans l'ordre du fichier, depuis la ligne d'ouverture) :
 - solde recalculé (ouverture + recettes − dépenses) comparé à la colonne du solde : écart signalé, jamais
@@ -24,6 +25,7 @@ Références de la source préfixées « file: » ; la remarque libre n'est jama
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable
 from datetime import date
 from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
@@ -78,6 +80,17 @@ def _amount(text: str) -> Decimal | None:
         return Decimal(text) if text else None
     except InvalidOperation:
         return None
+
+
+def _words(text: str) -> str:
+    return " " + " ".join(re.findall(r"[^\W_]+", text.casefold())) + " "
+
+
+def card_word(table: FileTableSpec, text: str) -> str | None:
+    """Mot de paiement par carte (données du tableau) trouvé dans le texte d'une ligne, mots entiers ; None :
+    aucun."""
+    words = _words(text)
+    return next((w for w in table.card_words if _words(w) in words), None)
 
 
 def is_opening(table: FileTableSpec, row: dict[str, str]) -> bool:
@@ -323,6 +336,16 @@ def documents_from_cash_rows(  # noqa: C901, PLR0912, PLR0915
             when = date.fromisoformat(val(i, "document_date"))
         except ValueError:
             skip(i, f"Entry {number}: no readable date: not exported.", "date")
+            continue
+        card = card_word(table, val(i, "booking_text"))
+        if card:
+            # paiement par carte inscrit dans la caisse : pas de l'argent liquide (texte de l'écriture)
+            skip(
+                i,
+                f"Entry {number}: “{val(i, 'booking_text')}” is a card payment ({card}), not cash: never "
+                "exported in the cash book (book it with your bank or card payments).",
+                "card_payment",
+            )
             continue
         cash_in, cash_out = _amount(val(i, "cash_in")), _amount(val(i, "cash_out"))
         if cash_in and cash_out:

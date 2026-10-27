@@ -850,7 +850,8 @@ def test_a_cash_book_becomes_entries_without_partner_and_every_trap_is_listed():
     assert reasons[27][0] == "cash_both"  # K-025 : recette ET dépense
     assert reasons[31][0] == "duplicate"  # second K-028 : exporté une fois
     assert reasons[33][0] == "rate" and "16 %" in reasons[33][1]  # K-030
-    assert len(t.documents) == 28 and all(d.partner is None for d in t.documents)  # K-020 : décision (solde)
+    # K-020 : décision (solde négatif) ; K-014 : paiement par carte
+    assert len(t.documents) == 27 and all(d.partner is None for d in t.documents)
     # recette : caisse au débit (ligne au crédit) ; dépense : ligne au débit ; montant brut, TVA déduite
     k027, k028 = docs["K-027"], docs["K-028"]
     assert k027.document_type == DocumentType.CASH_PAYMENT and k027.lines[0].gross_amount == Decimal("59.5")
@@ -906,3 +907,21 @@ def test_an_entry_out_of_date_order_is_information_and_still_exported():
         "exported as they are."
     )
     assert "K-029" in {d.number for d in t.documents}
+
+
+def test_a_card_payment_written_in_the_cash_book_is_never_exported_as_cash():
+    from uie_core.wizard.cdm_cash import card_word, documents_from_cash_rows
+
+    t = documents_from_cash_rows(INVOICES, _cash_rows(), {}, "EUR", {}, _no_vat)
+    reasons = {e.row: (e.kind, e.reason) for e in t.skipped}
+    assert reasons[15][0] == "card_payment" and "is a card payment (EC-Karte), not cash" in reasons[15][1]
+    assert "K-014" not in {d.number for d in t.documents}
+    # mots entiers du texte de l'écriture ; la remarque libre n'est jamais lue
+    assert card_word(INVOICES, "Tageslosung Laden") is None
+    assert card_word(INVOICES, "Umsatz Girocard Terminal") == "Girocard"
+    assert card_word(INVOICES, "Visabeantragung") is None
+    rows = _cash_rows()
+    rows[2] = {**rows[2], "remark": "Kartenzahlung"}  # K-002 : remarque seulement
+    assert "K-002" in {
+        d.number for d in documents_from_cash_rows(INVOICES, rows, {}, "EUR", {}, _no_vat).documents
+    }

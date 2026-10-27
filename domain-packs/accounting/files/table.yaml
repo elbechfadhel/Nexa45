@@ -147,3 +147,9 @@ tax_rates:
 # livre de caisse : texte d'une ligne d'ouverture (sans recette, dépense ni pièce) ; son solde = point de départ
 opening_words: [Anfangsbestand, Anfangssaldo, Übertrag, Uebertrag, Saldovortrag, Vortrag, Kassenvortrag,
                 Opening balance, Balance brought forward, Solde initial, Report à nouveau]
+
+# livre de caisse : mots d'un paiement par CARTE dans le texte de l'écriture (Buchungstext, jamais la remarque) :
+# pas de l'argent liquide, la ligne n'est pas exportée dans la caisse (signalée)
+card_words: [EC-Karte, EC Karte, ec-cash, Girocard, Kartenzahlung, Kartenzahlungen, Kreditkarte, Debitkarte,
+             Maestro, Mastercard, VISA, Kartenterminal, SumUp, card payment, credit card, debit card,
+             paiement par carte, carte bancaire]

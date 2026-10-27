@@ -79,6 +79,9 @@ class FileTableSpec(_Model):
     # texte d'une ligne d'OUVERTURE d'un livre de caisse (« Anfangsbestand ») : pas une écriture, son solde
     # est le point de départ du contrôle du solde
     opening_words: list[str] = []
+    # mots d'un PAIEMENT PAR CARTE dans le texte d'une ligne de caisse (« EC-Karte ») : pas de l'argent
+    # liquide ; lus dans le texte de l'écriture seulement, jamais dans une remarque libre
+    card_words: list[str] = []
     # pays du fichier quand aucun n'est donné (adresse sans pays, taux de TVA) ; None : jamais supposé
     home_country: str | None = None
 
