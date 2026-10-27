@@ -125,7 +125,7 @@ def test_type_mismatch_and_duplicate_target_go_to_review(targets_and_spec):
 @pytest.mark.parametrize(
     ("data", "name", "message"),
     [
-        (b"a,b\n1,2\n", "file.pdf", "Please upload an .xlsx or .csv file."),
+        (b"a,b\n1,2\n", "file.pdf", "Please upload an .xlsx, .csv or CAMT .xml file."),
         (b"", "empty.csv", "The file is empty."),
         (b"a;b\n", "header_only.csv", "The file has no data rows."),
         (b"PK\x03\x04garbage", "broken.xlsx", "We couldn't read this file. Please check its format."),
