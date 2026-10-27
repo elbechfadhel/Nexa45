@@ -18,6 +18,7 @@ from uie_core.exports.records import (
     ExportAccountAssignmentRecord,
     ExportDocumentRecord,
     ExportDocumentReleaseRecord,
+    ExportOpenItemRecord,
     ExportProfileRecord,
     ExportRunRecord,
 )
@@ -32,6 +33,7 @@ class DemoReset:
     documents: int  # pièces journalisées retirées
     runs: int  # fichiers générés retirés du journal
     profiles: int  # réglages retirés (seulement sur demande)
+    open_items: int = 0  # factures du registre des factures ouvertes retirées (et leurs règlements)
 
 
 def reset_file_exports(
@@ -93,6 +95,11 @@ def reset_file_exports(
                 ExportAccountAssignmentRecord.id.in_([a.id for a in accounts])
             )
         )
+    # registre des factures ouvertes du dossier (règlements : CASCADE) : supprimé avec l'état d'export
+    items = delete(ExportOpenItemRecord).where(ExportOpenItemRecord.organization_id == organization_id)
+    if client_key is not None:
+        items = items.where(ExportOpenItemRecord.client_key == client_key)
+    open_items = s.execute(items).rowcount or 0
     if run_ids:
         s.execute(delete(ExportRunRecord).where(ExportRunRecord.id.in_(run_ids)))
     removed_profiles = 0
@@ -117,7 +124,11 @@ def reset_file_exports(
             removed_profiles += 1
     s.flush()
     return DemoReset(
-        accounts=len(accounts), documents=len(doc_ids), runs=len(run_ids), profiles=removed_profiles
+        accounts=len(accounts),
+        documents=len(doc_ids),
+        runs=len(run_ids),
+        profiles=removed_profiles,
+        open_items=open_items,
     )
 
 

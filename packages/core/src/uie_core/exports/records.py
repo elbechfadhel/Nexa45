@@ -19,15 +19,18 @@ Aucune donnée de partenaire (nom, adresse, banque…) n'est stockée : seulemen
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
+from decimal import Decimal
 from typing import Any
 
 from sqlalchemy import (
     CheckConstraint,
+    Date,
     DateTime,
     ForeignKey,
     Index,
     Integer,
+    Numeric,
     String,
     UniqueConstraint,
     event,
@@ -95,6 +98,10 @@ class ExportAccountAssignmentRecord(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     # son pays (ISO), pour justifier une livraison intracommunautaire à 0 % ; jamais le numéro lui-même
     vat_status: Mapped[str | None] = mapped_column(String(10))
     vat_country: Mapped[str | None] = mapped_column(String(2))
+    # source FICHIER : nom et IBAN du partenaire de la liste exportée, pour reconnaître le payeur d'un relevé
+    # bancaire (rapprochement) ; voir docs/PROTECTION_DES_DONNEES_REGISTRE_DES_FACTURES.md
+    partner_name: Mapped[str | None] = mapped_column(String(200))
+    iban: Mapped[str | None] = mapped_column(String(34))
 
 
 class ExportRunRecord(UUIDPrimaryKeyMixin, TimestampMixin, Base):
@@ -269,4 +276,61 @@ class ExportDocumentReleaseRecord(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 def _export_document_records_are_immutable(mapper: Any, connection: Any, target: Any) -> None:  # noqa: ARG001
     raise ValueError(
         "export_document_records est un historique immuable : ajouter une ligne, jamais modifier"
+    )
+
+
+class ExportOpenItemRecord(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+    """Facture d'un dossier (source FICHIER) écrite dans un fichier : registre des factures OUVERTES (Offene
+    Posten), seul moyen de rapprocher un paiement d'un relevé bancaire (montant ouvert, partenaire). Champs
+    MINIMAUX (voir docs/PROTECTION_DES_DONNEES_REGISTRE_DES_FACTURES.md) ; supprimé avec le dossier (remise à
+    zéro) ou l'organisation. Montant ouvert = `amount` − paiements rapprochés (table des règlements)."""
+
+    __tablename__ = "export_open_items"
+    __table_args__ = (
+        UniqueConstraint(
+            "organization_id",
+            "client_key",
+            "target_system",
+            "target_product",
+            "document_ref",
+            name="uq_export_open_items_document",
+        ),
+    )
+
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        _UUID, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    client_key: Mapped[str | None] = mapped_column(String(60), index=True)  # dossier (mandant)
+    target_system: Mapped[str] = mapped_column(String(80), nullable=False)
+    target_product: Mapped[str] = mapped_column(String(80), nullable=False)
+    document_ref: Mapped[str] = mapped_column(String(120), nullable=False)  # référence opaque de la pièce
+    number: Mapped[str] = mapped_column(String(120), nullable=False)  # numéro de la facture (lettrage)
+    role: Mapped[str] = mapped_column(String(20), nullable=False)  # CUSTOMER | SUPPLIER
+    partner_ref: Mapped[str] = mapped_column(String(120), nullable=False)  # référence du partenaire
+    partner_name: Mapped[str | None] = mapped_column(String(200))  # nom écrit sur la facture
+    amount: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False)  # brut, signé (avoir < 0)
+    currency: Mapped[str] = mapped_column(String(3), nullable=False)
+    document_date: Mapped[date] = mapped_column(Date, nullable=False)
+    export_run_id: Mapped[uuid.UUID | None] = mapped_column(
+        _UUID, ForeignKey("export_runs.id", ondelete="SET NULL"), index=True
+    )
+
+
+class ExportOpenItemSettlementRecord(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+    """Paiement d'un relevé bancaire rapproché d'une facture du registre et écrit dans un fichier : le montant
+    réglé (positif) diminue le montant ouvert. Un paiement ne règle une facture qu'une fois."""
+
+    __tablename__ = "export_open_item_settlements"
+    __table_args__ = (
+        UniqueConstraint("open_item_id", "payment_ref", name="uq_export_open_item_settlements_payment"),
+    )
+
+    open_item_id: Mapped[uuid.UUID] = mapped_column(
+        _UUID, ForeignKey("export_open_items.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    payment_ref: Mapped[str] = mapped_column(String(120), nullable=False)  # référence opaque du mouvement
+    amount: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False)
+    settled_on: Mapped[date] = mapped_column(Date, nullable=False)
+    export_run_id: Mapped[uuid.UUID | None] = mapped_column(
+        _UUID, ForeignKey("export_runs.id", ondelete="SET NULL"), index=True
     )

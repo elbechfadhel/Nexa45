@@ -456,6 +456,7 @@ class PartnerExportService:
         organization_id: uuid.UUID | None = None,
         client_key: str = DEFAULT_CLIENT,
         vat: dict[str, tuple[str, str | None]] | None = None,
+        identity: dict[str, tuple[str, str | None]] | None = None,
     ) -> GeneratedFile:
         """Fichier pour des partenaires venus d'un FICHIER : réglages enregistrés dans le profil de
         l'organisation (une seule saisie, repris ensuite), numéros de compte réservés pour les lignes écrites
@@ -468,7 +469,7 @@ class PartnerExportService:
             raise ExportNotReady(
                 "Export settings are incomplete: " + "; ".join(exc.errors.values())
             ) from None
-        return self._write(self.profiles.target(system, product), saved, result, None, vat)
+        return self._write(self.profiles.target(system, product), saved, result, None, vat, identity)
 
     def _write(
         self,
@@ -477,9 +478,11 @@ class PartnerExportService:
         result: PartnerReadResult,
         iid: uuid.UUID | None,
         vat: dict[str, tuple[str, str | None]] | None = None,
+        identity: dict[str, tuple[str, str | None]] | None = None,
     ) -> GeneratedFile:
         """`vat` (source fichier) : état du numéro de TVA de chaque partenaire écrit, retenu avec son compte
-        (nouveau ou existant : un client corrigé et exporté de nouveau met l'état à jour)."""
+        (nouveau ou existant : un client corrigé et exporté de nouveau met l'état à jour) ; `identity` : son
+        nom et son IBAN, retenus de même (reconnaître le payeur d'un relevé bancaire)."""
         preview, accounts = self._build(target, profile, result, iid)  # réservation : lignes écrites
         written = [r for r in preview.records if r.status != RecordStatus.BLOCKED]
         if not written:
@@ -517,6 +520,7 @@ class PartnerExportService:
         new = 0
         for key in sorted(accounts.new & keep):
             state = (vat or {}).get(key[0], (None, None))
+            name, iban = (identity or {}).get(key[0], (None, None))
             self.s.add(
                 ExportAccountAssignmentRecord(
                     profile_id=profile.id,
@@ -528,10 +532,12 @@ class PartnerExportService:
                     export_run_id=run.id,
                     vat_status=state[0],
                     vat_country=state[1],
+                    partner_name=name,
+                    iban=iban,
                 )
             )
             new += 1
-        if vat:
+        if vat or identity:
             for row in self.s.scalars(
                 select(ExportAccountAssignmentRecord).where(
                     ExportAccountAssignmentRecord.profile_id == profile.id,
@@ -539,8 +545,12 @@ class PartnerExportService:
                     ExportAccountAssignmentRecord.source_ref.in_([k[0] for k in keep - accounts.new]),
                 )
             ):
-                if (row.source_ref, row.role) in keep and row.source_ref in vat:
+                if (row.source_ref, row.role) not in keep:
+                    continue
+                if vat and row.source_ref in vat:
                     row.vat_status, row.vat_country = vat[row.source_ref]
+                if identity and row.source_ref in identity:
+                    row.partner_name, row.iban = identity[row.source_ref]
         run.new_accounts = new
         self.s.flush()
         stamp = now.strftime("%Y%m%d_%H%M%S")

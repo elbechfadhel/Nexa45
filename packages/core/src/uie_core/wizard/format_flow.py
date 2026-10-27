@@ -16,6 +16,7 @@ from uie_core.accounting.target import AccountingTargetNotReady, ExportInvalid, 
 from uie_core.db.base import utcnow
 from uie_core.domains.model import DomainKey
 from uie_core.exports.documents import DocumentExportState
+from uie_core.exports.open_items import OpenItemRegister
 from uie_core.exports.records import ExportAccountAssignmentRecord, ExportValueMappingRecord
 from uie_core.exports.service import DEFAULT_CLIENT, ExportError, ExportNotReady
 from uie_core.identity.context import TenantContext
@@ -419,7 +420,14 @@ class FormatFlow:
             if generate:
                 try:
                     gen = exports.partners.file_generate(
-                        t.system, t.product, result, own, org, self.client, vat=built.vat
+                        t.system,
+                        t.product,
+                        result,
+                        own,
+                        org,
+                        self.client,
+                        vat=built.vat,
+                        identity=built.identity,
                     )
                 except (ExportNotReady, ExportError) as exc:
                     raise WizardInputError(str(exc)) from None
@@ -519,6 +527,12 @@ class FormatFlow:
             if gen is not None:
                 content, filename = gen.content, gen.filename
                 self._remember_mappings(org, choices)
+                if plan is not None and built.scope in ("SALE", "PURCHASE"):
+                    # factures écrites : registre des factures ouvertes du dossier (rapprochement bancaire)
+                    written = {r.document_ref for r in plan.rows}
+                    OpenItemRegister(self.svc.s, org, self.client, t.system, t.product).record_invoices(
+                        [d for d in built.documents if d.source_ref in written], gen.run.id
+                    )
         for message, idx in warnings.items():
             issues.append(
                 ValueIssue(

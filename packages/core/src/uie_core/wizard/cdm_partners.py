@@ -70,6 +70,8 @@ class PartnerTable(_Model):
     skipped: list[ExcludedRow]  # lignes non exportées (sans nom, doublon écarté, sans numéro)
     # source_ref → (valid | invalid | missing, pays ISO) : retenu avec le compte, sert aux factures à 0 %
     vat: dict[str, tuple[str, str | None]] = {}
+    # source_ref → (nom, IBAN valide ou None) : retenu avec le compte, reconnaît le payeur d'un relevé
+    identity: dict[str, tuple[str, str | None]] = {}
 
 
 def _legal_form(name: str, forms: list[str]) -> bool:
@@ -509,6 +511,9 @@ def partners_from_rows(  # noqa: C901, PLR0912, PLR0915
         )
     return PartnerTable(
         vat={ref: state for ref, state in vat_state.items() if ref in row_of},
+        identity={
+            p.source_ref: (p.name, p.bank_accounts[0].iban if p.bank_accounts else None) for p in partners
+        },
         partners=partners,
         row_of=row_of,
         issues=issues,
