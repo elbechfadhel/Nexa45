@@ -139,14 +139,17 @@ def test_a_cash_book_is_booked_on_the_cash_account_without_customer_or_supplier(
     assert applied["map:CATEGORY:cash:porto:0"] == ("4910", "usual_default")
     assert applied["map:CATEGORY:cash:bankeinzahlung"] == ("1360", "usual_default")
     assert applied["map:TAX:rate:PURCHASE:19"] == ("0009", "usual_default")
-    # Bewirtung (absente de la table) et Privatentnahme (forme juridique) : jamais devinées ; avec la
-    # Festschreibung, 3 questions (Berater, Mandant : réglages du dossier repris)
+    # solde négatif (K-020 : décision jamais présélectionnée), Bewirtung (absente de la table), Privatentnahme
+    # (forme juridique) : jamais devinés ; la Festschreibung n'est pas encore dans les réglages du dossier ici
     assert [q["decision"] for q in start["questions"]] == [
         "setting:lock_bookings",
+        "cash:negative",
         "map:CATEGORY:cash:bewirtung:19",
-        "map:CATEGORY:cash:privatentnahme",
     ]
-    assert start["more_questions"] == 0
+    assert start["more_questions"] == 1  # Privatentnahme
+    assert "map:CATEGORY:cash:privatentnahme" not in applied
+    serious = [i for i in pre["value_issues"] if i["severity"] == "serious"]
+    assert len(serious) == 1 and serious[0]["message"].startswith("The cash balance becomes negative with K-020")
     reasons = {e["row"]: (e["kind"], e["reason"]) for e in pre["excluded_rows"]}
     assert reasons[1][0] == "opening"
     assert "has no DATEV mapping yet" in reasons[17][1] and "has no DATEV mapping yet" in reasons[18][1]

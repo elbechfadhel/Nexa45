@@ -200,16 +200,19 @@ export function rowsText(rows, count, max = ROWS_SHOWN) {
   return more > 0 ? `${head} and ${more} more` : head;
 }
 
-/** @typedef {{ kind: string, severity?: "not_written" | "to_check", rows?: number[], count: number, fix?: string, message: string }} Problem */
+/** @typedef {{ kind: string, severity?: "not_written" | "to_check" | "serious" | "info", rows?: number[], count: number, fix?: string, message: string }} Problem */
 
-/** Problèmes du fichier préparé en deux groupes : valeurs NON écrites (y compris celles écartées par un choix de
- * l'utilisateur : rien n'est caché), puis valeurs écrites (ou absentes) à vérifier avant l'import.
+/** Problèmes du fichier préparé par groupe : anomalies GRAVES (en tête de page), valeurs NON écrites (y compris
+ * celles écartées par un choix de l'utilisateur : rien n'est caché), valeurs écrites (ou absentes) à vérifier
+ * avant l'import, informations.
  * @template {Problem} T
  * @param {T[]} issues
- * @returns {{ notWritten: T[], toCheck: T[] }} */
+ * @returns {{ serious: T[], notWritten: T[], toCheck: T[], info: T[] }} */
 export function problemGroups(issues) {
   return {
+    serious: issues.filter((i) => i.severity === "serious"),
     notWritten: issues.filter((i) => (i.severity ?? "not_written") === "not_written"),
     toCheck: issues.filter((i) => i.severity === "to_check"),
+    info: issues.filter((i) => i.severity === "info"),
   };
 }

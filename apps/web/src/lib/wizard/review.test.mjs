@@ -231,3 +231,21 @@ test("each issue has its own key, even several target warnings without a column"
   assert.match(page, /key=\{issueKey\(i\)\}/);
   assert.doesNotMatch(page, /key=\{`\$\{i\.kind\}-\$\{i\.column\}`\}/);
 });
+
+test("a serious anomaly of the file is shown at the top, information last", () => {
+  const groups = problemGroups([
+    { kind: "cash_negative", severity: "serious", rows: [21, 22], count: 2, message: "negative" },
+    { kind: "cash_balance_differs", severity: "to_check", rows: [34], count: 1, message: "differs" },
+    { kind: "cash_order", severity: "info", rows: [32], count: 1, message: "order" },
+  ]);
+  assert.deepEqual(
+    [groups.serious, groups.notWritten, groups.toCheck, groups.info].map((g) => g.map((i) => i.kind)),
+    [["cash_negative"], [], ["cash_balance_differs"], ["cash_order"]],
+  );
+  const page = readFileSync(
+    join(dirname(fileURLToPath(import.meta.url)), "..", "..", "components", "wizard-simple", "result-screen.tsx"),
+    "utf8",
+  );
+  // en tête : avant la liste des lignes non importées
+  assert.ok(page.indexOf("problems.serious.map") < page.indexOf("preview.excluded_count > 0"));
+});

@@ -13136,7 +13136,9 @@
             "default": "not_written",
             "enum": [
               "not_written",
-              "to_check"
+              "to_check",
+              "serious",
+              "info"
             ],
             "title": "Severity",
             "type": "string"

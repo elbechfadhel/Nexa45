@@ -329,7 +329,8 @@ class ValueIssueOut(_Out):
     message: str
     rows: list[int] = []  # lignes du fichier du client (1 = première ligne de données), au plus 200
     fix: str = ""  # solution simple
-    severity: Literal["not_written", "to_check"] = "not_written"  # non écrite | écrite, à vérifier
+    # non écrite | écrite, à vérifier | anomalie grave (affichée en tête) | information
+    severity: Literal["not_written", "to_check", "serious", "info"] = "not_written"
 
 
 class ValueTransformOut(_Out):

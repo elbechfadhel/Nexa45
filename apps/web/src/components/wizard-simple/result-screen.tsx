@@ -69,7 +69,12 @@ export function ResultScreen({
         ? L.toCompleteHelp
         : L.preparedHelp;
   const excluded = excludedGroups(preview.excluded_rows);
-  const problems = problemGroups(preview.value_issues) as { notWritten: Issue[]; toCheck: Issue[] };
+  const problems = problemGroups(preview.value_issues) as {
+    serious: Issue[];
+    notWritten: Issue[];
+    toCheck: Issue[];
+    info: Issue[];
+  };
   const currencyNotice = currencyNoticeText(preview, start.data_type);
 
   return (
@@ -101,6 +106,18 @@ export function ResultScreen({
           {updateError && (
             <p className="rounded-md border border-danger/35 bg-danger/10 p-3 text-danger">{updateError.message}</p>
           )}
+          {/* anomalies graves du fichier (solde de caisse négatif…) : en tête, jamais corrigées */}
+          {problems.serious.map((i) => (
+            <div key={issueKey(i)} role="alert" className="space-y-0.5 rounded-md border border-danger/35 bg-danger/10 p-3">
+              <p className="font-medium text-danger">{i.message}</p>
+              {i.rows.length > 0 && <p className="meta text-muted-foreground">{rowsText(i.rows, i.count)}</p>}
+              {i.fix && (
+                <p className="meta">
+                  <span className="font-semibold">{L.fixLabel}:</span> {i.fix}
+                </p>
+              )}
+            </div>
+          ))}
 
           {preview.excluded_count > 0 && (
             <section className="space-y-2">
@@ -151,6 +168,7 @@ export function ResultScreen({
 
           <IssueList title={L.notWrittenHeading} help={L.notWrittenHelp} issues={problems.notWritten} />
           <IssueList title={L.toCheckHeading} issues={problems.toCheck} />
+          <IssueList title={L.infoHeading} issues={problems.info} />
 
           {preview.value_transforms.length > 0 && (
             <section className="space-y-2">

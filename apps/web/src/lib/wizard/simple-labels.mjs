@@ -181,6 +181,7 @@ export const SIMPLE_LABELS = {
   notWrittenHeading: "Values left empty",
   notWrittenHelp: "These values are not written; the rest of each row is imported.",
   toCheckHeading: "To check",
+  infoHeading: "For your information",
   transformsHeading: "Written differently",
   transformsHelp: "Same value, another spelling, as you decided above.",
   /** @param {number} n */

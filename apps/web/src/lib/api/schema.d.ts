@@ -7174,7 +7174,7 @@ export interface components {
              * @default not_written
              * @enum {string}
              */
-            severity: "not_written" | "to_check";
+            severity: "not_written" | "to_check" | "serious" | "info";
         };
         /**
          * ValueQuestionOut

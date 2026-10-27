@@ -55,7 +55,8 @@ class ValueIssue(_Model):
     # `count` = total
     rows: list[int] = []
     fix: str = ""  # solution simple pour l'utilisateur (jamais une valeur proposée à sa place)
-    # not_written : valeur NON écrite ; to_check : valeur écrite (ou absente) à vérifier avant l'import
+    # not_written : valeur NON écrite ; to_check : valeur écrite (ou absente) à vérifier avant l'import ;
+    # serious : anomalie grave du fichier (affichée en tête) ; info : information, rien à faire
     severity: str = "not_written"
 
 

@@ -14,6 +14,11 @@ Rien n'est corrigé ni deviné ; une ligne qui ne peut pas être écrite est LIS
 - taux de TVA absent (admis seulement pour une catégorie déclarée sans TVA par la table de la cible, `no_vat`)
   ou non admis dans le pays à la date de la ligne ;
 - même numéro de pièce deux fois : contenu identique → écrite une fois ; contenu différent → aucune des deux.
+Contrôles du LIVRE (tel qu'il est écrit, dans l'ordre du fichier, depuis la ligne d'ouverture) :
+- solde recalculé (ouverture + recettes − dépenses) comparé à la colonne du solde : écart signalé, jamais
+  corrigé ; sans ligne d'ouverture, le solde n'est pas contrôlé, et c'est dit ;
+- solde NÉGATIF (une caisse ne l'est jamais) : anomalie grave en tête ; l'écriture qui le fait passer sous
+  zéro attend une décision explicite, jamais présélectionnée ; les suivantes encore négatives sont nommées.
 Références de la source préfixées « file: » ; la remarque libre n'est jamais lue pour décider."""
 
 from __future__ import annotations
@@ -34,10 +39,12 @@ from uie_cdm import (
 
 from uie_core.mapping.suggestions import cash_category_ref
 from uie_core.sources.table import FileTableSpec
-from uie_core.wizard.values import ExcludedRow, ValueIssue, ValueQuestion, ValueTransform
+from uie_core.wizard.text import say
+from uie_core.wizard.values import ExcludedRow, QuestionOption, ValueIssue, ValueQuestion, ValueTransform
 
 FILE_REF = "file:"
 CENT = Decimal("0.01")
+NEGATIVE_KEY = "cash:negative"  # écriture qui rend le solde négatif : à exporter ou non (décision)
 
 
 class _Model(BaseModel):
@@ -81,6 +88,92 @@ def is_opening(table: FileTableSpec, row: dict[str, str]) -> bool:
     return bool(text) and text in words and empty
 
 
+def _money(value: Decimal) -> str:
+    return f"{value:.2f} €"
+
+
+def _check_balance(
+    val: Callable[[int, str], str], entries: list[int], opening: Decimal | None, columns: dict[str, str]
+) -> tuple[list[ValueIssue], list[int], list[int]]:
+    """(points signalés, lignes qui rendent le solde négatif, lignes encore négatives) : solde recalculé dans
+    l'ordre du fichier, comparé à la colonne du solde ; rien n'est corrigé."""
+    if opening is None:
+        return (
+            [
+                ValueIssue(
+                    field="cash_balance",
+                    column=columns.get("cash_balance", ""),
+                    kind="cash_no_opening",
+                    count=0,
+                    examples=[],
+                    message="No opening balance line (Anfangsbestand): the cash balance is not checked.",
+                    fix="Add the opening balance as the first line of your cash book.",
+                    severity="to_check",
+                )
+            ],
+            [],
+            [],
+        )
+    balance = opening
+    differ: list[tuple[int, Decimal, Decimal]] = []
+    crossing: list[int] = []
+    still: list[int] = []
+    lowest = Decimal(0)
+    negative = False
+    for i in entries:
+        balance += (_amount(val(i, "cash_in")) or Decimal(0)) - (_amount(val(i, "cash_out")) or Decimal(0))
+        written = _amount(val(i, "cash_balance"))
+        if written is not None and abs(written - balance) >= CENT / 2:
+            differ.append((i, written, balance))
+        if balance < 0:
+            lowest = min(lowest, balance)
+            # passage sous zéro depuis un solde positif : l'écriture qui rend la caisse négative ; ensuite :
+            # encore négative (nommée, exportée)
+            (still if negative else crossing).append(i)
+        negative = balance < 0
+    issues = []
+    if crossing:
+        names = ", ".join(val(i, "document_number") or f"row {i + 1}" for i in crossing)
+        after = ", ".join(val(i, "document_number") or f"row {i + 1}" for i in still)
+        issues.append(
+            ValueIssue(
+                field="cash_balance",
+                column=columns.get("cash_balance", ""),
+                kind="cash_negative",
+                count=len(crossing) + len(still),
+                examples=[],
+                message=f"The cash balance becomes negative with {names} (lowest {_money(lowest)})"
+                + (f", and stays negative with {after}" if after else "")
+                + ": a cash register can never be negative. Nothing is corrected.",
+                rows=[i + 1 for i in crossing + still],
+                fix="Check these entries in your cash book (a missing receipt, a wrong amount, a wrong "
+                "date).",
+                severity="serious",
+            )
+        )
+    if differ:
+        first = differ[0]
+        issues.append(
+            ValueIssue(
+                field="cash_balance",
+                column=columns.get("cash_balance", ""),
+                kind="cash_balance_differs",
+                count=len(differ),
+                examples=[f"{_money(w)} instead of {_money(b)}" for _, w, b in differ[:5]],
+                message=say(
+                    "{n} cash [balance differs|balances differ] from the balance recalculated from the "
+                    "opening balance",
+                    len(differ),
+                )
+                + f" (row {first[0] + 1}: {_money(first[1])} in your file, {_money(first[2])} recalculated): "
+                "never corrected, the entries are exported.",
+                rows=[i + 1 for i, _, _ in differ],
+                severity="to_check",
+            )
+        )
+    return issues, crossing, still
+
+
 def documents_from_cash_rows(  # noqa: C901, PLR0912, PLR0915
     table: FileTableSpec,
     rows: list[dict[str, str]],
@@ -92,7 +185,7 @@ def documents_from_cash_rows(  # noqa: C901, PLR0912, PLR0915
     """`rows` : une entrée par ligne (clé du tableau → valeur mise en forme : nombres en notation standard,
     dates ISO) ; `no_vat` : catégorie déclarée sans TVA par la table de la cible (un taux vide n'est admis que
     pour elle ; None : jamais admis)."""
-    del choices  # décisions propres à la caisse : commits suivants
+    choices = choices or {}
     skipped: list[ExcludedRow] = []
     issues: list[ValueIssue] = []
     questions: list[ValueQuestion] = []
@@ -116,6 +209,28 @@ def documents_from_cash_rows(  # noqa: C901, PLR0912, PLR0915
             )
             continue
         entries.append(i)
+
+    balance_issues, crossing, _ = _check_balance(val, entries, opening, columns)
+    issues += balance_issues
+    negative_answer = choices.get(NEGATIVE_KEY)
+    if crossing:
+        listed = ", ".join(val(i, "document_number") or f"row {i + 1}" for i in crossing)
+        q = ValueQuestion(
+            key=NEGATIVE_KEY,
+            kind="cash_negative",
+            field="cash_balance",
+            column=columns.get("cash_balance"),
+            title=say("{n} [entry makes|entries make] the cash balance negative", len(crossing)),
+            help=f"{listed}. A cash register can never be negative: check the cash book with your tax "
+            "advisor before exporting.",
+            count=len(crossing),
+            options=[
+                QuestionOption(value="export", label="Export it anyway (I checked the cash book)"),
+                QuestionOption(value="skip", label="Do not export it"),
+            ],
+            answer=negative_answer if negative_answer in ("export", "skip") else None,
+        )
+        questions.append(q)
 
     # même numéro de pièce plusieurs fois : contenu identique = saisie en double ; sinon conflit
     content_keys = ("document_date", "cash_in", "cash_out", "tax_rate", "cash_category")
@@ -148,6 +263,16 @@ def documents_from_cash_rows(  # noqa: C901, PLR0912, PLR0915
         number = val(i, "document_number")
         if i in twice:
             skip(i, *twice[i])
+            continue
+        if i in crossing and negative_answer != "export":
+            # jamais exportée sans la décision explicite (aucune présélection)
+            skip(
+                i,
+                f"Entry {number or f'of row {i + 1}'}: the cash balance becomes negative here"
+                + (" (your choice)" if negative_answer == "skip" else ", waiting for your answer above")
+                + ": not exported.",
+                "cash_negative",
+            )
             continue
         if not number:
             skip(

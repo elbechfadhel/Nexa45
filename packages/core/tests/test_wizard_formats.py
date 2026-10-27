@@ -850,7 +850,7 @@ def test_a_cash_book_becomes_entries_without_partner_and_every_trap_is_listed():
     assert reasons[27][0] == "cash_both"  # K-025 : recette ET dépense
     assert reasons[31][0] == "duplicate"  # second K-028 : exporté une fois
     assert reasons[33][0] == "rate" and "16 %" in reasons[33][1]  # K-030
-    assert len(t.documents) == 29 and all(d.partner is None for d in t.documents)
+    assert len(t.documents) == 28 and all(d.partner is None for d in t.documents)  # K-020 : décision (solde)
     # recette : caisse au débit (ligne au crédit) ; dépense : ligne au débit ; montant brut, TVA déduite
     k027, k028 = docs["K-027"], docs["K-028"]
     assert k027.document_type == DocumentType.CASH_PAYMENT and k027.lines[0].gross_amount == Decimal("59.5")
@@ -865,4 +865,30 @@ def test_a_cash_book_becomes_entries_without_partner_and_every_trap_is_listed():
     assert t.category_scope["cash:barverkauf:19"] == "SALE" and t.category_scope["cash:porto:0"] == "PURCHASE"
     assert t.rates == {"SALE": ["19", "7"], "PURCHASE": ["19", "0"]}
     strict = documents_from_cash_rows(INVOICES, _cash_rows(), {}, "EUR", {}, no_vat=None)
-    assert {e.row for e in strict.skipped if e.kind == "rate"} >= {12, 18, 21, 22}  # jamais admis sans table
+    assert {e.row for e in strict.skipped if e.kind == "rate"} >= {12, 18, 22}  # jamais admis sans table
+
+
+def test_the_cash_balance_is_recalculated_and_a_negative_balance_is_a_serious_anomaly():
+    from uie_core.wizard.cdm_cash import NEGATIVE_KEY, documents_from_cash_rows
+
+    t = documents_from_cash_rows(
+        INVOICES, _cash_rows(), {"cash_balance": "Kassenbestand €"}, "EUR", {}, _no_vat
+    )
+    issues = {i.kind: i for i in t.issues}
+    negative = issues["cash_negative"]
+    assert negative.severity == "serious" and negative.rows == [21, 22, 23]  # K-020, puis K-021, K-022
+    assert negative.message.startswith("The cash balance becomes negative with K-020 (lowest -500.01 €)")
+    assert "stays negative with K-021, K-022" in negative.message
+    differs = issues["cash_balance_differs"]  # K-031 : 2419,67 dans le fichier, 2409,67 recalculé
+    assert (differs.rows, differs.severity) == ([34], "to_check")
+    assert "2419.67 € in your file, 2409.67 € recalculated" in differs.message
+    (q,) = [q for q in t.questions if q.key == NEGATIVE_KEY]
+    assert (q.suggested, q.answer, q.count) == (None, None, 1)  # jamais présélectionnée
+    assert "K-020" not in {d.number for d in t.documents}
+    assert {"K-021", "K-022"} <= {d.number for d in t.documents}  # encore négatives : exportées, nommées
+    done = documents_from_cash_rows(INVOICES, _cash_rows(), {}, "EUR", {NEGATIVE_KEY: "export"}, _no_vat)
+    assert "K-020" in {d.number for d in done.documents}
+    # sans ligne d'ouverture : solde non contrôlé, et c'est dit
+    rows = _cash_rows()[1:]
+    blind = documents_from_cash_rows(INVOICES, rows, {}, "EUR", {}, _no_vat)
+    assert [i.kind for i in blind.issues] == ["cash_no_opening"] and blind.opening_balance is None
