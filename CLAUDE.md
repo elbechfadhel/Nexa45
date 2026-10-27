@@ -1100,6 +1100,11 @@ Détail et décisions : **`docs/ROADMAP_STEUERBERATER.md`** (à lire avant tout 
   devinée), zone lue dans les listes de partenaires exportées (`eu_members`, état `non_eu`), comptes dans la
   table de données `domain-packs/accounting/datev/skr03_vat_accounts.yaml` (à valider par le Steuerberater),
   refus avec motif (0 % national, TVA étrangère, UE sans USt-IdNr, importation) ; détail dans la feuille de route.
+- Domaine 3 (livre de caisse, 2026-10-27) : type « Cash book » (colonnes de caisse, sans IA), écritures SANS
+  partenaire (Accounting CDM 1.3.0 `CASH_RECEIPT` / `CASH_PAYMENT`), Konto = compte propre déclaré par le binding
+  (`own_account`, réglage `cash_account`), comptes dans `domain-packs/accounting/datev/skr03_cash_accounts.yaml`
+  (à valider par le Steuerberater), contrôles du solde (recalcul, négatif en tête avec décision), carte, ordre ;
+  un montant reconnu seulement par l'IA est « à confirmer ».
 - Ordre : factures d'achat → TVA dans les écritures (§13b, UE, hors UE) → caisse ; point d'étape ; puis banque
   (CAMT, MT940), paie (rien avant la documentation officielle, protection des données des salariés d'abord).
 - Hors périmètre : déclarations fiscales (bilan, E-Bilanz, KSt, GewSt).

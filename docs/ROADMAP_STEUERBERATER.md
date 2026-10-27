@@ -25,7 +25,7 @@ Décisions de l'utilisateur, enregistrées le 2026-10-26. Ce fichier fait foi po
 1. **Factures d'achat (Eingangsrechnungen)** : Kreditoren, comptes de charges, TVA déductible.
 2. **TVA dans les écritures** : autoliquidation §13b, achats UE, pays hors UE. Codé (2026-10-26), test manuel
    à faire ; voir « Domaine 2 » ci-dessous.
-3. **Caisse (Kassenbuch)**.
+3. **Caisse (Kassenbuch)**. Codé (2026-10-27), test manuel à faire ; voir « Domaine 3 » ci-dessous.
 4. **Banque** : formats CAMT et MT940, rapprochement avec les factures.
 5. **Paie (LODAS / Lohn und Gehalt)** :
    - rien avant la documentation officielle du format d'import ;
@@ -74,3 +74,33 @@ Décisions D1-D7 validées par l'utilisateur ; mesure avant / après : `temp/RES
   aucune table des taux étrangers).
 - **Adresses étrangères vers DATEV** : la Postleitzahl de Debitoren/Kreditoren 5 n'admet que des chiffres (spec
   locale) : un code postal NL, PL, IE est laissé vide avec avertissement. Caractères hors cp1252 : plus tard.
+
+## Domaine 3 — le livre de caisse (2026-10-27)
+
+Décisions D1-D9 validées par l'utilisateur ; mesure avant / après : `temp/RESULTAT_DOMAINE3_MESURE.md`,
+`temp/RESULTAT_DOMAINE3.md`.
+
+- **Type « Cash book »** : reconnu par ses colonnes (Einnahme, Ausgabe, Kassenbestand, Buchungstext, Kategorie),
+  sans IA ; colonnes propres à chaque type de fichier (`TableColumn.data_types`).
+- **Écritures sans partenaire** : Accounting CDM 1.3.0, `CASH_RECEIPT` / `CASH_PAYMENT` ; recette = S, dépense =
+  H sur le compte de la caisse ; aucun Debitor ni Kreditor. Le binding déclare le compte propre (`own_account`) :
+  réglage `cash_account` du dossier, présélectionné à 1000, une caisse par fichier.
+- **Comptes** : table de DONNÉES `domain-packs/accounting/datev/skr03_cash_accounts.yaml`, « à valider par le
+  Steuerberater », présélection seulement :
+  - caisse 1000, Geldtransit 1360 ;
+  - Barverkauf 8400 / 8300 (automatiques), Bürobedarf 4930 (clé 0009), Porto 4910 ;
+  - Bankeinzahlung / Bankabhebung 1360, sans TVA ;
+  - Privatentnahme : sans TVA, compte jamais présélectionné (forme juridique) ; Bewirtung : absente (question).
+  Les réponses sont mémorisées pour le dossier.
+- **Contrôles** :
+  - ligne d'ouverture (mots de données) = point de départ du solde ; sans elle, solde non contrôlé, et c'est dit ;
+  - solde recalculé comparé à Kassenbestand (écart signalé, jamais corrigé) ;
+  - solde négatif = anomalie grave EN TÊTE ; seule l'écriture qui le fait passer sous zéro attend une décision
+    non présélectionnée ;
+  - ordre chronologique en information ;
+  - paiement par carte (mots de données dans le Buchungstext, jamais la remarque) jamais exporté ;
+  - recette et dépense sur une ligne, pièce absente, TVA vide hors catégorie sans TVA : refus avec motif.
+- **Buchungstext DATEV** : texte de la ligne + numéro de pièce.
+- **IA** : dans « Prepare data for DATEV », une colonne de MONTANT reconnue seulement par l'IA est « à
+  confirmer », jamais retenue d'office.
+
