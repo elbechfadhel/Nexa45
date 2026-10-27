@@ -598,6 +598,7 @@ def prepare(  # noqa: C901
     records: dict[str, RecordSheet] | None = None,
     units: UnitSettings | None = None,
     currency_from_system: bool = False,
+    keep_duplicates: bool = False,
     noun: str = "rows",
     import_defaults: dict[str, ImportDefault] | None = None,
     target_label: str = "The target",
@@ -642,7 +643,9 @@ def prepare(  # noqa: C901
     # montants : devise de chaque ligne (colonne de devises, sinon la valeur elle-même) ; jamais convertie
     found_currency = detect_currency(names, cells)
     money = [t for t in series if is_money(by_field[t])]
-    excluded: list[ExcludedRow] = duplicate_rows(cells, sorted(chosen))
+    # lignes identiques : écrites une fois ; un relevé bancaire décide lui-même de ses doublons
+    # (référence de la banque, décision « Export both »)
+    excluded: list[ExcludedRow] = [] if keep_duplicates else duplicate_rows(cells, sorted(chosen))
     currency: str | None = None
     notice: CurrencyNotice | None = None
     row_currency: list[str | None] = [None] * df.height

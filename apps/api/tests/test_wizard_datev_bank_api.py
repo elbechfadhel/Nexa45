@@ -201,3 +201,47 @@ def test_a_camt_statement_is_booked_on_the_bank_account_and_settles_the_exported
     again = _bank(c, _camt(MOVEMENTS[:1], "1000.00", "2545.81"), "Kontoauszug-2.camt053.xml")["start"]
     applied = {q["decision"]: (q["default"], q["default_from"]) for q in again["applied"]}
     assert applied["setting:bank_account"] == ("1210", "your_settings")
+
+
+def _csv_line(day: str, text: str, purpose: str, name: str, iban: str, amount: str) -> str:
+    cells = [BANK_IBAN, day, day, text, purpose, "", "", "NOTPROVIDED", "", "", "", name, iban, "", amount]
+    return ";".join(f'"{c}"' for c in [*cells, "EUR", "Umsatz gebucht"]) + "\n"
+
+
+CSV_HEADER = (
+    '"Auftragskonto";"Buchungstag";"Valutadatum";"Buchungstext";"Verwendungszweck";"Glaeubiger ID";'
+    '"Mandatsreferenz";"Kundenreferenz (End-to-End)";"Sammlerreferenz";"Lastschrift Ursprungsbetrag";'
+    '"Auslagenersatz Ruecklastschrift";"Beguenstigter/Zahlungspflichtiger";"Kontonummer/IBAN";'
+    '"BIC (SWIFT-Code)";"Betrag";"Waehrung";"Info"\n'
+)
+MUSTER = ("Muster Bürotechnik GmbH", "DE89370400440532013000")
+EXPORT = (
+    CSV_HEADER
+    # même mouvement que le relevé CAMT (paiement de RE-1) : jamais comptabilisé deux fois
+    + _csv_line("01.10.26", "GUTSCHRIFT", "RE-1", *MUSTER, "1545,81")
+    + _csv_line("04.11.26", "ENTGELTABSCHLUSS", "Entgelt Kontoführung 10/2026", "", "", "-12,90")
+    + _csv_line("04.11.26", "ENTGELTABSCHLUSS", "Entgelt Kontoführung 10/2026", "", "", "-12,90")
+)
+
+
+def test_a_bank_export_never_books_a_movement_twice_and_says_it_has_no_balances(world):  # noqa: F811
+    """Export « CSV-CAMT » après le relevé CAMT du même compte : le mouvement déjà exporté par le CAMT n'est
+    pas écrit une seconde fois ; deux lignes identiques sans référence de la banque : une fois (décision
+    « Export both » proposée) ; dates « TT.MM.JJ » de ce format : siècle déduit et listé (D7) ; soldes : non
+    contrôlables, dit."""
+    c = world["client"]
+    _folder(c)
+    rent = {"map:CATEGORY:bank:rent:DE27100777770209299700": "4210"}
+    first = _bank(c, STATEMENT, "Kontoauszug.camt053.xml", rent)
+    assert _download(c, first).status_code == 200
+    flow = _bank(c, EXPORT, "Umsaetze.csv")
+    start, pre = flow["start"], flow["preview"]
+    assert start["data_type"] == "Bank statement"
+    applied = {q["decision"]: q["default"] for q in start["applied"]}
+    assert applied["bank:duplicates"] == "once" and applied["century:1"] == "20"
+    reasons = {e["row"]: e["kind"] for e in pre["excluded_rows"]}
+    assert reasons == {1: "already_exported_movement", 3: "duplicate"}
+    assert pre["rows"] == 1  # les frais de novembre, une fois
+    kinds = {t["kind"] for t in pre["value_transforms"]}
+    assert "date_century" in kinds  # siècle complété : listé
+    assert any(i["kind"] == "bank_no_balance" for i in pre["value_issues"])

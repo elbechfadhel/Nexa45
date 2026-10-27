@@ -897,6 +897,16 @@ def check_column(  # noqa: C901, PLR0912, PLR0915
                         QuestionOption(value=c, label=f"{c}xx, like the other dates of this column")
                         for c in sorted(centuries)
                     ),
+                    # aucune autre date de la colonne ne le dit : siècle en cours proposé, jamais choisi seul
+                    *(
+                        [
+                            QuestionOption(
+                                value=f"{date.today().year // 100}", label=f"{date.today().year // 100}xx"
+                            )
+                        ]
+                        if not centuries
+                        else []
+                    ),
                     QuestionOption(value="skip", label="Leave these dates empty"),
                 ],
                 choices,
@@ -914,6 +924,8 @@ def check_column(  # noqa: C901, PLR0912, PLR0915
                     centuried.add(i)
         orders = {r.order for r in reads_d if r and r.order}
         both = [cleaned[i] for i, r in enumerate(reads_d) if r and r.options]
+        # lecture de chaque valeur ambiguë (siècle déjà complété le cas échéant) : exemples des deux ordres
+        readings = {cleaned[i]: r.options for i, r in enumerate(reads_d) if r and r.options}
         order: str | None = None
         # ordre PROUVÉ par une autre valeur de la colonne (« 13.10.2026 » : le jour d'abord) : aucune
         # interprétation à lister ; décidé par la question : listé (« as decided », la décision est visible)
@@ -933,12 +945,12 @@ def check_column(  # noqa: C901, PLR0912, PLR0915
                     QuestionOption(
                         value="dmy",
                         label="Day first: 03/04/2024 = 3 April",
-                        examples=_pairs(both, lambda v: _read_date(v, False).options[0]),  # type: ignore[index]
+                        examples=_pairs(both, lambda v: readings[v][0]),
                     ),
                     QuestionOption(
                         value="mdy",
                         label="Month first: 03/04/2024 = March 4",
-                        examples=_pairs(both, lambda v: _read_date(v, False).options[1]),  # type: ignore[index]
+                        examples=_pairs(both, lambda v: readings[v][1]),
                     ),
                 ],
                 choices,

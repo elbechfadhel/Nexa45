@@ -363,11 +363,18 @@ class FormatFlow:
             (a.label for a in answers if a.topic == DATA_TYPE_TOPIC), self.fmt.table.data_types[0]
         )
         if data_type == BANK_STATEMENT:
-            # export bancaire déclaré : ses dates « TT.MM.JJ » sont du siècle en cours (D7) ; décision
-            # présélectionnée et listée en transformation, jamais pour un fichier quelconque
-            dates = {f.name for f in p.fields if f.type == "date"}
-            choices = {f"century:{d.position}": "20" for d in decisions if d.target in dates} | choices
-        summary, rows, pairs = prepare(p, data, file_name, decisions, choices=choices)
+            # export bancaire déclaré : ses dates « TT.MM.JJ » sont du siècle en cours, le jour d'abord (D7) ;
+            # décisions présélectionnées et listées en transformation, jamais pour un fichier quelconque
+            dates = [
+                d.position for d in decisions if d.target in {f.name for f in p.fields if f.type == "date"}
+            ]
+            declared = {f"century:{pos}": "20" for pos in dates} | {
+                f"date_order:{pos}": "dmy" for pos in dates
+            }
+            choices = declared | choices
+        summary, rows, pairs = prepare(
+            p, data, file_name, decisions, choices=choices, keep_duplicates=data_type == BANK_STATEMENT
+        )
         columns = {target: header for header, target in pairs}
         out = {e.row - 1 for e in summary.excluded_rows}
         table_rows = [

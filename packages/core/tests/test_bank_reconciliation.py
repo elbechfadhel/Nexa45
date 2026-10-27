@@ -186,3 +186,22 @@ def test_the_statement_balance_is_checked_or_said_to_be_uncheckable():
     csv = documents_from_bank_rows(TABLE, rows, {}, "EUR", OPEN, {}, balances=None)
     (none,) = [i for i in csv.issues if i.kind == "bank_no_balance"]
     assert none.message.endswith("the account balance cannot be checked in this format.")
+
+
+def test_identical_movements_without_a_bank_reference_are_exported_once_unless_both_are_chosen():
+    from uie_core.wizard.cdm_bank import DUPLICATE_KEY
+
+    cloud = mv("2026-11-10", "-1190.00", "Papier Union Großhandel GmbH", "R-99200")
+    t = documents_from_bank_rows(TABLE, [cloud, dict(cloud)], {}, "EUR", OPEN, {})
+    assert len(t.documents) == 1 and [(e.row, e.kind) for e in t.skipped] == [(2, "duplicate")]
+    (q,) = t.questions
+    assert (q.key, q.suggested, [o.value for o in q.options]) == (DUPLICATE_KEY, "once", ["once", "both"])
+    both = documents_from_bank_rows(TABLE, [cloud, dict(cloud)], {}, "EUR", OPEN, {DUPLICATE_KEY: "both"})
+    # le second paiement trouve la facture déjà réglée par le premier (montant ouvert diminué dans le fichier)
+    assert len(both.documents) == 1 and [e.kind for e in both.skipped] == ["settled"]
+    # une référence de la banque différente : deux mouvements, jamais des doublons
+    refs = [{**cloud, "bank_reference": "R1"}, {**cloud, "bank_reference": "R2"}]
+    fees = [{**r, "purpose": "Entgelt Kontoführung 10/2026", "counterparty_name": ""} for r in refs]
+    two = documents_from_bank_rows(TABLE, fees, {}, "EUR", OPEN, {})
+    assert len(two.documents) == 2 and two.questions == []
+    assert two.documents[0].source_ref != two.documents[1].source_ref

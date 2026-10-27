@@ -45,6 +45,7 @@ from uie_core.wizard.values import ExcludedRow, QuestionOption, ValueIssue, Valu
 
 FILE_REF = "file:"
 CONFIRM_KEY = "bank:confirm:"  # paiement proposé pour une facture (même partenaire, même montant) : décision
+DUPLICATE_KEY = "bank:duplicates"  # mouvements identiques SANS référence de la banque : une fois, ou les deux
 
 
 class _Model(BaseModel):
@@ -211,6 +212,42 @@ def documents_from_bank_rows(  # noqa: C901, PLR0912, PLR0915
     documents: list[tuple[int, AccountingDocument]] = []
     settlements: dict[str, list[tuple[str, Decimal]]] = {}
     seen: dict[str, int] = {}
+    first_row: dict[str, int] = {}
+    # montant ouvert de chaque facture, diminué par les paiements déjà rapprochés DANS ce fichier
+    left = {x.document_ref: x.open_amount for x in open_items}
+    # même mouvement deux fois dans le fichier : une référence de la banque différente = deux mouvements
+    # (jamais des doublons) ; sans référence = doublon probable, écrit une fois sauf décision « Export both »
+    twins = [
+        i
+        for i in range(len(rows))
+        if any(rows[i].values())
+        and not val(i, "bank_reference")
+        and any(
+            j < i and not val(j, "bank_reference") and fingerprint(rows[j]) == fingerprint(rows[i])
+            for j in range(len(rows))
+        )
+    ]
+    keep_both = choices.get(DUPLICATE_KEY) == "both"
+    if twins:
+        questions.append(
+            ValueQuestion(
+                key=DUPLICATE_KEY,
+                kind="bank_duplicates",
+                field="amount",
+                column=columns.get("amount"),
+                title=say("{n} movement [appears|appear] twice in your file", len(twins)),
+                help="Same date, amount, counterparty and payment reference, and no bank reference to tell "
+                "them apart: usually the same movement exported twice.",
+                count=len(twins),
+                options=[
+                    QuestionOption(value="once", label="Export it once"),
+                    QuestionOption(value="both", label="Export both: they are two real movements"),
+                ],
+                suggested="once",
+                suggested_by="rule",
+                answer=choices.get(DUPLICATE_KEY) if choices.get(DUPLICATE_KEY) in ("once", "both") else None,
+            )
+        )
     for i in range(len(rows)):
         if not any(rows[i].values()):
             continue
@@ -224,6 +261,15 @@ def documents_from_bank_rows(  # noqa: C901, PLR0912, PLR0915
             skip(i, "No readable booking date: not exported.", "date")
             continue
         fp = fingerprint(rows[i])
+        if i in twins and not keep_both:
+            skip(
+                i,
+                f"Same movement as row {first_row.get(fp, 0) + 1} (no bank reference to tell them apart): "
+                "exported once.",
+                "duplicate",
+            )
+            continue
+        first_row.setdefault(fp, i)
         seen[fp] = seen.get(fp, 0) + 1
         source_ref = f"{FILE_REF}bank:{fp}" + (f"#{seen[fp]}" if seen[fp] > 1 else "")
         receipt = amount > 0
@@ -276,13 +322,22 @@ def documents_from_bank_rows(  # noqa: C901, PLR0912, PLR0915
                     i, f"{what}: the invoices cited belong to different partners: never guessed.", "mismatch"
                 )
                 continue
-            if any(x.open_amount <= 0 for x in found):
-                paid = ", ".join(x.number for x in found if x.open_amount <= 0)
+            if any(source_ref.split("#")[0] in {r.split("#")[0] for r in x.settled_by} for x in found):
+                # même mouvement qu'un paiement déjà exporté (relevé précédent) : jamais deux fois
+                skip(
+                    i,
+                    f"{what}: same movement as a payment already exported for invoice "
+                    f"{', '.join(x.number for x in found)}: never booked twice.",
+                    "already_exported_movement",
+                )
+                continue
+            if any(left[x.document_ref] <= 0 for x in found):
+                paid = ", ".join(x.number for x in found if left[x.document_ref] <= 0)
                 skip(i, f"{what}: invoice {paid} is already settled: not exported.", "settled")
                 continue
-            open_total = sum((x.open_amount for x in found), Decimal(0))
+            open_total = sum((left[x.document_ref] for x in found), Decimal(0))
             if bank == open_total:
-                parts = [(x, x.open_amount) for x in found]
+                parts = [(x, left[x.document_ref]) for x in found]
             elif len(found) == 1 and bank < open_total:
                 parts = [(found[0], bank)]  # paiement partiel (D9) : le reste reste ouvert
                 partial.append((i, found[0].number, open_total - bank))
@@ -332,6 +387,8 @@ def documents_from_bank_rows(  # noqa: C901, PLR0912, PLR0915
                 )
             )
             settlements[source_ref] = [(x.document_ref, paid) for x, paid in parts]
+            for x, paid in parts:
+                left[x.document_ref] -= paid
             continue
         # 2. mouvement hors factures (mots du motif, de la contrepartie ou du libellé de la banque)
         text = " ".join(p for p in (purpose, name, val(i, "bank_text")) if p)
@@ -375,7 +432,7 @@ def documents_from_bank_rows(  # noqa: C901, PLR0912, PLR0915
             same = [
                 x
                 for x in by_role.get(role, [])
-                if x.open_amount == bank
+                if left[x.document_ref] == bank
                 and ((iban and x.partner_iban == iban) or _same_name(x.partner_name, name))
             ]
             if len(same) == 1:
@@ -448,6 +505,7 @@ def documents_from_bank_rows(  # noqa: C901, PLR0912, PLR0915
                     )
                 )
                 settlements[source_ref] = [(target.document_ref, bank)]
+                left[target.document_ref] -= bank
                 continue
             skip(
                 i,
