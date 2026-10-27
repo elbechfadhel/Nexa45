@@ -245,3 +245,48 @@ def test_a_bank_export_never_books_a_movement_twice_and_says_it_has_no_balances(
     kinds = {t["kind"] for t in pre["value_transforms"]}
     assert "date_century" in kinds  # siècle complété : listé
     assert any(i["kind"] == "bank_no_balance" for i in pre["value_issues"])
+
+
+NOVEMBER = (
+    CSV_HEADER
+    + _csv_line(
+        "03.11.26",
+        "DAUERAUFTRAG",
+        "Miete 11/2026",
+        "Immobilien Vogel GbR",
+        "DE27100777770209299700",
+        "-1500,00",
+    )
+    + _csv_line("05.11.26", "GUTSCHRIFT", "Rechnung RE-6", "Alpen Handels GmbH", "", "3200,00")
+)
+
+
+def test_bank_questions_stay_few_and_answers_are_remembered_for_the_folder(world):  # noqa: F811
+    """Au plus 3 questions par fichier ; le loyer de novembre reprend la réponse d'octobre (même IBAN de la
+    contrepartie, « from your settings ») ; numéro inconnu mais même partenaire et même montant qu'une facture
+    ouverte : proposé « à confirmer », jamais rapproché sans la réponse."""
+    c = world["client"]
+    _folder(c)
+    rent = "map:CATEGORY:bank:rent:DE27100777770209299700"
+    october = _bank(c, STATEMENT, "Kontoauszug.camt053.xml", {rent: "4210"})
+    assert len(october["start"]["questions"]) <= 3
+    assert _download(c, october).status_code == 200
+
+    flow = _bank(c, NOVEMBER, "Umsaetze.csv")
+    start, pre = flow["start"], flow["preview"]
+    asked = {q["decision"] for q in start["questions"]}
+    assert len(asked) <= 3 and rent not in asked
+    applied = {q["decision"]: (q["default"], q["default_from"]) for q in start["applied"]}
+    assert applied[rent] == ("4210", "your_settings")
+    confirm = [q for q in pre["value_questions"] if q["kind"] == "bank_confirm"]
+    assert [q["title"] for q in confirm] == ["Payment from Alpen Handels GmbH: is it invoice RE-3?"]
+    assert {e["row"]: e["kind"] for e in pre["excluded_rows"]} == {2: "bank_confirm"}
+
+    flow = _bank(c, NOVEMBER, "Umsaetze.csv", {confirm[0]["key"]: "settle"})
+    assert flow["preview"]["excluded_rows"] == []
+    res = _download(c, flow)
+    assert res.status_code == 200, res.text
+    _, rows = _rows(res.content)
+    paid = _by(rows, 11, "RE-3")
+    assert [paid[i] for i in (0, 1, 6, 7)] == ["3200,00", '"S"', "1200", "11004"]
+    assert next(r for r in rows if r[7] == "4210")[1] == '"H"'
