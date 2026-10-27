@@ -1545,9 +1545,10 @@ def _prepare(  # noqa: PLR0913
     }
     for ref, bs in derived.items():
         for bk in bs.bookings:
-            kind, src, code0, name0 = _counter_key(bk)
-            code, name, docs = used.get((kind, src), (code0, name0, set()))
-            used[(kind, src)] = (code, name, docs | {ref})
+            if bk.settles is None:  # facture réglée : le compte du partenaire, aucune correspondance
+                kind, src, code0, name0 = _counter_key(bk)
+                code, name, docs = used.get((kind, src), (code0, name0, set()))
+                used[(kind, src)] = (code, name, docs | {ref})
             tax_key = _tax_key(bk, scopes[ref])
             if tax_key is not None:
                 code, name, docs = used.get(tax_key[:2], (tax_key[2], None, set()))
@@ -1763,9 +1764,11 @@ def _document(
     role = doc.partner.role.value if doc.partner else None
     partner_account = partner_numbers.get((doc.partner.source_ref, role or "")) if doc.partner else None
     partner_issue = None
-    if doc.partner is None:
-        # pièce SANS partenaire (écriture de caisse) : compte propre du dossier, jamais un compte inventé
-        partner_account, partner_issue = _own_account(target, values, "cash")
+    own_kind = "cash" if doc.document_type.is_cash else "bank" if doc.document_type.is_bank else None
+    settled_account = partner_account  # paiement : le compte du partenaire devient la contrepartie
+    if own_kind is not None:
+        # écriture de caisse ou de banque : compte propre du dossier dans le Konto, jamais un compte inventé
+        partner_account, partner_issue = _own_account(target, values, own_kind)
     elif b.partner_account:
         fd = target.resolved.field(b.partner_account.field)
         who = "Customer" if role == "CUSTOMER" else "Supplier"
@@ -1810,8 +1813,18 @@ def _document(
     bookings = []
     for bk in bs.bookings:
         issues: list[TargetIssue] = [partner_issue] if partner_issue else []
-        kind, src, _, _ = _counter_key(bk)
-        counter, issue = _resolve(target, mappings, kind, src)
+        if bk.settles is not None:
+            # facture réglée : contrepartie = compte du client / fournisseur attribué par l'export de la liste
+            counter, issue = settled_account, None
+            if counter is None and doc.partner is not None:
+                issue = TargetIssue(
+                    level=IssueLevel.BLOCKING,
+                    message=f"{doc.partner.name} has no {_name(target)} account yet: export your customers & "
+                    "suppliers first",
+                )
+        else:
+            kind, src, _, _ = _counter_key(bk)
+            counter, issue = _resolve(target, mappings, kind, src)
         if issue:
             issues.append(issue)
         tax_value, tax_none = None, False
@@ -1829,8 +1842,11 @@ def _document(
             "partner_side": bk.partner_side.value,
             "currency": doc.currency,
             "accounting_date": doc.accounting_date,
-            "number": doc.number,
-            "booking_text": text,
+            # paiement : Belegfeld 1 = numéro de la facture réglée (lettrage)
+            "number": bk.settles.number if bk.settles else doc.number,
+            "booking_text": ", ".join(p for p in (doc.partner.name, bk.settles.number) if p)
+            if bk.settles and doc.partner
+            else text,
         }
         rec = map_record(
             view,

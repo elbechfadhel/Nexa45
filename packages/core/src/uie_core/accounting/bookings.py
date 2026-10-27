@@ -23,7 +23,7 @@ from decimal import Decimal
 from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict
-from uie_cdm import AccountingDocument, LedgerAccountRef, LineKind, PostingCategoryRef, TaxRef
+from uie_cdm import AccountingDocument, LedgerAccountRef, LineKind, PostingCategoryRef, SettlementRef, TaxRef
 
 ZERO = Decimal("0")
 
@@ -47,6 +47,8 @@ class Booking(_Model):
     counter_account: LedgerAccountRef | None  # None : ligne(s) classée(s) par catégorie (CDM 1.1)
     tax: TaxRef | None
     counter_category: PostingCategoryRef | None = None  # catégorie de la source, sans compte
+    # paiement (CDM 1.4) : facture réglée ; la contrepartie est le compte du partenaire, choisi par la cible
+    settles: SettlementRef | None = None
     tax_rate: Decimal | None = None  # taux de TVA quand la source ne donne qu'un taux (sans TaxRef)
     net_amount: Decimal  # signé, côté contrepartie (somme des montants HT du groupe)
     gross_amount: Decimal  # signé, côté contrepartie (somme des montants TTC du groupe)
@@ -87,6 +89,8 @@ def gross_bookings(doc: AccountingDocument) -> BookingSet:
             continue
         if line.account is not None:
             counter = f"account:{line.account.source_ref}"
+        elif line.settles is not None:
+            counter = f"settles:{line.settles.source_ref}"  # une écriture par facture réglée
         else:
             assert line.category is not None  # garanti par le CDM 1.1
             counter = f"category:{line.category.source_ref}"
@@ -112,6 +116,7 @@ def gross_bookings(doc: AccountingDocument) -> BookingSet:
                 counter_account=first.account,
                 tax=first.taxes[0] if first.taxes else None,
                 counter_category=first.category if first.account is None else None,
+                settles=first.settles,
                 tax_rate=first.tax_rate if not first.taxes else None,
                 net_amount=net,
                 gross_amount=gross,

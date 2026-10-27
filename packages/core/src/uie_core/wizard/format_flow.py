@@ -16,7 +16,7 @@ from uie_core.accounting.target import AccountingTargetNotReady, ExportInvalid, 
 from uie_core.db.base import utcnow
 from uie_core.domains.model import DomainKey
 from uie_core.exports.documents import DocumentExportState
-from uie_core.exports.open_items import OpenItemRegister
+from uie_core.exports.open_items import OpenItemRegister, Settlement
 from uie_core.exports.records import ExportAccountAssignmentRecord, ExportValueMappingRecord
 from uie_core.exports.service import DEFAULT_CLIENT, ExportError, ExportNotReady
 from uie_core.identity.context import TenantContext
@@ -25,6 +25,7 @@ from uie_core.mapping import IssueLevel, RecordStatus
 from uie_core.mapping.suggestions import CashAccountRegistry
 from uie_core.partners import PartnerReadResult
 from uie_core.wizard.cdm_accounting import FILE_REF, category, documents_from_rows
+from uie_core.wizard.cdm_bank import documents_from_bank_rows
 from uie_core.wizard.cdm_cash import documents_from_cash_rows
 from uie_core.wizard.cdm_partners import partners_from_rows
 from uie_core.wizard.formats import (
@@ -193,6 +194,13 @@ class FormatFlow:
         # décisions du moteur de valeurs et du constructeur du CDM (sur les réponses présélectionnées)
         state = self._state(answers, p, data, file_name, decisions, choices)
         decided = [from_value_question(q) for q in state["questions"]]
+        preselected = {q.decision: q.default for q in decided if q.decision and q.default}
+        if any(choices.get(k) != v for k, v in preselected.items()):
+            # décisions présélectionnées (devise du fichier…) appliquées : les montants et les catégories qui
+            # en dépendent sont connus, leurs comptes sont demandés d'avance
+            choices |= preselected
+            state = self._state(answers, p, data, file_name, decisions, choices)
+            decided = [from_value_question(q) for q in state["questions"]]
         choices |= {q.decision: q.default for q in decided if q.decision and q.default}
         mappings = self._mapping_questions(state, choices)
         choices |= {q.decision: q.default for q in mappings if q.decision and q.default}
@@ -238,7 +246,7 @@ class FormatFlow:
             return []
         built = state["built"]
         chart = self._chart(choices)
-        if built.scope == "CASH":
+        if built.scope in ("CASH", "BANK"):
             # livre de caisse : recettes (sens vente) et dépenses (sens achat), clés de taxe de chaque sens
             out: list[QuickQuestion] = []
             for scope in ("SALE", "PURCHASE"):
@@ -373,6 +381,18 @@ class FormatFlow:
                 choices,
                 no_vat=cash.without_vat if cash else None,
             )
+        elif data_type == BANK_STATEMENT:
+            # relevé bancaire : rapprochement avec le registre des factures ouvertes du dossier (règles)
+            t = self.fmt.binding.target
+            org = self._org()
+            built = documents_from_bank_rows(
+                self.fmt.table,
+                table_rows,
+                columns,
+                own.get("currency") or summary.currency or "EUR",
+                OpenItemRegister(self.svc.s, org, self.client, t.system, t.product).items() if org else [],
+                choices,
+            )
         else:
             currency = own.get("currency") or summary.currency or "EUR"
             built = documents_from_rows(
@@ -464,7 +484,9 @@ class FormatFlow:
                 content, filename = gen.content, gen.filename
         else:
             # mot des pièces dans les messages : écritures d'un livre de caisse, sinon factures
-            one, many = ("entry", "entries") if built.scope == "CASH" else ("invoice", "invoices")
+            one, many = {"CASH": ("entry", "entries"), "BANK": ("movement", "movements")}.get(
+                built.scope, ("invoice", "invoices")
+            )
             result, span = self._documents(built, own, shared, choices)
             decided = mapping_decisions(choices, {})
             try:
@@ -566,6 +588,22 @@ class FormatFlow:
                     written = {r.document_ref for r in plan.rows}
                     OpenItemRegister(self.svc.s, org, self.client, t.system, t.product).record_invoices(
                         [d for d in built.documents if d.source_ref in written], gen.run.id
+                    )
+                if plan is not None and built.scope == "BANK":
+                    # paiements rapprochés écrits : règlements au registre (le montant ouvert diminue)
+                    written = {r.document_ref for r in plan.rows}
+                    register = OpenItemRegister(self.svc.s, org, self.client, t.system, t.product)
+                    ids = {i.document_ref: i.id for i in register.items()}
+                    dated = {d.source_ref: d.accounting_date for d in built.documents}
+                    register.record_settlements(
+                        [
+                            Settlement(ids[ref], payment, paid, dated[payment])
+                            for payment, parts in built.settlements.items()
+                            if payment in written
+                            for ref, paid in parts
+                            if ref in ids
+                        ],
+                        gen.run.id,
                     )
         for message, idx in warnings.items():
             issues.append(
