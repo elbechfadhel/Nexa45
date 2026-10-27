@@ -17,6 +17,12 @@ ligne ITEM qui a une catégorie) et leur TVA par taux (`tax_rate`, `tax_amount`)
 OPEN_ITEM n'est inventée : une telle pièce n'est pas une écriture complète (`missing_accounts`) tant qu'une
 correspondance catégorie → compte n'a pas été confirmée.
 
+1.4.0 (ADDITIF) : mouvements d'un RELEVÉ BANCAIRE (`BANK_RECEIPT` entrée d'argent, `BANK_PAYMENT` sortie) :
+partenaire FACULTATIF (présent quand le paiement est rapproché d'une facture) ; une ligne ITEM qui RÈGLE une
+facture porte `settles` (référence opaque et numéro de la facture réglée) au lieu d'un compte ou d'une
+catégorie ; un mouvement hors factures (frais, dépôt, impôt) a une ligne ITEM par catégorie, sans TVA. Le
+compte de la banque est celui du dossier, choisi par la cible.
+
 1.3.0 (ADDITIF) : écritures d'un LIVRE DE CAISSE (`CASH_RECEIPT` recette, `CASH_PAYMENT` dépense) : SANS
 partenaire (une caisse n'a ni client ni fournisseur) ; une ligne ITEM par catégorie et taux, comme une facture
 d'une source sans plan comptable (recette au crédit, dépense au débit) ; le compte de la caisse est celui du
@@ -37,7 +43,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from uie_cdm.partner import PartnerRole
 
-ACCOUNTING_MODEL_VERSION = "1.3.0"
+ACCOUNTING_MODEL_VERSION = "1.4.0"
 
 
 class _Model(BaseModel):
@@ -51,24 +57,35 @@ class DocumentType(StrEnum):
     VENDOR_CREDIT_NOTE = "VENDOR_CREDIT_NOTE"
     CASH_RECEIPT = "CASH_RECEIPT"  # 1.3.0 : recette d'un livre de caisse (sans partenaire)
     CASH_PAYMENT = "CASH_PAYMENT"  # 1.3.0 : dépense d'un livre de caisse (sans partenaire)
+    BANK_RECEIPT = "BANK_RECEIPT"  # 1.4.0 : entrée d'argent d'un relevé bancaire (partenaire facultatif)
+    BANK_PAYMENT = "BANK_PAYMENT"  # 1.4.0 : sortie d'argent d'un relevé bancaire (partenaire facultatif)
 
     @property
     def is_cash(self) -> bool:
         return self in (DocumentType.CASH_RECEIPT, DocumentType.CASH_PAYMENT)
 
     @property
+    def is_bank(self) -> bool:
+        return self in (DocumentType.BANK_RECEIPT, DocumentType.BANK_PAYMENT)
+
+    @property
     def partner_role(self) -> PartnerRole | None:
         """Rôle du partenaire de la pièce : client pour les pièces de vente, fournisseur pour les achats ;
         None : écriture de caisse (aucun partenaire)."""
-        if self.is_cash:
-            return None
+        if self.is_cash or self.is_bank:
+            return None  # caisse : aucun partenaire ; banque : celui de la facture réglée, s'il y en a une
         customer = self in (DocumentType.CUSTOMER_INVOICE, DocumentType.CUSTOMER_CREDIT_NOTE)
         return PartnerRole.CUSTOMER if customer else PartnerRole.SUPPLIER
 
     @property
     def scope(self) -> str:
         """Sens de la pièce pour la TVA : SALE (vente, recette) ou PURCHASE (achat, dépense)."""
-        sale = (DocumentType.CUSTOMER_INVOICE, DocumentType.CUSTOMER_CREDIT_NOTE, DocumentType.CASH_RECEIPT)
+        sale = (
+            DocumentType.CUSTOMER_INVOICE,
+            DocumentType.CUSTOMER_CREDIT_NOTE,
+            DocumentType.CASH_RECEIPT,
+            DocumentType.BANK_RECEIPT,
+        )
         return "SALE" if self in sale else "PURCHASE"
 
     @property
@@ -127,6 +144,13 @@ class PostingCategoryRef(_Model):
     name: str | None = None
 
 
+class SettlementRef(_Model):
+    """Facture réglée par un paiement (1.4.0) : référence opaque de la pièce et son numéro (lettrage)."""
+
+    source_ref: str = Field(min_length=1)
+    number: str = Field(min_length=1)
+
+
 class TaxRef(_Model):
     source_ref: str = Field(min_length=1)
     name: str = Field(min_length=1)
@@ -148,16 +172,23 @@ class DocumentLine(_Model):
     tax_rate: Decimal | None = None  # 1.1.0 : ITEM, taux en % quand la source ne donne qu'un taux
     tax_amount: Decimal | None = None  # 1.1.0 : ITEM, TVA de la ligne, même signe que `amount`
     supply_kind: SupplyKind | None = None  # 1.2.0 : ITEM, nature de l'opération quand la source la donne
+    settles: SettlementRef | None = (
+        None  # 1.4.0 : ITEM d'un paiement, facture réglée (sans compte ni catégorie)
+    )
 
     @model_validator(mode="after")
     def _classified(self) -> DocumentLine:
-        if self.account is None and not (self.kind == LineKind.ITEM and self.category is not None):
-            raise ValueError("une ligne a un compte (ou, pour une ligne ITEM, au moins une catégorie)")
+        classified = self.category is not None or self.settles is not None
+        if self.account is None and not (self.kind == LineKind.ITEM and classified):
+            raise ValueError(
+                "une ligne a un compte (ou, pour une ligne ITEM, une catégorie ou une facture réglée)"
+            )
         if self.kind != LineKind.ITEM and (
             self.category is not None
             or self.tax_rate is not None
             or self.tax_amount is not None
             or self.supply_kind is not None
+            or self.settles is not None
         ):
             raise ValueError("catégorie, TVA par taux et nature ne s'appliquent qu'à une ligne ITEM")
         return self
@@ -185,6 +216,8 @@ class AccountingDocument(_Model):
         if self.document_type.is_cash:
             if self.partner is not None:
                 raise ValueError("une écriture de caisse n'a pas de partenaire")
+        elif self.document_type.is_bank:
+            pass  # partenaire facultatif : celui de la facture réglée
         elif self.partner is None:
             raise ValueError("une facture ou un avoir a un partenaire")
         elif self.partner.role != self.document_type.partner_role:

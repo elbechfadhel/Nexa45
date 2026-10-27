@@ -200,3 +200,49 @@ def test_a_cash_book_entry_has_no_partner_and_says_its_direction():
         AccountingDocument(
             **receipt.model_dump(exclude={"document_type"}), document_type=DocumentType.CUSTOMER_INVOICE
         )
+
+
+def test_a_bank_payment_settles_an_invoice_with_an_optional_partner():
+    from uie_cdm import PostingCategoryRef, SettlementRef
+
+    paid = DocumentLine(
+        kind=LineKind.ITEM,
+        amount=Decimal("-1545.81"),
+        gross_amount=Decimal("-1545.81"),
+        settles=SettlementRef(source_ref="file:RE-2026042", number="RE-2026042"),
+    )
+    receipt = AccountingDocument(
+        source_ref="file:bank:1",
+        document_type=DocumentType.BANK_RECEIPT,
+        status=DocumentStatus.POSTED,
+        number="RE-2026042",
+        accounting_date=date(2026, 10, 1),
+        currency="EUR",
+        partner=PartnerRef(source_ref="file:1001", role=PartnerRole.CUSTOMER, name="Müller"),
+        total_amount=Decimal("1545.81"),
+        tax_amount=Decimal("0"),
+        lines=[paid],
+    )
+    assert receipt.document_type.is_bank and receipt.document_type.scope == "SALE"
+    assert receipt.lines[0].settles.number == "RE-2026042"
+    fee = DocumentLine(
+        kind=LineKind.ITEM,
+        amount=Decimal("12.90"),
+        gross_amount=Decimal("12.90"),
+        category=PostingCategoryRef(source_ref="bank:fees", name="Bank fees"),
+    )
+    payment = AccountingDocument(
+        **receipt.model_dump(exclude={"document_type", "partner", "lines"}),
+        document_type=DocumentType.BANK_PAYMENT,
+        lines=[fee],
+    )
+    assert payment.partner is None and payment.document_type.scope == "PURCHASE"  # sans partenaire
+    with pytest.raises(ValueError, match="facture réglée"):
+        DocumentLine(kind=LineKind.ITEM, amount=Decimal("1"))
+    with pytest.raises(ValueError, match="ITEM"):
+        DocumentLine(
+            kind=LineKind.TAX,
+            amount=Decimal("1"),
+            account=LedgerAccountRef(source_ref="a", code="1"),
+            settles=SettlementRef(source_ref="x", number="1"),
+        )
