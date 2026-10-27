@@ -15,6 +15,7 @@ dependencies = [
     "polars>=1.20",
     "fastexcel>=0.12",
     "xlsxwriter>=3.2",
+    "defusedxml>=0.7",  # relevés CAMT : XML venu d'un utilisateur (ni entités, ni bombe d'expansion)
 ]
 
 [build-system]

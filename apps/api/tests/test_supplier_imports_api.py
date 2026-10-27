@@ -145,7 +145,7 @@ def test_xlsx_and_bad_files(api):
     r = _upload(alice, "supplier_catalog.xlsx", XLSX)
     assert r.status_code == 201 and (r.json()["rows"], r.json()["columns"]) == (10, 8)
     r = _upload(alice, "notes.txt", b"hello")
-    assert r.status_code == 400 and r.json()["detail"] == "Please upload an .xlsx or .csv file."
+    assert r.status_code == 400 and r.json()["detail"] == "Please upload an .xlsx, .csv or CAMT .xml file."
     r = _upload(alice, "big.csv", b"a\n" + b"x\n" * (6 * 1024 * 1024))
     assert r.status_code == 400 and "too large" in r.json()["detail"]
 

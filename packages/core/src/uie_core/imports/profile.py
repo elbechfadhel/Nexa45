@@ -18,10 +18,12 @@ from pathlib import PurePath
 import polars as pl
 from pydantic import BaseModel, ConfigDict
 
+from uie_core.sources.camt import CamtError, camt_table
+
 MAX_FILE_BYTES = 10 * 1024 * 1024
 MAX_ROWS = 20_000
 MAX_COLUMNS = 200
-EXTENSIONS = {".csv": "csv", ".xlsx": "xlsx"}
+EXTENSIONS = {".csv": "csv", ".xlsx": "xlsx", ".xml": "xml"}  # .xml : relevé bancaire CAMT.053
 EXAMPLES = 3  # valeurs d'exemple distinctes par colonne (en mémoire seulement)
 TYPE_SHARE = 0.95  # part minimale des valeurs non vides pour retenir un type (le reste = valeurs invalides)
 
@@ -61,7 +63,7 @@ class FileProfile(BaseModel):
 def file_format(filename: str) -> str:
     fmt = EXTENSIONS.get(PurePath(filename).suffix.lower())
     if fmt is None:
-        raise ImportFileError("Please upload an .xlsx or .csv file.")
+        raise ImportFileError("Please upload an .xlsx, .csv or CAMT .xml file.")
     return fmt
 
 
@@ -75,7 +77,7 @@ def read_table(data: bytes, filename: str) -> tuple[str, pl.DataFrame]:
     if len(data) > MAX_FILE_BYTES:
         raise ImportFileError(f"The file is too large (maximum {MAX_FILE_BYTES // (1024 * 1024)} MB).")
     try:
-        df = _read_csv(data) if fmt == "csv" else _read_xlsx(data)
+        df = _read_csv(data) if fmt == "csv" else _read_xml(data) if fmt == "xml" else _read_xlsx(data)
     except ImportFileError:
         raise
     except Exception as exc:  # format corrompu : jamais le détail technique côté fournisseur
@@ -108,6 +110,14 @@ def profile_file(data: bytes, filename: str) -> FileProfile:
             )
         )
     return FileProfile(file_format=fmt, row_count=df.height, columns=columns)
+
+
+def _read_xml(data: bytes) -> pl.DataFrame:
+    """Relevé bancaire CAMT.053 → table (en-têtes d'un export bancaire) ; tout autre XML est refusé."""
+    try:
+        return camt_table(data)
+    except CamtError as exc:
+        raise ImportFileError(str(exc)) from None
 
 
 def _read_xlsx(data: bytes) -> pl.DataFrame:
