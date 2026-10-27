@@ -353,6 +353,7 @@ def mapping_questions(
             _, key, rate = ref.split(":")
             usual = from_table = table.account_for(key, Decimal(rate))
         default = saved.get(decision) or usual
+        note = cash_table.note_for(cash[0]) if cash is not None and cash_table is not None else None
         if saved.get(decision):
             help_text = "Your account from a previous file, preselected."
         elif from_table:
@@ -361,10 +362,12 @@ def mapping_questions(
             help_text = (
                 "Usual account of your chart of accounts, preselected: confirm it with your tax advisor."
             )
+        elif note:
+            help_text = note  # compte jamais présélectionné, pour une raison donnée par la table
         else:
             help_text = (
                 "Enter the account given by your tax advisor: an unknown category is never guessed."
-                if scope == "PURCHASE"
+                if scope == "PURCHASE" or cash is not None
                 else "Enter the account given by your tax advisor."
             )
         out.append(

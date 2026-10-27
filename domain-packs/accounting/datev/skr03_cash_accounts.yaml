@@ -11,7 +11,7 @@
 # mandant (question, jamais présélectionnée).
 
 kind: cash_accounts
-table_version: "1.0.0"
+table_version: "1.1.0"   # 1.1.0 : note de la Privatentnahme
 target: {system: datev, product: buchungsstapel}
 chart: "03"
 status: usual practice, to be validated by your tax advisor (Steuerberater)
@@ -31,4 +31,6 @@ categories:
   - {names: [Bankeinzahlung, Einzahlung Bank, Geldtransit], no_vat: true, account: "1360"}
   - {names: [Bankabhebung, Abhebung Bank, Bankauszahlung], no_vat: true, account: "1360"}
   # sans TVA, mais compte jamais présélectionné : il dépend de la forme juridique du mandant
-  - {names: [Privatentnahme, Privateinlage], no_vat: true}
+  - {names: [Privatentnahme, Privateinlage], no_vat: true,
+     note: "Its account depends on the legal form of the client (sole trader, partnership or company): it is never
+       preselected, ask your tax advisor."}

@@ -149,7 +149,9 @@ def test_a_cash_book_is_booked_on_the_cash_account_without_customer_or_supplier(
     assert start["more_questions"] == 1  # Privatentnahme
     assert "map:CATEGORY:cash:privatentnahme" not in applied
     serious = [i for i in pre["value_issues"] if i["severity"] == "serious"]
-    assert len(serious) == 1 and serious[0]["message"].startswith("The cash balance becomes negative with K-020")
+    assert len(serious) == 1 and serious[0]["message"].startswith(
+        "The cash balance becomes negative with K-020"
+    )
     reasons = {e["row"]: (e["kind"], e["reason"]) for e in pre["excluded_rows"]}
     assert reasons[1][0] == "opening"
     assert "has no DATEV mapping yet" in reasons[17][1] and "has no DATEV mapping yet" in reasons[18][1]
@@ -180,3 +182,26 @@ def test_a_cash_book_is_booked_on_the_cash_account_without_customer_or_supplier(
     k011 = _by(rows, 11, "K-011")  # dépôt à la banque : Geldtransit, sans TVA
     assert [k011[i] for i in (0, 1, 7, 8)] == ["1200,00", '"H"', "1360", '""']
     assert {r[6] for r in rows} == {"1000"}  # aucun Debitor ni Kreditor
+
+
+def test_an_account_never_guessed_is_asked_once_then_remembered_for_the_folder(world):  # noqa: F811
+    """Bewirtung (absente de la table) et Privatentnahme (compte selon la forme juridique, dit dans l'aide) :
+    questions sans présélection ; la réponse donnée au téléchargement est reprise au fichier suivant du même
+    dossier (« from your settings »)."""
+    c = world["client"]
+    _same_folder(c)
+    answers = {
+        "setting:lock_bookings": "0",
+        "cash:negative": "skip",
+        "map:CATEGORY:cash:bewirtung:19": "4650",
+        "map:CATEGORY:cash:privatentnahme": "1800",
+    }
+    first = _flow(c, "Buchungsstapel 13", CASH_BOOK, "Kassenbuch.csv", answers)
+    asked = {q["decision"] for q in first["start"]["questions"]}
+    assert "map:CATEGORY:cash:bewirtung:19" in asked  # jamais présélectionné
+    assert _download(c, first).status_code == 200
+    again = _flow(c, "Buchungsstapel 13", CASH_BOOK, "Kassenbuch-2.csv")["start"]
+    applied = {q["decision"]: (q["default"], q["default_from"]) for q in again["applied"]}
+    assert applied["map:CATEGORY:cash:bewirtung:19"] == ("4650", "your_settings")
+    assert applied["map:CATEGORY:cash:privatentnahme"] == ("1800", "your_settings")
+    assert applied["setting:cash_account"] == ("1000", "your_settings")

@@ -925,3 +925,16 @@ def test_a_card_payment_written_in_the_cash_book_is_never_exported_as_cash():
     assert "K-002" in {
         d.number for d in documents_from_cash_rows(INVOICES, rows, {}, "EUR", {}, _no_vat).documents
     }
+
+
+def test_an_account_never_preselected_says_why_in_its_question():
+    from uie_core.wizard.formats import format_target, mapping_questions
+
+    fmt = format_target("datev", "buchungsstapel", "13", "DATEV Buchungsstapel 13")
+    assert fmt is not None
+    cats = {"cash:privatentnahme": "Privatentnahme (no VAT)", "cash:bewirtung:19": "Bewirtung at 19 % VAT"}
+    qs = {q.decision: q for q in mapping_questions(fmt, cats, ["19"], "03", {}, scope="PURCHASE")}
+    private = qs["map:CATEGORY:cash:privatentnahme"]
+    assert private.default is None and "depends on the legal form of the client" in private.question.help
+    meal = qs["map:CATEGORY:cash:bewirtung:19"]
+    assert meal.default is None and "never guessed" in meal.question.help

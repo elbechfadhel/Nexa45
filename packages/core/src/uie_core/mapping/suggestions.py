@@ -162,6 +162,7 @@ class CashCategory(_Spec):
     rate: Decimal | None = None
     no_vat: bool = False
     account: str | None = Field(default=None, pattern=r"^\d+$")
+    note: str | None = None  # pourquoi le compte n'est pas présélectionné (affiché avec la question)
 
 
 class CashAccountTable(_Spec):
@@ -188,6 +189,10 @@ class CashAccountTable(_Spec):
             if (rate is None and c.no_vat) or (rate is not None and c.rate == rate):
                 return c.account
         return None
+
+    def note_for(self, name: str) -> str | None:
+        """Note de la table sur cette catégorie (ex. compte selon la forme juridique)."""
+        return next((c.note for c in self._find(name) if c.note), None)
 
     def without_vat(self, name: str) -> bool:
         """Catégorie déclarée SANS TVA (un taux vide est admis pour elle, et seulement pour elle)."""
