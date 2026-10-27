@@ -699,3 +699,11 @@ test("a cash book: categories without VAT, a hint when the file is not recognize
   const card = readFileSync(join(here, "..", "..", "components", "wizard-simple", "download-card.tsx"), "utf8");
   assert.match(card, /!preview\.nothing_new && !nothingToWrite\(preview\)/);
 });
+
+test("start over is a fresh start: neither the file nor the target is kept", () => {
+  const wizard = readFileSync(join(here, "..", "..", "components", "wizard-simple", "simple-wizard.tsx"), "utf8");
+  const restart = wizard.slice(wizard.indexOf("function restart()"), wizard.indexOf("}", wizard.indexOf("function restart()")));
+  assert.match(restart, /setFile\(null\)/);
+  assert.match(restart, /setTarget\(""\)/);
+  assert.match(restart, /setScreen\("start"\)/);
+});

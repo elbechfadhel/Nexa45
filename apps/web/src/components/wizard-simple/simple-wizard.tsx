@@ -112,12 +112,15 @@ export function SimpleWizard({
     return () => clearTimeout(timer);
   }, [screen, start, edits, extra, input, refresh]);
 
+  // « Start over » : vrai départ à zéro (ni fichier, ni cible gardés)
   function restart() {
     quick.reset();
     check.reset();
     prepared.reset();
     setStart(null);
     setPreview(null);
+    setFile(null);
+    setTarget("");
     setScreen("start");
   }
 
