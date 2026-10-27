@@ -17,6 +17,11 @@ ligne ITEM qui a une catégorie) et leur TVA par taux (`tax_rate`, `tax_amount`)
 OPEN_ITEM n'est inventée : une telle pièce n'est pas une écriture complète (`missing_accounts`) tant qu'une
 correspondance catégorie → compte n'a pas été confirmée.
 
+1.3.0 (ADDITIF) : écritures d'un LIVRE DE CAISSE (`CASH_RECEIPT` recette, `CASH_PAYMENT` dépense) : SANS
+partenaire (une caisse n'a ni client ni fournisseur) ; une ligne ITEM par catégorie et taux, comme une facture
+d'une source sans plan comptable (recette au crédit, dépense au débit) ; le compte de la caisse est celui du
+dossier, choisi par la cible.
+
 1.2.0 (ADDITIF) : une ligne ITEM peut dire la NATURE de l'opération (`supply_kind` : marchandise ou prestation
 de service) quand la source la donne ; la TVA d'une opération internationale en dépend. Absente : inconnue,
 jamais déduite.
@@ -32,7 +37,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from uie_cdm.partner import PartnerRole
 
-ACCOUNTING_MODEL_VERSION = "1.2.0"
+ACCOUNTING_MODEL_VERSION = "1.3.0"
 
 
 class _Model(BaseModel):
@@ -44,12 +49,27 @@ class DocumentType(StrEnum):
     CUSTOMER_CREDIT_NOTE = "CUSTOMER_CREDIT_NOTE"
     VENDOR_BILL = "VENDOR_BILL"
     VENDOR_CREDIT_NOTE = "VENDOR_CREDIT_NOTE"
+    CASH_RECEIPT = "CASH_RECEIPT"  # 1.3.0 : recette d'un livre de caisse (sans partenaire)
+    CASH_PAYMENT = "CASH_PAYMENT"  # 1.3.0 : dépense d'un livre de caisse (sans partenaire)
 
     @property
-    def partner_role(self) -> PartnerRole:
-        """Rôle du partenaire de la pièce : client pour les pièces de vente, fournisseur pour les achats."""
+    def is_cash(self) -> bool:
+        return self in (DocumentType.CASH_RECEIPT, DocumentType.CASH_PAYMENT)
+
+    @property
+    def partner_role(self) -> PartnerRole | None:
+        """Rôle du partenaire de la pièce : client pour les pièces de vente, fournisseur pour les achats ;
+        None : écriture de caisse (aucun partenaire)."""
+        if self.is_cash:
+            return None
         customer = self in (DocumentType.CUSTOMER_INVOICE, DocumentType.CUSTOMER_CREDIT_NOTE)
         return PartnerRole.CUSTOMER if customer else PartnerRole.SUPPLIER
+
+    @property
+    def scope(self) -> str:
+        """Sens de la pièce pour la TVA : SALE (vente, recette) ou PURCHASE (achat, dépense)."""
+        sale = (DocumentType.CUSTOMER_INVOICE, DocumentType.CUSTOMER_CREDIT_NOTE, DocumentType.CASH_RECEIPT)
+        return "SALE" if self in sale else "PURCHASE"
 
     @property
     def is_credit_note(self) -> bool:
@@ -154,7 +174,7 @@ class AccountingDocument(_Model):
     document_date: date | None = None
     due_date: date | None = None
     currency: str = Field(pattern=r"^[A-Z]{3}$")  # ISO 4217
-    partner: PartnerRef
+    partner: PartnerRef | None = None  # 1.3.0 : absent pour une écriture de caisse, obligatoire sinon
     total_amount: Decimal = Field(ge=0)
     tax_amount: Decimal = Field(ge=0)
     lines: list[DocumentLine] = []
@@ -162,7 +182,12 @@ class AccountingDocument(_Model):
 
     @model_validator(mode="after")
     def _consistency(self) -> AccountingDocument:
-        if self.partner.role != self.document_type.partner_role:
+        if self.document_type.is_cash:
+            if self.partner is not None:
+                raise ValueError("une écriture de caisse n'a pas de partenaire")
+        elif self.partner is None:
+            raise ValueError("une facture ou un avoir a un partenaire")
+        elif self.partner.role != self.document_type.partner_role:
             raise ValueError("le rôle du partenaire ne correspond pas au type de pièce")
         if self.status == DocumentStatus.POSTED and not self.number:
             raise ValueError("une pièce comptabilisée a un numéro")

@@ -164,3 +164,39 @@ def test_category_line_without_account_is_kept_and_flagged():
 def test_unclassified_or_misplaced_lines_are_refused(line):  # noqa: ANN001
     with pytest.raises(ValidationError):
         DocumentLine(**line)
+
+
+def test_a_cash_book_entry_has_no_partner_and_says_its_direction():
+    from uie_cdm import PostingCategoryRef
+
+    line = DocumentLine(
+        kind=LineKind.ITEM,
+        amount=Decimal("-357"),
+        gross_amount=Decimal("-357"),
+        tax_rate=Decimal("19"),
+        tax_amount=Decimal("-57"),
+        category=PostingCategoryRef(source_ref="cash:barverkauf:19", name="Barverkauf at 19 % VAT"),
+    )
+    receipt = AccountingDocument(
+        source_ref="file:cash:K-028",
+        document_type=DocumentType.CASH_RECEIPT,
+        status=DocumentStatus.POSTED,
+        number="K-028",
+        accounting_date=date(2026, 9, 22),
+        currency="EUR",
+        total_amount=Decimal("357"),
+        tax_amount=Decimal("57"),
+        lines=[line],
+    )
+    assert receipt.partner is None and receipt.document_type.is_cash
+    assert receipt.document_type.partner_role is None and receipt.document_type.scope == "SALE"
+    assert DocumentType.CASH_PAYMENT.scope == "PURCHASE" and DocumentType.VENDOR_BILL.scope == "PURCHASE"
+    with pytest.raises(ValueError, match="pas de partenaire"):
+        AccountingDocument(
+            **receipt.model_dump(exclude={"partner"}),
+            partner=PartnerRef(source_ref="file:1", role=PartnerRole.CUSTOMER, name="X"),
+        )
+    with pytest.raises(ValueError, match="a un partenaire"):
+        AccountingDocument(
+            **receipt.model_dump(exclude={"document_type"}), document_type=DocumentType.CUSTOMER_INVOICE
+        )
