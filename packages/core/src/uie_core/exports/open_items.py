@@ -9,7 +9,8 @@ Voir docs/PROTECTION_DES_DONNEES_REGISTRE_DES_FACTURES.md. Aucun nom de système
 from __future__ import annotations
 
 import uuid
-from dataclasses import dataclass
+from collections.abc import Mapping
+from dataclasses import dataclass, field
 from datetime import date
 from decimal import Decimal
 
@@ -41,7 +42,8 @@ class OpenItem:
     open_amount: Decimal  # montant − règlements exportés
     currency: str
     document_date: date
-    settled_by: frozenset[str] = frozenset()  # mouvements bancaires qui l'ont réglée (références opaques)
+    # mouvements bancaires qui l'ont réglée (références opaques) → date de leur export (AAAA-MM-JJ)
+    settled_by: Mapping[str, str] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -123,13 +125,15 @@ class OpenItemRegister:
             .order_by(ExportOpenItemRecord.document_date, ExportOpenItemRecord.number)
         ).all()
         partners = self._partners({r.partner_ref for r, _ in rows})
-        payments: dict[uuid.UUID, set[str]] = {}
-        for item_id, ref in self.s.execute(
+        payments: dict[uuid.UUID, dict[str, str]] = {}
+        for item_id, ref, at in self.s.execute(
             select(
-                ExportOpenItemSettlementRecord.open_item_id, ExportOpenItemSettlementRecord.payment_ref
+                ExportOpenItemSettlementRecord.open_item_id,
+                ExportOpenItemSettlementRecord.payment_ref,
+                ExportOpenItemSettlementRecord.created_at,
             ).where(ExportOpenItemSettlementRecord.open_item_id.in_([r.id for r, _ in rows]))
         ):
-            payments.setdefault(item_id, set()).add(ref)
+            payments.setdefault(item_id, {})[ref] = at.date().isoformat() if at else ""
         out = []
         for r, paid in rows:
             name, iban, account = partners.get((r.partner_ref, r.role), (None, None, None))
@@ -147,7 +151,7 @@ class OpenItemRegister:
                     open_amount=r.amount - Decimal(paid),
                     currency=r.currency,
                     document_date=r.document_date,
-                    settled_by=frozenset(payments.get(r.id, set())),
+                    settled_by=payments.get(r.id, {}),
                 )
             )
         return out

@@ -65,6 +65,8 @@ class BankTable(_Model):
     transforms: list[ValueTransform] = []
     # paiement → factures réglées (registre) et montant réglé : inscrits au registre au téléchargement
     settlements: dict[str, list[tuple[str, Decimal]]] = {}
+    # mouvements déjà exportés par un relevé précédent : date de cet export → nombre (résumé)
+    already_exported: dict[str, int] = {}
 
 
 def _amount(text: str) -> Decimal | None:
@@ -194,6 +196,7 @@ def documents_from_bank_rows(  # noqa: C901, PLR0912, PLR0915
     et de clôture du relevé (CAMT) ; None : le format n'en donne pas (export tabulaire)."""
     choices = choices or {}
     skipped: list[ExcludedRow] = []
+    already: dict[str, int] = {}
     issues: list[ValueIssue] = []
     questions: list[ValueQuestion] = []
     partial: list[tuple[int, str, Decimal]] = []
@@ -322,14 +325,22 @@ def documents_from_bank_rows(  # noqa: C901, PLR0912, PLR0915
                     i, f"{what}: the invoices cited belong to different partners: never guessed.", "mismatch"
                 )
                 continue
-            if any(source_ref.split("#")[0] in {r.split("#")[0] for r in x.settled_by} for x in found):
-                # même mouvement qu'un paiement déjà exporté (relevé précédent) : jamais deux fois
+            done = sorted(
+                on
+                for x in found
+                for r, on in x.settled_by.items()
+                if r.split("#")[0] == source_ref.split("#")[0]
+            )
+            if done:
+                # même mouvement qu'un paiement déjà exporté (relevé précédent) : jamais deux fois ;
+                # résumé avec les pièces déjà exportées, par date de l'export
                 skip(
                     i,
                     f"{what}: same movement as a payment already exported for invoice "
                     f"{', '.join(x.number for x in found)}: never booked twice.",
-                    "already_exported_movement",
+                    "already_exported",
                 )
+                already[done[0]] = already.get(done[0], 0) + 1
                 continue
             if any(left[x.document_ref] <= 0 for x in found):
                 paid = ", ".join(x.number for x in found if left[x.document_ref] <= 0)
@@ -553,6 +564,7 @@ def documents_from_bank_rows(  # noqa: C901, PLR0912, PLR0915
         categories=categories,
         category_scope=scopes,
         settlements=settlements,
+        already_exported=already,
     )
 
 

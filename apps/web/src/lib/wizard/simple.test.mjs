@@ -645,6 +645,11 @@ test("invoices already exported are one summary line by date, the detail only in
     "27 invoices already exported (12 on 2026-10-25, 15 on 2026-10-26): not exported again",
   );
   assert.equal(alreadyExportedText({}, "Invoices"), "");
+  // relevé bancaire passé une seconde fois : les paiements déjà exportés, même résumé
+  assert.equal(
+    alreadyExportedText({ already_exported: [{ date: "2026-10-27", count: 16 }] }, "Bank statement"),
+    "16 bank movements already exported on 2026-10-27: not exported again",
+  );
   assert.equal(
     SIMPLE_LABELS.nothingNewHelp({ one: "invoice", many: "invoices" }),
     "Nothing new to export: every invoice of this file was already exported.",

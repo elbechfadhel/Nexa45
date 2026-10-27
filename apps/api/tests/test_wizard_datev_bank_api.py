@@ -240,7 +240,9 @@ def test_a_bank_export_never_books_a_movement_twice_and_says_it_has_no_balances(
     applied = {q["decision"]: q["default"] for q in start["applied"]}
     assert applied["bank:duplicates"] == "once" and applied["century:1"] == "20"
     reasons = {e["row"]: e["kind"] for e in pre["excluded_rows"]}
-    assert reasons == {1: "already_exported_movement", 3: "duplicate"}
+    assert reasons == {1: "already_exported", 3: "duplicate"}
+    # résumé sur une ligne, par date de l'export précédent (le détail reste dans `excluded_rows`)
+    assert [g["count"] for g in pre["already_exported"]] == [1]
     assert pre["rows"] == 1  # les frais de novembre, une fois
     kinds = {t["kind"] for t in pre["value_transforms"]}
     assert "date_century" in kinds  # siècle complété : listé

@@ -453,7 +453,8 @@ class FormatFlow:
         notices: list[str] = []
         content, filename = b"", ""
         status = "prepared"
-        already: dict[str, int] = {}  # date de l'export précédent → pièces déjà exportées
+        # date de l'export précédent → pièces déjà exportées (relevé : mouvements déjà rapprochés et exportés)
+        already: dict[str, int] = dict(getattr(built, "already_exported", {}))
         nothing_new = False
         warnings: dict[str, list[int]] = defaultdict(list)
         if self.fmt.domain == DomainKey.PARTNER:
