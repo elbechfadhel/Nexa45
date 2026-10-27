@@ -69,8 +69,14 @@ INVOICE_WORDS = frozenset(
     rechnungseingang eingangsrechnung eingangsrechnungen eingangsdatum kostenart kostenarten aufwand
     aufwandsart""".split()
 )
-# types de données des journaux de factures : ventes (factures de sortie) et achats (factures d'achat)
-INVOICES, PURCHASE_INVOICES = "Invoices", "Purchase invoices"
+# livre de caisse : recettes, dépenses, solde de la caisse (« cashin » : « Cash in » collé)
+CASH_WORDS = frozenset(
+    """einnahme einnahmen ausgabe ausgaben kassenbestand kassenstand kassensaldo kassenbuch bareinnahme
+    barausgabe cashin cashout recette recettes depense depenses encaissement decaissement""".split()
+)
+# types de données des journaux de factures : ventes (factures de sortie) et achats (factures d'achat) ;
+# livre de caisse (une ligne = une recette ou une dépense, sans client ni fournisseur)
+INVOICES, PURCHASE_INVOICES, CASH_BOOK = "Invoices", "Purchase invoices", "Cash book"
 MIN_SCORE = 3  # en-têtes reconnus au minimum, et au moins deux fois plus que l'autre sorte
 
 # type de données affiché → domaine du domain pack qui donne la structure
@@ -94,6 +100,9 @@ def infer_data_type(headers: list[str], options: list[str] | None = None) -> str
     """Type de données d'après les en-têtes, parmi `options` (types que la cible reçoit ; None : tous) ;
     None quand les règles ne tranchent pas (le LLM peut alors être consulté, parmi les mêmes types)."""
     words = [_words(h) for h in headers]
+    # recettes ET dépenses (au moins deux en-têtes de caisse) : un livre de caisse, avant les factures
+    if sum(1 for w in words if w & CASH_WORDS) >= 2:
+        return CASH_BOOK if options is None or CASH_BOOK in options else None
     product = sum(1 for w in words if w & PRODUCT_WORDS)
     partner = sum(1 for w in words if w & PARTNER_WORDS)
     invoice = sum(1 for w in words if w & INVOICE_WORDS)

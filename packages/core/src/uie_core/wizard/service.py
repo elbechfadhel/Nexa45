@@ -475,7 +475,7 @@ class MigrationWizardService:
         if fmt is not None:  # colonnes du tableau de source fichier : la clé est le nom du champ
             learned, not_relevant = self._learned_headers(code)
             return ColumnHints(
-                spec=fmt.table.semantic_spec(),
+                spec=fmt.table.semantic_spec({f.name for f in p.fields}),
                 field_keys={f.name: f.name for f in p.fields},
                 learned=learned,
                 not_relevant=not_relevant,

@@ -142,6 +142,18 @@ class FormatFlow:
             ),
         ]
         p, mapping = self.svc.map_file(answers, structure(self.fmt, data_type), data, file_name)
+        # un MONTANT reconnu seulement par l'IA n'est jamais retenu d'office : à confirmer (D9)
+        amounts = {f.name for f in p.fields if f.type == "decimal"}
+        mapping = mapping.model_copy(
+            update={
+                "columns": [
+                    c.model_copy(update={"status": ColumnStatus.TO_CONFIRM})
+                    if c.status == ColumnStatus.AI_MATCH and c.target in amounts
+                    else c
+                    for c in mapping.columns
+                ]
+            }
+        )
         decisions = [
             MappingDecision(position=c.position, target=c.target)
             for c in mapping.columns

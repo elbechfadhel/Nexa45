@@ -23,7 +23,7 @@ from uie_core.wizard.cdm_partners import (
     partners_from_rows,
 )
 from uie_core.wizard.formats import matched_keys
-from uie_core.wizard.quick import target_for_data_type
+from uie_core.wizard.quick import infer_data_type, target_for_data_type
 
 PARTNERS = FileTableRegistry.get(DomainKey.PARTNER)
 INVOICES = FileTableRegistry.get(DomainKey.ACCOUNTING)
@@ -672,3 +672,59 @@ def test_foreign_vat_invoiced_by_a_supplier_abroad_is_never_input_tax():
         "never booked as input tax: not exported.",
     )
     assert reasons[2][0] == "foreign_vat"
+
+
+CASH_HEADERS = [
+    "Datum",
+    "Beleg-Nr.",
+    "Buchungstext",
+    "Kategorie",
+    "Einnahme €",
+    "Ausgabe €",
+    "USt %",
+    "Kassenbestand €",
+    "Bemerkung",
+]
+
+
+def test_a_cash_book_is_its_own_kind_of_file_recognized_by_its_columns():
+    from uie_core.wizard.formats import data_type_of_file, format_target, structure
+    from uie_core.wizard.quick import CASH_BOOK
+
+    assert "Cash book" in INVOICES.data_types and CASH_BOOK == "Cash book"
+    assert infer_data_type(CASH_HEADERS) == CASH_BOOK  # règles, sans IA
+    fmt = format_target("datev", "buchungsstapel", "13", "DATEV Buchungsstapel 13")
+    assert fmt is not None and data_type_of_file(fmt, CASH_HEADERS) == CASH_BOOK
+    fields = {f.name for f in structure(fmt, CASH_BOOK).fields}
+    assert {
+        "cash_in",
+        "cash_out",
+        "cash_balance",
+        "booking_text",
+        "cash_category",
+        "document_number",
+    } <= fields
+    # ni client, ni fournisseur, ni montant de facture dans un livre de caisse
+    assert not {"partner_number", "supplier_number", "gross_amount", "expense_category"} & fields
+    # « Kategorie » : la catégorie de caisse ici, la Kostenart dans un journal d'achat (vocabulaire du type)
+    keys = {c.key for c in INVOICES.columns_for(CASH_BOOK)}
+    assert (
+        matched_keys(INVOICES.model_copy(update={"columns": INVOICES.columns_for(CASH_BOOK)}), CASH_HEADERS)
+        == {
+            "document_date",
+            "document_number",
+            "booking_text",
+            "cash_category",
+            "cash_in",
+            "cash_out",
+            "tax_rate",
+            "cash_balance",
+            "remark",
+        }
+        and "cash_category" in keys
+    )
+    # les journaux de factures ne changent pas
+    sales = ["Re-Nr.", "Re-Datum", "Kd-Nr.", "Kunde", "Netto €", "USt %", "USt €", "Brutto €"]
+    assert data_type_of_file(fmt, sales) == "Invoices" and "gross_amount" in {
+        f.name for f in structure(fmt, "Invoices").fields
+    }

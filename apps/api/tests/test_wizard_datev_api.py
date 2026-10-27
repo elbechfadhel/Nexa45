@@ -323,7 +323,7 @@ def test_an_unknown_data_type_is_chosen_by_the_user_and_the_targets_say_what_the
     c = world["client"]
     targets = {t["format"]: t for t in c.get("/api/wizard/targets").json() if t.get("system") == "datev"}
     assert targets["Buchungsstapel 13"]["latest"]
-    assert targets["Buchungsstapel 13"]["receives"] == ["Invoices", "Purchase invoices"]
+    assert targets["Buchungsstapel 13"]["receives"] == ["Invoices", "Purchase invoices", "Cash book"]
     assert targets["Buchungsstapel 13"]["product_name"] == "Buchungsstapel"
     assert targets["Debitoren/Kreditoren 5"]["receives"] == [
         "Customers & suppliers",
@@ -363,7 +363,7 @@ def test_a_journal_that_names_neither_customers_nor_suppliers_lets_the_user_choo
     target = _target(c, "Buchungsstapel 13")
     res = c.post("/api/wizard/quick-start", files=files, data={"payload": json.dumps({"target": target})})
     assert res.status_code == 422
-    assert res.json()["detail"]["data_types"] == ["Invoices", "Purchase invoices"]
+    assert res.json()["detail"]["data_types"] == ["Invoices", "Purchase invoices", "Cash book"]
     chosen = c.post(
         "/api/wizard/quick-start",
         files=files,
@@ -399,7 +399,7 @@ def test_a_file_of_another_kind_is_never_forced_into_the_only_kind_a_target_take
     assert res.status_code == 422
     detail = res.json()["detail"]
     assert detail["code"] == "data_type_unknown"
-    assert detail["data_types"] == ["Invoices", "Purchase invoices"]
+    assert detail["data_types"] == ["Invoices", "Purchase invoices", "Cash book"]
     assert "looks like a list of customers" in detail["message"]
     assert "Choose another target" in detail["message"]
     forced = c.post(

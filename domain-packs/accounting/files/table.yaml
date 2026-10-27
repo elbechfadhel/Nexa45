@@ -7,9 +7,10 @@
 # le net et la TVA servent au CONTRÔLE (net + TVA = brut, à 0,01 près ; jamais corrigé).
 # Taux de TVA admis : ceux du pays à la date de la facture (16 % / 5 % : taux temporaires de 2020, plus admis).
 
-table_version: "1.3.0"   # 1.1.0 : factures d'achat ; 1.2.0 : leurs colonnes ; 1.3.0 : Leistungsart
+table_version: "1.4.0"   # 1.1.0 : factures d'achat ; 1.2.0 : leurs colonnes ; 1.3.0 : Leistungsart ;
+                         # 1.4.0 : livre de caisse
 domain: ACCOUNTING
-data_types: ["Invoices", "Purchase invoices"]
+data_types: ["Invoices", "Purchase invoices", "Cash book"]
 home_country: DE
 
 columns:
@@ -29,21 +30,25 @@ columns:
     aliases: [re datum, rechnungsdatum, belegdatum, datum, invoice date, document date, date, date de facture]
   # numéro du client (ventes) OU du fournisseur (achats) : l'un des deux est exigé selon le type du fichier
   - key: partner_number
+    data_types: [Invoices, Purchase invoices]
     label: Customer number
     description: Number of the customer in the source; the same number as in the customer list.
     aliases: [kd nr, kdnr, kunden nr, kundennr, kundennummer, debitor, debitor nr, debitorennummer,
               customer no, customer number, numéro client]
   - key: supplier_number
+    data_types: [Invoices, Purchase invoices]
     label: Supplier number
     description: Number of the supplier in the source; the same number as in the supplier list.
     aliases: [lief nr, liefnr, lieferanten nr, lieferantennr, lieferantennummer, kreditor, kreditor nr,
               kreditorennummer, supplier no, supplier number, vendor no, vendor number, numéro fournisseur]
   - key: partner_name
+    data_types: [Invoices, Purchase invoices]
     label: Customer or supplier name
     description: Name of the customer or of the supplier as written on the invoice (booking text).
     aliases: [kunde, kundenname, name, firma, empfänger, customer, customer name, client,
               lieferant, lieferantenname, supplier, supplier name, vendor, vendor name, fournisseur]
   - key: expense_category
+    data_types: [Invoices, Purchase invoices]
     label: Expense category
     description: Kind of expense of a purchase invoice (Kostenart); its account is confirmed once, never
       guessed.
@@ -52,6 +57,7 @@ columns:
   # nature de l'opération : la TVA d'une vente ou d'un achat avec l'étranger en dépend ; vide ou autre
   # valeur → jamais devinée (ni depuis la catégorie, ni depuis une remarque)
   - key: supply_kind
+    data_types: [Invoices, Purchase invoices]
     label: Kind of supply
     description: Goods or services (Leistungsart); the VAT of a cross-border invoice depends on it.
     aliases: [leistungsart, art der leistung, umsatzart, lieferart, ware dienstleistung, kind of supply,
@@ -62,6 +68,7 @@ columns:
       SERVICES: [dienstleistung, dienstleistungen, sonstige leistung, leistung, service, services,
                  prestation, prestations, prestation de service, prestation de services]
   - key: net_amount
+    data_types: [Invoices, Purchase invoices]
     label: Net amount
     data_type: decimal
     group: amounts
@@ -73,11 +80,13 @@ columns:
     aliases: [ust %, mwst %, ust satz, mwst satz, steuersatz, umsatzsteuersatz, vat %, vat rate, tax rate,
               taux de tva, tva %]
   - key: tax_amount
+    data_types: [Invoices, Purchase invoices]
     label: VAT amount
     data_type: decimal
     group: amounts
     aliases: [ust €, mwst €, ust betrag, mwst betrag, umsatzsteuer, vat amount, tax amount, montant tva]
   - key: gross_amount
+    data_types: [Invoices, Purchase invoices]
     label: Gross amount
     data_type: decimal
     group: amounts
@@ -87,6 +96,43 @@ columns:
   - key: currency
     label: Currency
     aliases: [währung, waehrung, wkz, currency, devise]
+  # livre de caisse (Kassenbuch) : une ligne = une recette OU une dépense, sans client ni fournisseur ; le solde
+  # courant sert au CONTRÔLE (jamais corrigé) ; le texte de la ligne devient le texte de l'écriture
+  - key: cash_in
+    label: Cash in
+    description: Cash received (Einnahme) on this line of the cash book.
+    data_type: decimal
+    group: amounts
+    data_types: [Cash book]
+    aliases: [einnahme, einnahmen, einnahme €, einnahmen €, einnahme eur, bareinnahme, bareinnahmen,
+              kasseneingang, cash in, cash received, receipts, recette, recettes, encaissement]
+  - key: cash_out
+    label: Cash out
+    description: Cash paid (Ausgabe) on this line of the cash book.
+    data_type: decimal
+    group: amounts
+    data_types: [Cash book]
+    aliases: [ausgabe, ausgaben, ausgabe €, ausgaben €, ausgabe eur, barausgabe, barausgaben, kassenausgang,
+              cash out, cash paid, payments, dépense, dépenses, décaissement]
+  - key: cash_balance
+    label: Cash balance
+    description: Balance of the cash register after this line (Kassenbestand); checked, never corrected.
+    data_type: decimal
+    group: amounts
+    data_types: [Cash book]
+    aliases: [kassenbestand, kassenbestand €, kassenstand, kassensaldo, bestand, saldo, cash balance,
+              balance, solde, solde de caisse]
+  - key: booking_text
+    label: Booking text
+    description: Text of the cash book line (Buchungstext); written as the text of the booking.
+    data_types: [Cash book]
+    aliases: [buchungstext, text, beschreibung, bezeichnung, verwendungszweck, vorgang, booking text,
+              description, libellé, libelle]
+  - key: cash_category
+    label: Category
+    description: Category of the cash book line (Kategorie); its account is confirmed once, never guessed.
+    data_types: [Cash book]
+    aliases: [kategorie, buchungskategorie, art, kontierung, category, catégorie]
   # texte libre de la source : reconnu (jamais envoyé à l'IA), jamais exporté ni lu pour décider quoi que ce
   # soit (une exonération ne se déduit jamais d'un commentaire)
   - key: remark

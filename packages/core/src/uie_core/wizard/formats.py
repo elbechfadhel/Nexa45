@@ -44,7 +44,7 @@ from uie_core.mapping.suggestions import (
 from uie_core.sources.table import FileTableRegistry, FileTableSpec
 from uie_core.wizard.missing import MissingChoice, MissingKind, MissingQuestion
 from uie_core.wizard.model import TargetField, TargetProposal, Verification
-from uie_core.wizard.quick import INVOICES, PURCHASE_INVOICES, QuickMapping, QuickQuestion
+from uie_core.wizard.quick import CASH_BOOK, INVOICES, PURCHASE_INVOICES, QuickMapping, QuickQuestion
 from uie_core.wizard.values import ValueQuestion
 
 MODEL_DOMAIN = {"partner": DomainKey.PARTNER, "accounting": DomainKey.ACCOUNTING}
@@ -107,7 +107,12 @@ def data_type_of_file(fmt: FormatTarget, headers: list[str]) -> str | None:
     pour des factures, le sens aussi (numéro de client : ventes, numéro de fournisseur : achats ; ni l'un ni
     l'autre, ou les deux : non tranché)."""
     found = matched_keys(fmt.table, headers)
-    if not {c.key for c in fmt.table.columns if c.required} <= found:
+    # livre de caisse : une colonne de recettes ET une de dépenses (ni client, ni fournisseur)
+    if CASH_BOOK in fmt.table.data_types and {"cash_in", "cash_out"} <= found:
+        required = {c.key for c in fmt.table.columns_for(CASH_BOOK) if c.required}
+        return CASH_BOOK if required <= found else None
+    required = {c.key for c in fmt.table.columns_for(fmt.table.data_types[0]) if c.required}
+    if not required <= found:
         return None
     if fmt.domain == DomainKey.ACCOUNTING and len(fmt.table.data_types) > 1:
         customer, supplier = "partner_number" in found, "supplier_number" in found
@@ -139,7 +144,7 @@ def role_of(data_type: str) -> PartnerRole | None:
 
 
 def structure(fmt: FormatTarget, data_type: str) -> TargetProposal:
-    """Structure = colonnes du tableau de source (ce que le fichier peut apporter), vérifiée par le
+    """Structure = colonnes du tableau de source que ce TYPE de fichier peut apporter, vérifiée par le
     binding."""
     return TargetProposal(
         title=f"{data_type} for {fmt.label}"[:200],
@@ -158,7 +163,7 @@ def structure(fmt: FormatTarget, data_type: str) -> TargetProposal:
                 description=c.description or None,
                 verified=True,
             )
-            for c in fmt.table.columns
+            for c in fmt.table.columns_for(data_type)
         ],
         rows=[],
     )

@@ -33,6 +33,8 @@ class TableColumn(_Model):
     group: FieldGroup = FieldGroup.IDENTITY
     required: bool = False  # sans elle, aucun enregistrement ne peut être construit
     aliases: list[str] = []
+    # types de données (libellés du tableau) qui ont cette colonne ; vide : tous
+    data_types: list[str] = []
     # valeurs admises : valeur → graphies courantes (« Ware », « Lieferung » → goods) ; une autre valeur
     # n'est jamais devinée
     values: dict[str, list[str]] = {}
@@ -88,8 +90,14 @@ class FileTableSpec(_Model):
     def column(self, key: str) -> TableColumn | None:
         return next((c for c in self.columns if c.key == key), None)
 
-    def semantic_spec(self) -> SemanticSpec:
-        """Vocabulaire des colonnes au format du moteur de correspondance (alias exacts, libellés, mots)."""
+    def columns_for(self, data_type: str | None) -> list[TableColumn]:
+        """Colonnes qu'un fichier de ce type peut apporter (toutes si `data_type` est None)."""
+        return [c for c in self.columns if data_type is None or not c.data_types or data_type in c.data_types]
+
+    def semantic_spec(self, keys: set[str] | None = None) -> SemanticSpec:
+        """Vocabulaire des colonnes au format du moteur de correspondance (alias exacts, libellés, mots) ;
+        `keys` : seulement ces colonnes (celles du type de données du fichier : un même alias, « Kategorie »,
+        peut désigner une colonne différente selon le type)."""
         vocabulary = Vocabulary(
             domain_key=self.domain,
             version=f"table-{self.table_version}",
@@ -105,6 +113,7 @@ class FileTableSpec(_Model):
                     aliases=c.aliases,
                 )
                 for c in self.columns
+                if keys is None or c.key in keys
             ],
         )
         return SemanticSpec(
