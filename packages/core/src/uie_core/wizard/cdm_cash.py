@@ -17,6 +17,7 @@ Rien n'est corrigé ni deviné ; une ligne qui ne peut pas être écrite est LIS
 Contrôles du LIVRE (tel qu'il est écrit, dans l'ordre du fichier, depuis la ligne d'ouverture) :
 - solde recalculé (ouverture + recettes − dépenses) comparé à la colonne du solde : écart signalé, jamais
   corrigé ; sans ligne d'ouverture, le solde n'est pas contrôlé, et c'est dit ;
+- ordre chronologique : une écriture antérieure placée après une plus récente est signalée (information) ;
 - solde NÉGATIF (une caisse ne l'est jamais) : anomalie grave en tête ; l'écriture qui le fait passer sous
   zéro attend une décision explicite, jamais présélectionnée ; les suivantes encore négatives sont nommées.
 Références de la source préfixées « file: » ; la remarque libre n'est jamais lue pour décider."""
@@ -174,6 +175,42 @@ def _check_balance(
     return issues, crossing, still
 
 
+def _check_order(
+    val: Callable[[int, str], str], entries: list[int], columns: dict[str, str]
+) -> list[ValueIssue]:
+    """Ordre chronologique : une écriture datée AVANT une écriture placée plus haut est signalée en
+    information (elle est exportée ; rien n'est réordonné)."""
+    latest: tuple[date, int] | None = None
+    late: list[tuple[int, date, date]] = []
+    for i in entries:
+        try:
+            when = date.fromisoformat(val(i, "document_date"))
+        except ValueError:
+            continue
+        if latest is not None and when < latest[0]:
+            late.append((i, when, latest[0]))
+        elif latest is None or when > latest[0]:
+            latest = (when, i)
+    if not late:
+        return []
+    i, when, before = late[0]
+    who = val(i, "document_number") or f"row {i + 1}"
+    return [
+        ValueIssue(
+            field="document_date",
+            column=columns.get("document_date", ""),
+            kind="cash_order",
+            count=len(late),
+            examples=[],
+            message=say("{n} [entry is|entries are] not in date order", len(late))
+            + f" ({who} of {when.strftime('%d.%m.%Y')} after an entry of {before.strftime('%d.%m.%Y')}): "
+            "exported as they are.",
+            rows=[r + 1 for r, _, _ in late],
+            severity="info",
+        )
+    ]
+
+
 def documents_from_cash_rows(  # noqa: C901, PLR0912, PLR0915
     table: FileTableSpec,
     rows: list[dict[str, str]],
@@ -212,6 +249,7 @@ def documents_from_cash_rows(  # noqa: C901, PLR0912, PLR0915
 
     balance_issues, crossing, _ = _check_balance(val, entries, opening, columns)
     issues += balance_issues
+    issues += _check_order(val, entries, columns)
     negative_answer = choices.get(NEGATIVE_KEY)
     if crossing:
         listed = ", ".join(val(i, "document_number") or f"row {i + 1}" for i in crossing)

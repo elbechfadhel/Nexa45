@@ -891,4 +891,18 @@ def test_the_cash_balance_is_recalculated_and_a_negative_balance_is_a_serious_an
     # sans ligne d'ouverture : solde non contrôlé, et c'est dit
     rows = _cash_rows()[1:]
     blind = documents_from_cash_rows(INVOICES, rows, {}, "EUR", {}, _no_vat)
-    assert [i.kind for i in blind.issues] == ["cash_no_opening"] and blind.opening_balance is None
+    assert "cash_no_opening" in [i.kind for i in blind.issues] and blind.opening_balance is None
+    assert "cash_negative" not in [i.kind for i in blind.issues]
+
+
+def test_an_entry_out_of_date_order_is_information_and_still_exported():
+    from uie_core.wizard.cdm_cash import documents_from_cash_rows
+
+    t = documents_from_cash_rows(INVOICES, _cash_rows(), {}, "EUR", {}, _no_vat)
+    (order,) = [i for i in t.issues if i.kind == "cash_order"]
+    assert (order.severity, order.rows) == ("info", [32])  # K-029 du 19.09 après le 22.09
+    assert order.message == (
+        "1 entry is not in date order (K-029 of 19.09.2026 after an entry of 22.09.2026): "
+        "exported as they are."
+    )
+    assert "K-029" in {d.number for d in t.documents}
