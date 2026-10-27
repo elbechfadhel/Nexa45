@@ -8,6 +8,9 @@ Les opérations avec l'étranger (TVA : livraison intracommunautaire, exportatio
 leur propre table (`kind: vat_accounts`) : compte d'usage par sens, ZONE du partenaire (UE avec numéro de TVA
 valide, hors UE) et NATURE (marchandise, service), pour des catégories `vat:<sens>:<zone>:<nature>:<taux>`.
 
+Un livre de caisse a la sienne (`kind: cash_accounts`) : compte de la caisse, compte de transit et compte de
+chaque catégorie de caisse par taux (ou sans TVA), pour des catégories `cash:<catégorie>[:<taux>]`.
+
 Aucun nom de système ici : la table nomme sa cible (système, format) et son plan comptable."""
 
 from __future__ import annotations
@@ -134,13 +137,93 @@ class VatAccountRegistry:
         return cls._tables.get((system, product, chart)) if chart else None
 
 
+CASH_PREFIX = "cash"
+
+
+def cash_category_ref(name: str, rate: Decimal | None) -> str:
+    """Référence d'une catégorie de caisse : « cash:<catégorie>:<taux> », sans TVA « cash:<catégorie> »."""
+    key = category_key(name)
+    return f"{CASH_PREFIX}:{key}" if rate is None else f"{CASH_PREFIX}:{key}:{rate.normalize():f}"
+
+
+def parse_cash_ref(ref: str) -> tuple[str, Decimal | None] | None:
+    """(catégorie, taux ou None sans TVA) d'une catégorie de caisse ; None : autre catégorie."""
+    parts = ref.split(":")
+    if parts[0] != CASH_PREFIX or len(parts) not in (2, 3):
+        return None
+    return parts[1], Decimal(parts[2]) if len(parts) == 3 else None
+
+
+class CashCategory(_Spec):
+    """Noms d'une catégorie de caisse, son taux (ou `no_vat` : sans TVA) et son compte d'usage (absent :
+    jamais présélectionné)."""
+
+    names: list[str] = Field(min_length=1)
+    rate: Decimal | None = None
+    no_vat: bool = False
+    account: str | None = Field(default=None, pattern=r"^\d+$")
+
+
+class CashAccountTable(_Spec):
+    """Comptes d'usage d'un livre de caisse pour un format cible et un plan comptable."""
+
+    kind: Literal["cash_accounts"]
+    table_version: str
+    target: TargetProductRef
+    chart: str
+    status: str  # « à valider par le Steuerberater » : affiché avec chaque présélection
+    cash_account: str = Field(pattern=r"^\d+$")
+    transit_account: str | None = Field(default=None, pattern=r"^\d+$")
+    categories: list[CashCategory]
+    automatic_accounts: list[str] = []
+    tax_keys: dict[str, str] = {}  # dépense : taux → clé de taxe d'usage
+
+    def _find(self, name: str) -> list[CashCategory]:
+        key = category_key(name)
+        return [c for c in self.categories if key in {category_key(n) for n in c.names}]
+
+    def account_for(self, name: str, rate: Decimal | None) -> str | None:
+        """Compte d'usage de cette catégorie à ce taux (None : sans TVA) ; None : inconnu, jamais deviné."""
+        for c in self._find(name):
+            if (rate is None and c.no_vat) or (rate is not None and c.rate == rate):
+                return c.account
+        return None
+
+    def without_vat(self, name: str) -> bool:
+        """Catégorie déclarée SANS TVA (un taux vide est admis pour elle, et seulement pour elle)."""
+        return any(c.no_vat for c in self._find(name))
+
+    def tax_key_for(self, rate: Decimal) -> str | None:
+        return self.tax_keys.get(f"{rate.normalize():f}")
+
+
+class CashAccountRegistry:
+    """Tables des livres de caisse, par (système, format, plan comptable)."""
+
+    _tables: ClassVar[dict[tuple[str, str, str], CashAccountTable]] = {}
+
+    @classmethod
+    def register(cls, table: CashAccountTable) -> CashAccountTable:
+        cls._tables[(table.target.system, table.target.product, table.chart)] = table
+        return table
+
+    @classmethod
+    def find(cls, system: str, product: str, chart: str | None) -> CashAccountTable | None:
+        return cls._tables.get((system, product, chart)) if chart else None
+
+
 def automatic_accounts(system: str, product: str, chart: str | None, scope: str) -> list[str]:
-    """Comptes automatiques du plan comptable du dossier (catégories et opérations avec l'étranger)."""
+    """Comptes automatiques du plan comptable du dossier (catégories, opérations avec l'étranger, caisse)."""
     found = CategoryAccountRegistry.find(system, product, chart, scope)
     vat = VatAccountRegistry.find(system, product, chart)
+    cash = CashAccountRegistry.find(system, product, chart)
     return list(
         dict.fromkeys(
-            [*(found.automatic_accounts if found else []), *(vat.automatic_accounts if vat else [])]
+            [
+                *(found.automatic_accounts if found else []),
+                *(vat.automatic_accounts if vat else []),
+                *(cash.automatic_accounts if cash else []),
+            ]
         )
     )
 
@@ -163,6 +246,9 @@ class CategoryAccountRegistry:
 
 
 __all__ = [
+    "CashAccountRegistry",
+    "CashAccountTable",
+    "CashCategory",
     "CategoryAccount",
     "CategoryAccountRegistry",
     "CategoryAccountTable",
@@ -170,7 +256,9 @@ __all__ = [
     "VatAccountRegistry",
     "VatAccountTable",
     "automatic_accounts",
+    "cash_category_ref",
     "category_key",
+    "parse_cash_ref",
     "parse_vat_ref",
     "vat_category_ref",
 ]

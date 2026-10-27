@@ -728,3 +728,49 @@ def test_a_cash_book_is_its_own_kind_of_file_recognized_by_its_columns():
     assert data_type_of_file(fmt, sales) == "Invoices" and "gross_amount" in {
         f.name for f in structure(fmt, "Invoices").fields
     }
+
+
+def test_the_usual_accounts_of_a_cash_book_are_data_to_be_validated():
+    from uie_core.mapping.suggestions import (
+        CashAccountRegistry,
+        automatic_accounts,
+        cash_category_ref,
+        parse_cash_ref,
+    )
+    from uie_core.wizard.formats import format_target, mapping_questions
+
+    table = CashAccountRegistry.find("datev", "buchungsstapel", "03")
+    assert table is not None and "to be validated by your tax advisor" in table.status
+    assert (table.cash_account, table.transit_account) == ("1000", "1360")
+    assert table.account_for("Barverkauf", Decimal("19")) == "8400"
+    assert table.account_for("barverkauf", Decimal("7")) == "8300"
+    assert table.account_for("Bürobedarf", Decimal("19")) == "4930"
+    assert table.account_for("Porto", Decimal("0")) == "4910"
+    assert table.account_for("Bankeinzahlung", None) == table.account_for("Bankabhebung", None) == "1360"
+    # jamais deviné : catégorie absente, ou sans compte (dépend de la forme juridique)
+    assert table.account_for("Bewirtung", Decimal("19")) is None
+    assert table.account_for("Privatentnahme", None) is None and table.without_vat("Privatentnahme")
+    assert not table.without_vat("Barverkauf") and table.tax_key_for(Decimal("19")) == "0009"
+    assert {"8400", "8300"} <= set(automatic_accounts("datev", "buchungsstapel", "03", "SALE"))
+    assert CashAccountRegistry.find("datev", "buchungsstapel", "04") is None
+    assert cash_category_ref("Bürobedarf", Decimal("19")) == "cash:bürobedarf:19"
+    assert parse_cash_ref("cash:bankeinzahlung") == ("bankeinzahlung", None)
+    assert parse_cash_ref("purchase:bürobedarf:19") is None
+    fmt = format_target("datev", "buchungsstapel", "13", "DATEV Buchungsstapel 13")
+    assert fmt is not None
+    cats = {
+        "cash:barverkauf:19": "Barverkauf at 19 % VAT",
+        "cash:bankeinzahlung": "Bankeinzahlung (no VAT)",
+        "cash:bewirtung:19": "Bewirtung at 19 % VAT",
+    }
+    qs = {q.decision: q for q in mapping_questions(fmt, cats, ["19"], "03", {}, scope="SALE")}
+    sales = qs["map:CATEGORY:cash:barverkauf:19"]
+    assert sales.default == "8400" and "to be validated by your tax advisor" in sales.question.help
+    transit = qs["map:CATEGORY:cash:bankeinzahlung"]
+    assert transit.default == "1360" and transit.mapping is not None
+    assert (transit.mapping.category, transit.mapping.rate, transit.mapping.tax_decision) == (
+        "Bankeinzahlung",
+        "",
+        None,
+    )
+    assert qs["map:CATEGORY:cash:bewirtung:19"].default is None  # question, jamais devinée

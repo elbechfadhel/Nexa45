@@ -36,9 +36,11 @@ from uie_core.mapping import (
     TargetBindingRegistry,
 )
 from uie_core.mapping.suggestions import (
+    CashAccountRegistry,
     CategoryAccountRegistry,
     VatAccountRegistry,
     automatic_accounts,
+    parse_cash_ref,
     parse_vat_ref,
 )
 from uie_core.sources.table import FileTableRegistry, FileTableSpec
@@ -298,18 +300,26 @@ def mapping_questions(
     hint = b.suggestions.get(chart or "")
     table = CategoryAccountRegistry.find(b.target.system, b.target.product, chart, scope)
     vat_table = VatAccountRegistry.find(b.target.system, b.target.product, chart)
+    cash_table = CashAccountRegistry.find(b.target.system, b.target.product, chart)
     automatic = automatic_accounts(b.target.system, b.target.product, chart, scope)
     lookup = b.lookup(LookupKind.CATEGORY)
     account = lookup.label if lookup else "Account"
     out = []
     for ref, name in sorted(categories.items()):
         decision = f"{MAPPING}CATEGORY:{ref}"
-        rate_of = ref.rsplit(":", 1)[-1]  # « purchase:bürobedarf:19 », « sale:19 » : le taux en dernier
+        cash = parse_cash_ref(ref)
+        # « purchase:bürobedarf:19 », « sale:19 » : le taux en dernier ; caisse sans TVA : aucun taux
+        rate_of = ref.rsplit(":", 1)[-1] if cash is None or cash[1] is not None else ""
         usual = hint.categories.get(ref) if hint else None
         from_table = None
         status = table.status if table is not None else ""
         vat = parse_vat_ref(ref)
-        if vat is not None:
+        if cash is not None:
+            # livre de caisse : compte d'usage de la catégorie à ce taux (ou sans TVA), table de la caisse
+            if cash_table is not None:
+                usual = from_table = cash_table.account_for(cash[0], cash[1])
+                status = cash_table.status
+        elif vat is not None:
             # opération avec l'étranger : compte d'usage par sens, zone et nature (table des comptes de TVA)
             if vat_table is not None:
                 usual = from_table = vat_table.account_for(vat[0], vat[1], vat[2])
@@ -349,9 +359,9 @@ def mapping_questions(
                 ),
                 decision=decision,
                 mapping=QuickMapping(
-                    category=name.removesuffix(f" at {rate_of} % VAT"),
+                    category=name.removesuffix(f" at {rate_of} % VAT").removesuffix(" (no VAT)"),
                     rate=rate_of,
-                    tax_decision=f"{MAPPING}TAX:rate:{scope}:{rate_of}",
+                    tax_decision=f"{MAPPING}TAX:rate:{scope}:{rate_of}" if rate_of else None,
                     automatic_accounts=automatic,
                 ),
             )

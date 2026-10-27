@@ -44,6 +44,8 @@ from uie_core.domains import (
 )
 from uie_core.mapping import TargetBinding, TargetBindingRegistry
 from uie_core.mapping.suggestions import (
+    CashAccountRegistry,
+    CashAccountTable,
     CategoryAccountRegistry,
     CategoryAccountTable,
     VatAccountRegistry,
@@ -335,6 +337,15 @@ def load_vat_accounts(path: Path) -> VatAccountTable:
         raise DomainPackError(f"{path} : table des comptes de TVA invalide\n{exc}") from None
 
 
+def load_cash_accounts(path: Path) -> CashAccountTable:
+    """Table des comptes d'usage d'un livre de caisse (`kind: cash_accounts`) : présélections à valider par
+    le conseiller fiscal, jamais un domain pack."""
+    try:
+        return CashAccountTable.model_validate(read_yaml(path))
+    except ValidationError as exc:
+        raise DomainPackError(f"{path} : table des comptes de caisse invalide\n{exc}") from None
+
+
 def load_source_binding(path: Path) -> SourceBinding:
     """Binding de source à schéma fixe (`<domaine>/sources/*.yaml`), validé au chargement. La confrontation au
     contrat du Registry se fait à la lecture, quand le snapshot du système est disponible."""
@@ -387,6 +398,9 @@ def discover_domain_packs(domain_dir: str, root: Path | None = None) -> list[typ
             continue
         if isinstance(raw, dict) and raw.get("kind") == "vat_accounts":
             VatAccountRegistry.register(load_vat_accounts(path))  # invalide → erreur au démarrage
+            continue
+        if isinstance(raw, dict) and raw.get("kind") == "cash_accounts":
+            CashAccountRegistry.register(load_cash_accounts(path))  # invalide → erreur au démarrage
             continue
         spec = load_pack_spec(path)
         rel = path.relative_to(base.parent).as_posix()
