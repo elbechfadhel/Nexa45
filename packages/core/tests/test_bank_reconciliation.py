@@ -166,3 +166,23 @@ def test_the_identity_of_a_movement_does_not_depend_on_the_file_format():
     camt = mv("2026-10-30", "166.92", "Bäckerei Groß e.K.", "RE-2026043", "DE02120300000000202051")
     csv = {**camt, "bank_reference": None, "bank_text": "GUTSCHRIFT", "value_date": "2026-10-30"}
     assert fingerprint(camt) == fingerprint({k: v for k, v in csv.items() if v})
+
+
+def test_the_statement_balance_is_checked_or_said_to_be_uncheckable():
+    rows = ROWS[:2]  # 1545.81 + 500.00
+    ok = documents_from_bank_rows(
+        TABLE, rows, {}, "EUR", OPEN, {}, balances=(Decimal("100"), Decimal("2145.81"))
+    )
+    (info,) = [i for i in ok.issues if i.kind == "bank_balance_checked"]
+    assert (
+        info.severity == "info"
+        and "opening 100.00 € + movements 2045.81 € = closing 2145.81 €" in info.message
+    )
+    bad = documents_from_bank_rows(
+        TABLE, rows, {}, "EUR", OPEN, {}, balances=(Decimal("100"), Decimal("2000"))
+    )
+    (serious,) = [i for i in bad.issues if i.kind == "bank_balance_differs"]
+    assert serious.severity == "serious" and "but the closing balance is 2000.00 €" in serious.message
+    csv = documents_from_bank_rows(TABLE, rows, {}, "EUR", OPEN, {}, balances=None)
+    (none,) = [i for i in csv.issues if i.kind == "bank_no_balance"]
+    assert none.message.endswith("the account balance cannot be checked in this format.")

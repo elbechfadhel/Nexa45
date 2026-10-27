@@ -173,6 +173,11 @@ def test_a_camt_statement_is_booked_on_the_bank_account_and_settles_the_exported
     assert rent in {q["decision"] for q in start["questions"]}  # loyer : jamais deviné
     reasons = {e["row"]: e["kind"] for e in pre["excluded_rows"]}
     assert reasons[4] == "unknown_payment"
+    balance = [i for i in pre["value_issues"] if i["kind"] == "bank_balance_checked"]
+    assert (
+        balance[0]["message"]
+        == "Balance checked: opening 1000.00 € + movements 181.91 € = closing 1181.91 €."
+    )
     partial = [i for i in pre["value_issues"] if i["kind"] == "bank_partial"]
     assert partial[0]["message"] == "1 partial payment: invoice RE-2, 57.00 € still open."
 

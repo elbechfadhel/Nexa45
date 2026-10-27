@@ -127,6 +127,58 @@ def _category_ref(cat: BankCategory, row: dict[str, str]) -> PostingCategoryRef:
     )
 
 
+def _check_balance(
+    rows: list[dict[str, str]],
+    balances: tuple[Decimal | None, Decimal | None] | None,
+    columns: dict[str, str],
+) -> list[ValueIssue]:
+    """Solde d'ouverture + mouvements = solde de clôture (relevé tel qu'il est écrit) ; écart : anomalie
+    grave, jamais corrigée. Sans soldes dans le format : dit en information, jamais un solde supposé."""
+    column = columns.get("amount", "")
+    if balances is None or None in balances:
+        return [
+            ValueIssue(
+                field="amount",
+                column=column,
+                kind="bank_no_balance",
+                count=0,
+                examples=[],
+                message="This bank export has no opening or closing balance: the account balance cannot be "
+                "checked in this format.",
+                severity="info",
+            )
+        ]
+    opening, closing = balances
+    assert opening is not None and closing is not None
+    moved = sum((_amount((r.get("amount") or "").strip()) or Decimal(0) for r in rows), Decimal(0))
+    if opening + moved == closing:
+        return [
+            ValueIssue(
+                field="amount",
+                column=column,
+                kind="bank_balance_checked",
+                count=0,
+                examples=[],
+                message=f"Balance checked: opening {_money(opening)} + movements {_money(moved)} = closing "
+                f"{_money(closing)}.",
+                severity="info",
+            )
+        ]
+    return [
+        ValueIssue(
+            field="amount",
+            column=column,
+            kind="bank_balance_differs",
+            count=0,
+            examples=[],
+            message=f"The statement does not add up: opening {_money(opening)} + movements {_money(moved)} = "
+            f"{_money(opening + moved)}, but the closing balance is {_money(closing)}. Nothing is corrected.",
+            fix="Check that the file holds the whole statement (no movement missing or added).",
+            severity="serious",
+        )
+    ]
+
+
 def documents_from_bank_rows(  # noqa: C901, PLR0912, PLR0915
     table: FileTableSpec,
     rows: list[dict[str, str]],
@@ -134,9 +186,11 @@ def documents_from_bank_rows(  # noqa: C901, PLR0912, PLR0915
     currency: str,
     open_items: list[OpenItem],
     choices: dict[str, str] | None = None,
+    balances: tuple[Decimal | None, Decimal | None] | None = None,
 ) -> BankTable:
     """`rows` : une entrée par ligne (clé du tableau → valeur mise en forme) ; `open_items` : registre des
-    factures ouvertes du dossier (montant ouvert, partenaire, compte, IBAN)."""
+    factures ouvertes du dossier (montant ouvert, partenaire, compte, IBAN) ; `balances` : soldes d'ouverture
+    et de clôture du relevé (CAMT) ; None : le format n'en donne pas (export tabulaire)."""
     choices = choices or {}
     skipped: list[ExcludedRow] = []
     issues: list[ValueIssue] = []
@@ -408,6 +462,7 @@ def documents_from_bank_rows(  # noqa: C901, PLR0912, PLR0915
             "unknown_payment",
         )
 
+    issues += _check_balance(rows, balances, columns)
     if partial:
         issues.append(
             ValueIssue(

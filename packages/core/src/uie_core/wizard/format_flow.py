@@ -24,6 +24,7 @@ from uie_core.imports.profile import read_table
 from uie_core.mapping import IssueLevel, RecordStatus
 from uie_core.mapping.suggestions import CashAccountRegistry
 from uie_core.partners import PartnerReadResult
+from uie_core.sources.camt import read_camt
 from uie_core.wizard.cdm_accounting import FILE_REF, category, documents_from_rows
 from uie_core.wizard.cdm_bank import documents_from_bank_rows
 from uie_core.wizard.cdm_cash import documents_from_cash_rows
@@ -77,6 +78,14 @@ def statement_iban(data: bytes, file_name: str, decisions: list[MappingDecision]
     _, df = read_table(data, file_name)
     values = [str(v).replace(" ", "").upper() for v in df.get_column(df.columns[column]).to_list() if v]
     return values[0] if values else None
+
+
+def statement_balances(data: bytes, file_name: str) -> tuple[Any, Any] | None:
+    """Soldes d'ouverture et de clôture d'un relevé CAMT ; None : le format n'en donne pas."""
+    if not file_name.lower().endswith(".xml"):
+        return None
+    statement = read_camt(data)
+    return statement.opening, statement.closing
 
 
 if TYPE_CHECKING:
@@ -392,6 +401,7 @@ class FormatFlow:
                 own.get("currency") or summary.currency or "EUR",
                 OpenItemRegister(self.svc.s, org, self.client, t.system, t.product).items() if org else [],
                 choices,
+                balances=statement_balances(data, file_name),
             )
         else:
             currency = own.get("currency") or summary.currency or "EUR"
