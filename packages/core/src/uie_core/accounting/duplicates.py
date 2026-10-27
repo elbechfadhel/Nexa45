@@ -74,7 +74,7 @@ class BusinessKey:
             tax=doc.tax_amount,
             day=doc.document_date or doc.accounting_date,
             numbers=frozenset(_numbers(doc)),
-            partner=_name(doc.partner.name),
+            partner=_name(doc.partner.name) if doc.partner else "",
         )
 
     def same_values(self, other: BusinessKey) -> bool:

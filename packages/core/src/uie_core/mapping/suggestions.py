@@ -212,17 +212,20 @@ class CashAccountRegistry:
         return cls._tables.get((system, product, chart)) if chart else None
 
 
-def automatic_accounts(system: str, product: str, chart: str | None, scope: str) -> list[str]:
-    """Comptes automatiques du plan comptable du dossier (catégories, opérations avec l'étranger, caisse)."""
+def automatic_accounts(
+    system: str, product: str, chart: str | None, scope: str, cash: bool = False
+) -> list[str]:
+    """Comptes automatiques du plan comptable du dossier (catégories, opérations avec l'étranger ; ceux de la
+    table de la caisse seulement pour une écriture de caisse : `cash`)."""
     found = CategoryAccountRegistry.find(system, product, chart, scope)
     vat = VatAccountRegistry.find(system, product, chart)
-    cash = CashAccountRegistry.find(system, product, chart)
+    found_cash = CashAccountRegistry.find(system, product, chart) if cash else None
     return list(
         dict.fromkeys(
             [
                 *(found.automatic_accounts if found else []),
                 *(vat.automatic_accounts if vat else []),
-                *(cash.automatic_accounts if cash else []),
+                *(found_cash.automatic_accounts if found_cash else []),
             ]
         )
     )

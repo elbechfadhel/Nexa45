@@ -34,7 +34,8 @@ def _accounting(session, inst):  # noqa: ANN001, ANN202
 
 
 CDM_ENUMS = {
-    "document_type": DocumentType,
+    # écritures de caisse (CDM 1.3.0) : source FICHIER (livre de caisse), jamais lues dans un système
+    "document_type": [t for t in DocumentType if not t.is_cash],
     "document_status": DocumentStatus,
     "line_kind": LineKind,
     "tax_computation": TaxComputation,

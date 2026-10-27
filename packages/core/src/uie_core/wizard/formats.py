@@ -66,6 +66,7 @@ ASKED = (
     "creditor_offset",
     "currency",
     "lock_bookings",
+    "cash_account",
 )
 NEVER_INVENTED = frozenset({"advisor_number", "client_number"})
 
@@ -208,16 +209,30 @@ def _shown(p: ProfileParam, value: Any) -> str | None:
 
 
 def settings_questions(
-    fmt: FormatTarget, saved: dict[str, Any], saved_shared: dict[str, Any], data_year: int
+    fmt: FormatTarget,
+    saved: dict[str, Any],
+    saved_shared: dict[str, Any],
+    data_year: int,
+    without_partner: bool = False,
 ) -> list[QuickQuestion]:
     """Une question par réglage : valeur de VOS réglages (enregistrés) d'abord, sinon valeur d'usage
-    présélectionnée ; Beraternummer et Mandantennummer : jamais de présélection inventée."""
+    présélectionnée ; Beraternummer et Mandantennummer : jamais de présélection inventée. Les réglages des
+    pièces sans partenaire (compte de la caisse) ne sont posés que pour un fichier de telles pièces
+    (`without_partner`) ; leur valeur d'usage vient de la table du plan comptable (à valider)."""
     length = int(saved_shared.get("account_length") or saved.get("account_length") or 4)
+    chart = str(saved_shared.get("chart_of_accounts") or _usual("chart_of_accounts", length, data_year))
+    b = fmt.binding
+    cash = CashAccountRegistry.find(b.target.system, b.target.product, chart)
     out = []
     for p, shared in params(fmt):
+        if p.applies_to == "without_partner" and not without_partner:
+            continue
         own = _shown(p, (saved_shared if shared else saved).get(p.name))
         # comptes de personne : longueur des comptes généraux + 1 (10000-69999 pour une longueur 4)
         default = own or (None if p.name in NEVER_INVENTED else _usual(p.name, length, data_year))
+        status = None
+        if b.own_account and p.name == b.own_account.param and not own and cash is not None:
+            default, status = cash.cash_account, cash.status  # compte de la caisse d'usage, à valider
         choices = [MissingChoice(value=c, label=c) for c in p.choices]
         if p.type == ParamType.CHOICE and p.name == "lock_bookings":
             choices = [
@@ -236,7 +251,16 @@ def settings_questions(
                     if choices
                     else MissingKind.TEXT,
                     title=p.label,
-                    help=" ".join(x for x in (p.help, p.format_help) if x) or None,
+                    help=" ".join(
+                        x
+                        for x in (
+                            p.help,
+                            p.format_help,
+                            f"Usual account ({status}), preselected." if status else None,
+                        )
+                        if x
+                    )
+                    or None,
                     choices=choices,
                     free_text=not choices,
                 ),
@@ -302,6 +326,7 @@ def mapping_questions(
     vat_table = VatAccountRegistry.find(b.target.system, b.target.product, chart)
     cash_table = CashAccountRegistry.find(b.target.system, b.target.product, chart)
     automatic = automatic_accounts(b.target.system, b.target.product, chart, scope)
+    automatic_cash = automatic_accounts(b.target.system, b.target.product, chart, scope, cash=True)
     lookup = b.lookup(LookupKind.CATEGORY)
     account = lookup.label if lookup else "Account"
     out = []
@@ -362,7 +387,7 @@ def mapping_questions(
                     category=name.removesuffix(f" at {rate_of} % VAT").removesuffix(" (no VAT)"),
                     rate=rate_of,
                     tax_decision=f"{MAPPING}TAX:rate:{scope}:{rate_of}" if rate_of else None,
-                    automatic_accounts=automatic,
+                    automatic_accounts=automatic_cash if cash is not None else automatic,
                 ),
             )
         )

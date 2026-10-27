@@ -34,7 +34,6 @@ from uie_cdm import (
     DocumentStatus,
     LedgerAccountRef,
     LineKind,
-    PartnerRole,
     PostingCategoryRef,
     TaxRef,
 )
@@ -1541,13 +1540,15 @@ def _prepare(  # noqa: PLR0913
 
     # correspondances nécessaires sur la période (comptes de contrepartie, taxes des écritures)
     used: dict[tuple[LookupKind, str], tuple[str, str | None, set[str]]] = {}
-    roles = {i.document.source_ref: i.document.partner.role for i in result.items if i.document is not None}
+    scopes = {
+        i.document.source_ref: i.document.document_type.scope for i in result.items if i.document is not None
+    }
     for ref, bs in derived.items():
         for bk in bs.bookings:
             kind, src, code0, name0 = _counter_key(bk)
             code, name, docs = used.get((kind, src), (code0, name0, set()))
             used[(kind, src)] = (code, name, docs | {ref})
-            tax_key = _tax_key(bk, roles[ref])
+            tax_key = _tax_key(bk, scopes[ref])
             if tax_key is not None:
                 code, name, docs = used.get(tax_key[:2], (tax_key[2], None, set()))
                 used[tax_key[:2]] = (code, name, docs | {ref})
@@ -1577,8 +1578,8 @@ def _prepare(  # noqa: PLR0913
                     eligible=False,
                     target_status=None,
                     not_prepared_reason=reason,
-                    partner_name=doc.partner.name if doc else None,
-                    partner_role=doc.partner.role.value if doc else None,
+                    partner_name=doc.partner.name if doc and doc.partner else None,
+                    partner_role=doc.partner.role.value if doc and doc.partner else None,
                     accounting_date=doc.accounting_date if doc else None,
                     currency=doc.currency if doc else None,
                     total_amount=doc.total_amount if doc else None,
@@ -1759,10 +1760,13 @@ def _document(
             )
         )
 
-    role = doc.partner.role.value
-    partner_account = partner_numbers.get((doc.partner.source_ref, role))
+    role = doc.partner.role.value if doc.partner else None
+    partner_account = partner_numbers.get((doc.partner.source_ref, role or "")) if doc.partner else None
     partner_issue = None
-    if b.partner_account:
+    if doc.partner is None:
+        # pièce SANS partenaire (écriture de caisse) : compte propre du dossier, jamais un compte inventé
+        partner_account, partner_issue = _own_account(target, values)
+    elif b.partner_account:
         fd = target.resolved.field(b.partner_account.field)
         who = "Customer" if role == "CUSTOMER" else "Supplier"
         if partner_account is None:
@@ -1789,12 +1793,19 @@ def _document(
                     f"{int(length) + b.partner_account.plus} digits",
                 )
 
-    text = ", ".join(p for p in (doc.partner.name, doc.number) if p)
+    # texte de l'écriture : partenaire et numéro ; sans partenaire, texte de la pièce et numéro (D7)
+    text = ", ".join(p for p in (doc.partner.name if doc.partner else doc.description, doc.number) if p)
     # comptes AUTOMATIQUES du plan comptable du dossier (données) : la cible calcule la taxe, aucune clé
-    scope = "SALE" if doc.partner.role == PartnerRole.CUSTOMER else "PURCHASE"
+    scope = doc.document_type.scope
     chart = values.get(b.chart_param) if b.chart_param else None
     automatic = set(
-        automatic_accounts(b.target.system, b.target.product, str(chart) if chart else None, scope)
+        automatic_accounts(
+            b.target.system,
+            b.target.product,
+            str(chart) if chart else None,
+            scope,
+            cash=doc.document_type.is_cash,
+        )
     )
     bookings = []
     for bk in bs.bookings:
@@ -1804,7 +1815,7 @@ def _document(
         if issue:
             issues.append(issue)
         tax_value, tax_none = None, False
-        tax_key = _tax_key(bk, doc.partner.role)
+        tax_key = _tax_key(bk, scope)
         if tax_key is not None and counter in automatic:
             tax_none = True  # compte automatique : jamais de clé de taxe
         elif tax_key is not None:
@@ -1885,7 +1896,7 @@ def _document(
         source_status=doc.status.value,
         eligible=item.exportable,
         target_status=_status(every),  # une pièce est un tout : une écriture bloquée bloque la pièce
-        partner_name=doc.partner.name,
+        partner_name=doc.partner.name if doc.partner else None,
         partner_role=role,
         accounting_date=doc.accounting_date,
         document_date=doc.document_date,
@@ -1908,14 +1919,44 @@ def _counter_key(bk: Booking) -> tuple[LookupKind, str, str, str | None]:
     return LookupKind.CATEGORY, cat.source_ref, cat.name or cat.source_ref, None
 
 
-def _tax_key(bk: Booking, role: PartnerRole) -> tuple[LookupKind, str, str] | None:
-    """Taxe d'une écriture à faire correspondre : taxe de la source, sinon son TAUX et son sens (vente /
-    achat : clés différentes chez une cible) — une décision de la cible, jamais une taxe inventée."""
+def _own_account(target: _Target, values: dict[str, Any]) -> tuple[str | None, TargetIssue | None]:
+    """Compte propre du dossier pour une pièce sans partenaire (réglage du profil déclaré par le binding), ou
+    le problème qui bloque l'écriture."""
+    b = target.binding
+    spec = b.own_account
+    if spec is None:
+        return None, TargetIssue(
+            level=IssueLevel.BLOCKING,
+            message=f"{_name(target)} has no account for a booking without customer or supplier",
+        )
+    fd = target.resolved.field(spec.field)
+    label = next((p.label for p in b.profile if p.name == spec.param), spec.param)
+    value = str(values.get(spec.param) or "").strip()
+    if not value:
+        return None, TargetIssue(
+            level=IssueLevel.BLOCKING,
+            field=spec.field,
+            label=fd.label,
+            message=f"{label} is not set: choose it in your settings",
+        )
+    length = values.get(spec.length_from) if spec.length_from else None
+    if not value.isdigit() or (length is not None and len(value) != int(length)):
+        return None, TargetIssue(
+            level=IssueLevel.BLOCKING,
+            field=spec.field,
+            label=fd.label,
+            message=f"{label} {value} is not an account of {int(length or 0)} digits",
+        )
+    return value, None
+
+
+def _tax_key(bk: Booking, scope: str) -> tuple[LookupKind, str, str] | None:
+    """Taxe d'une écriture à faire correspondre : taxe de la source, sinon son TAUX et son sens (SALE /
+    PURCHASE : clés différentes chez une cible) — une décision de la cible, jamais une taxe inventée."""
     if bk.tax is not None:
         return LookupKind.TAX, bk.tax.source_ref, bk.tax.name
     if bk.tax_rate is None:
         return None
-    scope = "SALE" if role == PartnerRole.CUSTOMER else "PURCHASE"
     rate = bk.tax_rate.normalize()
     label = "sales" if scope == "SALE" else "purchases"
     return LookupKind.TAX, f"rate:{scope}:{rate:f}", f"{rate:f} % ({label})"

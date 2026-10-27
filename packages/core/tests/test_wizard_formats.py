@@ -751,7 +751,8 @@ def test_the_usual_accounts_of_a_cash_book_are_data_to_be_validated():
     assert table.account_for("Bewirtung", Decimal("19")) is None
     assert table.account_for("Privatentnahme", None) is None and table.without_vat("Privatentnahme")
     assert not table.without_vat("Barverkauf") and table.tax_key_for(Decimal("19")) == "0009"
-    assert {"8400", "8300"} <= set(automatic_accounts("datev", "buchungsstapel", "03", "SALE"))
+    assert {"8400", "8300"} <= set(automatic_accounts("datev", "buchungsstapel", "03", "SALE", cash=True))
+    assert "8400" not in automatic_accounts("datev", "buchungsstapel", "03", "SALE")  # factures : inchangé
     assert CashAccountRegistry.find("datev", "buchungsstapel", "04") is None
     assert cash_category_ref("Bürobedarf", Decimal("19")) == "cash:bürobedarf:19"
     assert parse_cash_ref("cash:bankeinzahlung") == ("bankeinzahlung", None)

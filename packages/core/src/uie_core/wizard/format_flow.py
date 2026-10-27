@@ -20,8 +20,10 @@ from uie_core.exports.records import ExportAccountAssignmentRecord, ExportValueM
 from uie_core.exports.service import DEFAULT_CLIENT, ExportError, ExportNotReady
 from uie_core.identity.context import TenantContext
 from uie_core.mapping import IssueLevel, RecordStatus
+from uie_core.mapping.suggestions import CashAccountRegistry
 from uie_core.partners import PartnerReadResult
 from uie_core.wizard.cdm_accounting import FILE_REF, category, documents_from_rows
+from uie_core.wizard.cdm_cash import documents_from_cash_rows
 from uie_core.wizard.cdm_partners import partners_from_rows
 from uie_core.wizard.formats import (
     MAPPING,
@@ -48,6 +50,7 @@ from uie_core.wizard.model import (
     WizardUnavailable,
 )
 from uie_core.wizard.quick import (
+    CASH_BOOK,
     MAX_BLOCKING,
     PURCHASE_INVOICES,
     QuickQuestion,
@@ -161,7 +164,11 @@ class FormatFlow:
         ]
         saved, saved_shared = self._saved()
         settings = settings_questions(
-            self.fmt, saved, saved_shared, self._data_year(p, data, file_name, decisions)
+            self.fmt,
+            saved,
+            saved_shared,
+            self._data_year(p, data, file_name, decisions),
+            without_partner=data_type == CASH_BOOK,
         )
         choices = {q.decision: q.default for q in settings if q.decision and q.default}
         # décisions du moteur de valeurs et du constructeur du CDM (sur les réponses présélectionnées)
@@ -211,11 +218,35 @@ class FormatFlow:
         if self.fmt.domain != DomainKey.ACCOUNTING:
             return []
         built = state["built"]
-        cats, rates = built.categories, built.rates
-        chart = choices.get(SETTING + "chart_of_accounts") or self._saved()[1].get("chart_of_accounts")
+        chart = self._chart(choices)
+        if built.scope == "CASH":
+            # livre de caisse : recettes (sens vente) et dépenses (sens achat), clés de taxe de chaque sens
+            out: list[QuickQuestion] = []
+            for scope in ("SALE", "PURCHASE"):
+                cats = {r: n for r, n in built.categories.items() if built.category_scope.get(r) == scope}
+                out += mapping_questions(
+                    self.fmt,
+                    cats,
+                    built.rates.get(scope, []),
+                    chart,
+                    choices,
+                    scope=scope,
+                    saved=self._saved_mappings(),
+                )
+            return out
         return mapping_questions(
-            self.fmt, cats, rates, chart, choices, scope=built.scope, saved=self._saved_mappings()
+            self.fmt,
+            built.categories,
+            built.rates,
+            chart,
+            choices,
+            scope=built.scope,
+            saved=self._saved_mappings(),
         )
+
+    def _chart(self, choices: dict[str, str]) -> str | None:
+        """Plan comptable du dossier : réponse, sinon vos réglages."""
+        return choices.get(SETTING + "chart_of_accounts") or self._saved()[1].get("chart_of_accounts")
 
     def _saved_mappings(self) -> dict[str, str]:
         """Correspondances mémorisées pour ce dossier (source fichier, sans instance) au téléchargement
@@ -292,6 +323,19 @@ class FormatFlow:
         own, _ = setting_values(self.fmt, choices)
         if self.fmt.domain == DomainKey.PARTNER:
             built: Any = partners_from_rows(self.fmt.table, table_rows, columns, role_of(data_type), choices)
+        elif data_type == CASH_BOOK:
+            # livre de caisse : écritures sans partenaire ; taux vide admis seulement pour une catégorie que
+            # la table des comptes de caisse du dossier déclare sans TVA
+            b = self.fmt.binding
+            cash = CashAccountRegistry.find(b.target.system, b.target.product, self._chart(choices))
+            built = documents_from_cash_rows(
+                self.fmt.table,
+                table_rows,
+                columns,
+                own.get("currency") or summary.currency or "EUR",
+                choices,
+                no_vat=cash.without_vat if cash else None,
+            )
         else:
             currency = own.get("currency") or summary.currency or "EUR"
             built = documents_from_rows(
@@ -375,6 +419,8 @@ class FormatFlow:
                     raise WizardInputError(str(exc)) from None
                 content, filename = gen.content, gen.filename
         else:
+            # mot des pièces dans les messages : écritures d'un livre de caisse, sinon factures
+            one, many = ("entry", "entries") if built.scope == "CASH" else ("invoice", "invoices")
             result, span = self._documents(built, own, shared, choices)
             decided = mapping_decisions(choices, {})
             try:
@@ -403,7 +449,7 @@ class FormatFlow:
                 notices.append(
                     str(exc)
                     if isinstance(exc, AccountingTargetNotReady)
-                    else "No invoice can be written to the file: every invoice is blocked (see each row)."
+                    else f"No {one} can be written to the file: every {one} is blocked (see each row)."
                 )
                 status = "to_complete"
             by_ref = {d.source_ref: d for d in prep.documents}
@@ -414,7 +460,7 @@ class FormatFlow:
                     excluded.append(
                         ExcludedRow(
                             row=row,
-                            reason=f"Invoice {d.number}: {blocked_reasons(every)}: not written.",
+                            reason=f"{one.capitalize()} {d.number}: {blocked_reasons(every)}: not written.",
                             kind="target",
                         )
                     )
@@ -427,7 +473,7 @@ class FormatFlow:
                         excluded.append(
                             ExcludedRow(
                                 row=built.row_of.get(x.document_ref, 0),
-                                reason=f"Invoice {x.number}: " + "; ".join(x.reasons) + ".",
+                                reason=f"{one.capitalize()} {x.number}: " + "; ".join(x.reasons) + ".",
                                 kind="already_exported",
                             )
                         )
@@ -437,7 +483,7 @@ class FormatFlow:
                 written = plan.exported_documents
                 nothing_new = written == 0 and bool(already)
                 notices.append(
-                    say("{n} [invoice|invoices] in the file", written)
+                    say("{n} [" + one + "|" + many + "] in the file", written)
                     + f" ({count(plan.row_count, 'booking')}, period {plan.period_text or span.text})."
                 )
             else:

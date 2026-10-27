@@ -169,6 +169,9 @@ class ProfileParam(_Spec):
     required_for_file: bool = False
     # ligne de résumé des réglages (« Customer account = {value} + customer number ») ; sans elle : libellé
     summary: str | None = None
+    # « without_partner » : réglage des seules pièces SANS partenaire (compte de la caisse), posé seulement
+    # pour un fichier de telles pièces
+    applies_to: Literal["all", "without_partner"] = "all"
 
 
 class AccountSpec(_Spec):
@@ -227,6 +230,15 @@ class PartnerAccountSpec(_Spec):
     plus: int = 0
 
 
+class OwnAccountSpec(_Spec):
+    """Compte PROPRE du dossier écrit à la place du compte du tiers pour une pièce SANS partenaire (écriture
+    de caisse : le compte de la caisse) : valeur d'un paramètre du profil, jamais devinée."""
+
+    field: str  # même position que le compte du tiers
+    param: str  # paramètre du profil (propre au binding) qui donne le compte
+    length_from: str | None = None  # paramètre (hérité) : longueur exacte attendue
+
+
 class LookupKind(StrEnum):
     ACCOUNT = "ACCOUNT"  # compte de contrepartie source → compte cible
     TAX = "TAX"  # taxe source (ou taux d'une source sans taxes) → clé de taxe cible
@@ -279,6 +291,7 @@ class TargetBinding(_Spec):
     account: AccountSpec | None = None
     booking: BookingSpec | None = None
     partner_account: PartnerAccountSpec | None = None
+    own_account: OwnAccountSpec | None = None  # pièce sans partenaire : compte propre du dossier
     lookups: list[LookupSpec] = []
     inherit_profile: InheritedProfile | None = None
     fields: list[FieldMapping]
@@ -316,6 +329,11 @@ class TargetBinding(_Spec):
         lengths = [lk.length_from for lk in self.lookups if lk.length_from]
         if self.partner_account:
             lengths.append(self.partner_account.length_from)
+        if self.own_account:
+            if self.own_account.param not in params:
+                raise ValueError(f"paramètre de profil inconnu : {self.own_account.param}")
+            if self.own_account.length_from:
+                lengths.append(self.own_account.length_from)
         if unknown := sorted(set(lengths) - known):
             raise ValueError(f"paramètres de profil inconnus : {unknown}")
         kinds = [lk.kind for lk in self.lookups]
@@ -331,6 +349,8 @@ class TargetBinding(_Spec):
             out.add(self.account.field)
         if self.partner_account:
             out.add(self.partner_account.field)
+        if self.own_account:
+            out.add(self.own_account.field)
         out |= {lk.field for lk in self.lookups}
         if self.items:
             out |= {f.field for f in self.items.fields}
