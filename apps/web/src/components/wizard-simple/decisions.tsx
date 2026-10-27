@@ -16,6 +16,7 @@ import {
   defaultOrigin,
   type Edits,
   questionKey,
+  rowRate,
   rowTaxKey,
   settingsSummary,
 } from "@/lib/wizard/simple.mjs";
@@ -154,7 +155,7 @@ export function Decisions({
                         <Fragment key={key}>
                           <TableRow>
                             <TableCell className="break-words whitespace-normal">{q.mapping?.category}</TableCell>
-                            <TableCell>{q.mapping?.rate} %</TableCell>
+                            <TableCell>{rowRate(q)}</TableCell>
                             <TableCell>{answerText(q, valueOf(q))}</TableCell>
                             <TableCell className="whitespace-normal">{rowTaxKey(q, tax, values)}</TableCell>
                             <TableCell className="text-right">

@@ -195,7 +195,12 @@ export function StartScreen({
       </Card>
 
       <div className="flex flex-wrap items-center justify-end gap-3">
-        {(!file || !target) && <p className="meta text-muted-foreground">{entry.startHint ?? L.startHint}</p>}
+        {/* sans fichier : le fichier à donner ; fichier sans format reconnu : le format à choisir */}
+        {(!file || !target) && (
+          <p className="meta text-muted-foreground">
+            {(file ? entry.targetHint : entry.startHint) ?? L.startHint}
+          </p>
+        )}
         <Button onClick={onStart} disabled={!file || !target}>
           {L.start}
         </Button>

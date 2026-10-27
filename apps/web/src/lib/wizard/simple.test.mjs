@@ -10,7 +10,10 @@ import {
   alreadyExportedText,
   answerText,
   appliedThemes,
+  rowRate,
   rowTaxKey,
+  nothingToWrite,
+  nounOf,
   settingsSummary,
   currencyNoticeText,
   automaticColumns,
@@ -493,7 +496,7 @@ test("an entry point reuses the Simple screens: only its title, introduction and
   assert.equal(WIZARD_ENTRIES.general.stepStart, undefined);
   assert.equal(SIMPLE_LABELS.stepStart, "Your file and target");
   const start = readFileSync(join(here, "..", "..", "components", "wizard-simple", "start-screen.tsx"), "utf8");
-  assert.match(start, /entry\.startHint \?\? L\.startHint/);
+  assert.match(start, /\(file \? entry\.targetHint : entry\.startHint\) \?\? L\.startHint/);
   // la question de l'étape 2 : propre au parcours ; le Wizard garde la sienne
   assert.equal(WIZARD_ENTRIES.datev.targetHeading, "2. What do you want to prepare?");
   assert.equal(WIZARD_ENTRIES.general.targetHeading, undefined);
@@ -647,7 +650,7 @@ test("invoices already exported are one summary line by date, the detail only in
   // rien de neuf : jamais « Your file is prepared », aucun bouton de téléchargement
   const folder = join(here, "..", "..", "components", "wizard-simple");
   assert.match(readFileSync(join(folder, "result-screen.tsx"), "utf8"), /preview\.nothing_new\s*\?\s*L\.nothingNewHelp/);
-  assert.match(readFileSync(join(folder, "download-card.tsx"), "utf8"), /\{!preview\.nothing_new && \(\s*<Button/);
+  assert.match(readFileSync(join(folder, "download-card.tsx"), "utf8"), /\{!preview\.nothing_new && !nothingToWrite\(preview\) && \(\s*<Button/);
 });
 
 test("the accounts table uses the page text size in every column", () => {
@@ -657,7 +660,13 @@ test("the accounts table uses the page text size in every column", () => {
 });
 
 test("what an entry point can prepare comes from its configuration, validated domains only", () => {
-  assert.deepEqual(WIZARD_ENTRIES.datev.prepares, ["Customers", "Suppliers", "Sales invoices", "Purchase invoices"]);
+  assert.deepEqual(WIZARD_ENTRIES.datev.prepares, [
+    "Customers",
+    "Suppliers",
+    "Sales invoices",
+    "Purchase invoices",
+    "Cash book",
+  ]);
   assert.equal(WIZARD_ENTRIES.general.prepares, undefined); // Wizard général inchangé
   assert.equal(SIMPLE_LABELS.preparesHeading, "What you can prepare here:");
   const wizard = readFileSync(join(here, "..", "..", "components", "wizard-simple", "simple-wizard.tsx"), "utf8");
@@ -673,4 +682,20 @@ test("the introduction of an entry point is not narrowed to a reading width", ()
   // « Add your file, check what DATEV will receive… » tient sur une ligne : aucune largeur maximale imposée
   const wizard = readFileSync(join(here, "..", "..", "components", "wizard-simple", "simple-wizard.tsx"), "utf8");
   assert.match(wizard, /className="page-description max-w-none[^"]*">\{entry\.intro\}/);
+});
+
+test("a cash book: categories without VAT, a hint when the file is not recognized, no download when nothing can be written", () => {
+  const transit = { decision: "map:CATEGORY:cash:bankeinzahlung", default: "1360", question: { field: "x", label: "x", kind: "text", title: "x", choices: [], free_text: true }, mapping: { category: "Bankeinzahlung", rate: "", tax_decision: null, automatic_accounts: ["8400"] } };
+  assert.equal(rowRate(transit), "—");
+  assert.equal(rowTaxKey(transit, undefined, {}), "No tax key");
+  const sales = { ...transit, default: "8400", mapping: { ...transit.mapping, rate: "19" } };
+  assert.equal(rowRate(sales), "19 %");
+  assert.equal(rowTaxKey(sales, undefined, {}), "No tax key (automatic account)");
+  assert.equal(WIZARD_ENTRIES.datev.targetHint, "Your file was not recognized: choose what to prepare.");
+  assert.equal(nounOf("Cash book").many, "cash book entries");
+  assert.equal(nothingToWrite({ rows: 0, delivery: "format", nothing_new: false }), true);
+  assert.equal(nothingToWrite({ rows: 0, delivery: "format", nothing_new: true }), false); // « Nothing new to export »
+  assert.equal(nothingToWrite({ rows: 3, delivery: "format" }), false);
+  const card = readFileSync(join(here, "..", "..", "components", "wizard-simple", "download-card.tsx"), "utf8");
+  assert.match(card, /!preview\.nothing_new && !nothingToWrite\(preview\)/);
 });

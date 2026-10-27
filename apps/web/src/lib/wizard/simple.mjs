@@ -235,11 +235,24 @@ export function settingsSummary(settings, answers) {
     .join(" · ");
 }
 
+/** Taux affiché sur une ligne du tableau : « 19 % », « — » pour une catégorie sans TVA.
+ * @param {QuickQuestion} row */
+export function rowRate(row) {
+  return row.mapping?.rate ? `${row.mapping.rate} %` : L.noVat;
+}
+
+/** Rien ne peut être écrit dans le fichier d'un format (toutes les lignes refusées) : pas de téléchargement.
+ * @param {{ rows: number, delivery?: string | null, nothing_new?: boolean }} preview */
+export function nothingToWrite(preview) {
+  return preview.delivery === "format" && preview.rows === 0 && !preview.nothing_new;
+}
+
 /** Clé de taxe affichée sur une ligne du tableau : aucune sur un compte automatique, sinon la réponse.
  * @param {QuickQuestion} row @param {QuickQuestion | undefined} tax @param {Record<string, string>} answers */
 export function rowTaxKey(row, tax, answers) {
   const account = answers[questionKey(row)] ?? row.default ?? "";
   if (account && (row.mapping?.automatic_accounts ?? []).includes(account)) return L.automaticAccount;
+  if (!row.mapping?.rate) return L.noTaxKey; // catégorie sans TVA : aucune clé de taxe
   if (!tax) return "";
   return answerText(tax, answers[questionKey(tax)] ?? tax.default ?? "");
 }

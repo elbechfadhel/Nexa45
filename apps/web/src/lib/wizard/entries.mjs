@@ -18,6 +18,7 @@ import { SIMPLE_LABELS as L } from "./simple-labels.mjs";
  *   detect?: boolean,
  *   prepares?: string[],
  *   startHint?: string,
+ *   targetHint?: string,
  *   stepStart?: string,
  * }} WizardEntry
  * `targetHeading` : intitulé du choix de la cible (absent : celui du Wizard, « 2. Where should your data go? ») ;
@@ -43,9 +44,11 @@ export const WIZARD_ENTRIES = {
     systems: ["datev"],
     groups: ["registry"],
     detect: true,
-    prepares: ["Customers", "Suppliers", "Sales invoices", "Purchase invoices"],
+    prepares: ["Customers", "Suppliers", "Sales invoices", "Purchase invoices", "Cash book"],
     // le format est choisi d'après le fichier : seul le fichier reste à donner
     startHint: "Choose a file to continue.",
+    // fichier déposé mais non reconnu : le choix du format revient à l'utilisateur
+    targetHint: "Your file was not recognized: choose what to prepare.",
     stepStart: "Your file", // aucune cible à choisir ici
   },
 };

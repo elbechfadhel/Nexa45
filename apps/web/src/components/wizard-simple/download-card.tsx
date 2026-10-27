@@ -8,7 +8,7 @@ import { Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type { PreparedFile, QuickStart } from "@/lib/api/wizard-hooks";
-import { importSteps } from "@/lib/wizard/simple.mjs";
+import { importSteps, nothingToWrite } from "@/lib/wizard/simple.mjs";
 import { SIMPLE_LABELS as L } from "@/lib/wizard/simple-labels.mjs";
 
 export function DownloadCard({
@@ -51,8 +51,9 @@ export function DownloadCard({
         </section>
         {error && <p className="rounded-md border border-danger/35 bg-danger/10 p-3 text-danger">{error.message}</p>}
         <div className="flex flex-wrap items-center gap-3">
-          {/* rien de neuf à exporter : aucun fichier à télécharger */}
-          {!preview.nothing_new && (
+          {/* rien de neuf à exporter, ou rien qui puisse être écrit : aucun fichier à télécharger */}
+          {nothingToWrite(preview) && <p className="meta text-muted-foreground">{L.nothingToWrite}</p>}
+          {!preview.nothing_new && !nothingToWrite(preview) && (
             <Button onClick={onDownload} disabled={busy}>
               {downloading ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
               {downloading ? L.downloading : L.download}

@@ -263,11 +263,14 @@ export const USE_CASES = [
     order: 91,
     title: "Prepare data for DATEV",
     summary:
-      "For tax advisors: add a customer or supplier list, sales or purchase invoices as Excel or CSV and download the file prepared for DATEV.",
+      "For tax advisors: add a customer or supplier list, sales or purchase invoices or a cash book as Excel or CSV and download the file prepared for DATEV.",
     goal: "A DATEV import file from your client's own lists, with the same checks as the wizard and nothing sent.",
     flow: ["Your file", "DATEV format", "Summary", "DATEV file"],
     systems: { source: ["file"], target: ["datev"] },
-    demo: { instance: "a customer or supplier list, sales or purchase invoices (.xlsx or .csv)", minutes: 5 },
+    demo: {
+      instance: "a customer or supplier list, sales or purchase invoices, a cash book (.xlsx or .csv)",
+      minutes: 5,
+    },
     steps: [
       "Open Prepare data for DATEV",
       "Drop your list or your invoices: Bookings or Customers and suppliers is chosen from the file (change it in one click)",
@@ -278,7 +281,8 @@ export const USE_CASES = [
     expected: [
       "Only the DATEV formats are offered: no AI-proposed system and no Expert mode on this page",
       "Purchase invoices: the expense account of each category (Kostenart) is preselected from a usual chart of accounts table, to be confirmed by the tax advisor; an unknown category is never guessed",
-      "Purchases from another country (intra-community acquisition, reverse charge) are listed, not exported, until VAT in bookings is supported",
+      "Invoices with another country: the account follows the partner's zone (EU with a valid VAT ID, outside the EU) and the kind of supply (goods or services), from a VAT accounts table to be confirmed by the tax advisor; a missing kind of supply is one question, never guessed",
+      "Cash book: every booking on the cash account of the client (preselected, to be confirmed), receipts and payments by category; the cash balance is recalculated, a negative balance is shown first and its entry needs your decision; card payments are never exported as cash",
       "The same screens as the AI Migration Wizard: only the title, the introduction and the targets differ",
       "Nothing is written to your systems and nothing is sent to DATEV",
     ],

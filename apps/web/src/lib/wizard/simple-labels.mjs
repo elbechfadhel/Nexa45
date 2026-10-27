@@ -28,6 +28,7 @@ const CHECKS = {
   "Customers & suppliers": "Names, addresses, VAT IDs, bank accounts and account numbers.",
   Invoices: "Amounts, VAT rates, dates, accounts and invoices already exported.",
   "Purchase invoices": "Suppliers, amounts, VAT rates, dates, expense accounts and invoices already exported.",
+  "Cash book": "Receipts and payments, VAT rates, the cash balance and entries already exported.",
 };
 
 /** @param {string[]} receives */
@@ -71,6 +72,7 @@ export const SIMPLE_LABELS = {
   formatKinds: {
     Invoices: "Bookings",
     "Purchase invoices": "Bookings",
+    "Cash book": "Bookings",
     "Customers & suppliers": "Customers and suppliers",
     Customers: "Customers",
     Suppliers: "Suppliers",
@@ -149,6 +151,7 @@ export const SIMPLE_LABELS = {
     "Customers & suppliers": { one: "customer or supplier", many: "customers and suppliers" },
     Invoices: { one: "invoice", many: "invoices" },
     "Purchase invoices": { one: "purchase invoice", many: "purchase invoices" },
+    "Cash book": { one: "cash book entry", many: "cash book entries" },
   },
   nounFallback: { one: "record", many: "records" },
 
@@ -201,6 +204,9 @@ export const SIMPLE_LABELS = {
   mappingsHelp: "Preselected usual accounts: confirm them with your tax advisor.",
   mappingColumns: { category: "Category", rate: "VAT", account: "Account", taxKey: "Tax key" },
   automaticAccount: "No tax key (automatic account)",
+  noTaxKey: "No tax key",
+  noVat: "—",
+  nothingToWrite: "Nothing can be written to the file yet: see the rows not imported above.",
   /** @param {string} rate */
   taxKeyShared: (rate) => `The tax key applies to every category at ${rate} % VAT.`,
   fileDecisionsHeading: "About your file",
