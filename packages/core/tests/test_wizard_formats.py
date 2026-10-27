@@ -941,3 +941,53 @@ def test_an_account_never_preselected_says_why_in_its_question():
     assert private.default is None and "depends on the legal form of the client" in private.question.help
     meal = qs["map:CATEGORY:cash:bewirtung:19"]
     assert meal.default is None and "never guessed" in meal.question.help
+
+
+BANK_CSV_HEADERS = [
+    "Auftragskonto",
+    "Buchungstag",
+    "Valutadatum",
+    "Buchungstext",
+    "Verwendungszweck",
+    "Glaeubiger ID",
+    "Mandatsreferenz",
+    "Beguenstigter/Zahlungspflichtiger",
+    "Kontonummer/IBAN",
+    "BIC (SWIFT-Code)",
+    "Betrag",
+    "Waehrung",
+    "Info",
+]
+
+
+def test_a_bank_statement_is_its_own_kind_of_file_recognized_by_its_columns():
+    from uie_core.sources.camt import COLUMNS
+    from uie_core.wizard.formats import data_type_of_file, format_target, structure
+    from uie_core.wizard.quick import BANK_STATEMENT
+
+    fmt = format_target("datev", "buchungsstapel", "13", "DATEV Buchungsstapel 13")
+    assert fmt is not None and BANK_STATEMENT in fmt.table.data_types
+    # export « CSV-CAMT » d'une banque et relevé CAMT.053 (lu sous la même forme) : règles, sans IA
+    assert infer_data_type(BANK_CSV_HEADERS) == BANK_STATEMENT == infer_data_type(list(COLUMNS))
+    assert data_type_of_file(fmt, BANK_CSV_HEADERS) == BANK_STATEMENT == data_type_of_file(fmt, list(COLUMNS))
+    bank = INVOICES.model_copy(update={"columns": INVOICES.columns_for(BANK_STATEMENT)})
+    assert matched_keys(bank, list(COLUMNS)) == {
+        "account_iban",
+        "document_date",
+        "value_date",
+        "bank_text",
+        "purpose",
+        "counterparty_name",
+        "counterparty_iban",
+        "amount",
+        "currency",
+        "bank_reference",
+    }
+    fields = {f.name for f in structure(fmt, BANK_STATEMENT).fields}
+    assert not {"partner_number", "gross_amount", "cash_in", "cash_category"} & fields
+    # les livres de caisse et les journaux de factures ne changent pas
+    assert data_type_of_file(fmt, CASH_HEADERS) == "Cash book"
+    assert (
+        infer_data_type(["Re-Nr.", "Re-Datum", "Kd-Nr.", "Kunde", "Netto €", "USt %", "Brutto €"])
+        == "Invoices"
+    )

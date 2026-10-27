@@ -50,6 +50,7 @@ from uie_core.wizard.model import (
     WizardUnavailable,
 )
 from uie_core.wizard.quick import (
+    BANK_STATEMENT,
     CASH_BOOK,
     MAX_BLOCKING,
     PURCHASE_INVOICES,
@@ -310,6 +311,14 @@ class FormatFlow:
         choices: dict[str, str],
     ) -> dict[str, Any]:
         """Moteur de valeurs puis constructeur du CDM (rien n'est lu dans un système, rien n'est écrit)."""
+        data_type = next(
+            (a.label for a in answers if a.topic == DATA_TYPE_TOPIC), self.fmt.table.data_types[0]
+        )
+        if data_type == BANK_STATEMENT:
+            # export bancaire déclaré : ses dates « TT.MM.JJ » sont du siècle en cours (D7) ; décision
+            # présélectionnée et listée en transformation, jamais pour un fichier quelconque
+            dates = {f.name for f in p.fields if f.type == "date"}
+            choices = {f"century:{d.position}": "20" for d in decisions if d.target in dates} | choices
         summary, rows, pairs = prepare(p, data, file_name, decisions, choices=choices)
         columns = {target: header for header, target in pairs}
         out = {e.row - 1 for e in summary.excluded_rows}
@@ -317,9 +326,6 @@ class FormatFlow:
             {} if i in out else {h: r[j] for j, h in enumerate(summary.headers) if r[j]}
             for i, r in enumerate(rows)
         ]
-        data_type = next(
-            (a.label for a in answers if a.topic == DATA_TYPE_TOPIC), self.fmt.table.data_types[0]
-        )
         own, _ = setting_values(self.fmt, choices)
         if self.fmt.domain == DomainKey.PARTNER:
             built: Any = partners_from_rows(self.fmt.table, table_rows, columns, role_of(data_type), choices)

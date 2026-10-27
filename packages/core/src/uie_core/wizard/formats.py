@@ -46,7 +46,14 @@ from uie_core.mapping.suggestions import (
 from uie_core.sources.table import FileTableRegistry, FileTableSpec
 from uie_core.wizard.missing import MissingChoice, MissingKind, MissingQuestion
 from uie_core.wizard.model import TargetField, TargetProposal, Verification
-from uie_core.wizard.quick import CASH_BOOK, INVOICES, PURCHASE_INVOICES, QuickMapping, QuickQuestion
+from uie_core.wizard.quick import (
+    BANK_STATEMENT,
+    CASH_BOOK,
+    INVOICES,
+    PURCHASE_INVOICES,
+    QuickMapping,
+    QuickQuestion,
+)
 from uie_core.wizard.values import ValueQuestion
 
 MODEL_DOMAIN = {"partner": DomainKey.PARTNER, "accounting": DomainKey.ACCOUNTING}
@@ -110,6 +117,13 @@ def data_type_of_file(fmt: FormatTarget, headers: list[str]) -> str | None:
     pour des factures, le sens aussi (numéro de client : ventes, numéro de fournisseur : achats ; ni l'un ni
     l'autre, ou les deux : non tranché)."""
     found = matched_keys(fmt.table, headers)
+    # relevé bancaire : un montant et un motif de paiement (vocabulaire des colonnes de ce type)
+    if BANK_STATEMENT in fmt.table.data_types:
+        bank = matched_keys(
+            fmt.table.model_copy(update={"columns": fmt.table.columns_for(BANK_STATEMENT)}), headers
+        )
+        if {"amount", "purpose"} <= bank:
+            return BANK_STATEMENT
     # livre de caisse : une colonne de recettes ET une de dépenses (ni client, ni fournisseur)
     if CASH_BOOK in fmt.table.data_types and {"cash_in", "cash_out"} <= found:
         required = {c.key for c in fmt.table.columns_for(CASH_BOOK) if c.required}

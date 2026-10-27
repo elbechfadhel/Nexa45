@@ -74,9 +74,15 @@ CASH_WORDS = frozenset(
     """einnahme einnahmen ausgabe ausgaben kassenbestand kassenstand kassensaldo kassenbuch bareinnahme
     barausgabe cashin cashout recette recettes depense depenses encaissement decaissement""".split()
 )
+# relevé bancaire (export d'une banque) : motif de paiement, compte, contrepartie, dates de la banque
+BANK_WORDS = frozenset(
+    """verwendungszweck auftragskonto valutadatum valuta buchungstag zahlungspflichtiger beguenstigter
+    begünstigter mandatsreferenz glaeubiger gläubiger sammlerreferenz wertstellung""".split()
+)
 # types de données des journaux de factures : ventes (factures de sortie) et achats (factures d'achat) ;
-# livre de caisse (une ligne = une recette ou une dépense, sans client ni fournisseur)
+# livre de caisse (une ligne = une recette ou une dépense, sans client ni fournisseur) ; relevé bancaire
 INVOICES, PURCHASE_INVOICES, CASH_BOOK = "Invoices", "Purchase invoices", "Cash book"
+BANK_STATEMENT = "Bank statement"
 MIN_SCORE = 3  # en-têtes reconnus au minimum, et au moins deux fois plus que l'autre sorte
 
 # type de données affiché → domaine du domain pack qui donne la structure
@@ -100,6 +106,9 @@ def infer_data_type(headers: list[str], options: list[str] | None = None) -> str
     """Type de données d'après les en-têtes, parmi `options` (types que la cible reçoit ; None : tous) ;
     None quand les règles ne tranchent pas (le LLM peut alors être consulté, parmi les mêmes types)."""
     words = [_words(h) for h in headers]
+    # en-têtes d'un export bancaire (au moins deux) : un relevé bancaire, avant tout le reste
+    if sum(1 for w in words if w & BANK_WORDS) >= 2:
+        return BANK_STATEMENT if options is None or BANK_STATEMENT in options else None
     # recettes ET dépenses (au moins deux en-têtes de caisse) : un livre de caisse, avant les factures
     if sum(1 for w in words if w & CASH_WORDS) >= 2:
         return CASH_BOOK if options is None or CASH_BOOK in options else None
