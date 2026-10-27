@@ -203,3 +203,31 @@ opening_words: [Anfangsbestand, Anfangssaldo, Übertrag, Uebertrag, Saldovortrag
 card_words: [EC-Karte, EC Karte, ec-cash, Girocard, Kartenzahlung, Kartenzahlungen, Kreditkarte, Debitkarte,
              Maestro, Mastercard, VISA, Kartenterminal, SumUp, card payment, credit card, debit card,
              paiement par carte, carte bancaire]
+
+# relevé bancaire : mouvements HORS factures, reconnus par des mots (entiers) du motif ou de la contrepartie,
+# jamais par le montant ; leur compte vient de la table des comptes bancaires de la cible (à valider)
+bank_categories:
+  - key: bank_fees
+    label: Bank fees
+    words: [Entgelt Kontoführung, Kontoführung, Kontoführungsentgelt, Kontoführungsgebühr, Entgeltabschluss,
+            Rechnungsabschluss, Kontoabschluss, Bankgebühren, Bank charges, account maintenance fee, frais de tenue
+            de compte]
+  - key: cash_deposit
+    label: Cash deposit
+    words: [Bareinzahlung, Einzahlung Bargeld, Bargeldeinzahlung, cash deposit, dépôt d espèces]
+  - key: vat_prepayment
+    label: VAT prepayment (tax office)
+    words: [USt-VZ, UStVA, Umsatzsteuervorauszahlung, Umsatzsteuer-Vorauszahlung, Umsatzsteuer Vorauszahlung,
+            VAT prepayment]
+  - key: rent
+    label: Rent
+    words: [Miete, Mietzahlung, Rent, Loyer]
+    per_counterparty: true
+  - key: card_settlement
+    label: Card payments settlement
+    words: [Kartenumsätze, Kartenumsatz, Kartenzahlungen, Kartenabrechnung, Kartenterminal, card settlement,
+            card payments]
+    never_booked: "card sales and their fees are not exported invoices: book this settlement with your tax
+      advisor"
+discount_words: [Skonto, Skontoabzug, abzgl. Skonto, cash discount, escompte]
+

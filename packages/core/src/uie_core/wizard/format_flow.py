@@ -20,6 +20,7 @@ from uie_core.exports.open_items import OpenItemRegister
 from uie_core.exports.records import ExportAccountAssignmentRecord, ExportValueMappingRecord
 from uie_core.exports.service import DEFAULT_CLIENT, ExportError, ExportNotReady
 from uie_core.identity.context import TenantContext
+from uie_core.imports.profile import read_table
 from uie_core.mapping import IssueLevel, RecordStatus
 from uie_core.mapping.suggestions import CashAccountRegistry
 from uie_core.partners import PartnerReadResult
@@ -62,6 +63,20 @@ from uie_core.wizard.quick import (
 )
 from uie_core.wizard.text import count, say
 from uie_core.wizard.values import ExcludedRow, ValueIssue, ValueQuestion, rows_of
+
+BANK_SETTING = "bank_account"  # réglage du compte bancaire du dossier (paramètre du binding)
+BANK_KIND = "BANK_ACCOUNT"  # mémoire du dossier : IBAN du relevé → compte bancaire
+
+
+def statement_iban(data: bytes, file_name: str, decisions: list[MappingDecision]) -> str | None:
+    """IBAN du compte d'un relevé bancaire (colonne du compte du relevé, première valeur) ; None : absent."""
+    column = next((d.position for d in decisions if d.target == "account_iban"), None)
+    if column is None:
+        return None
+    _, df = read_table(data, file_name)
+    values = [str(v).replace(" ", "").upper() for v in df.get_column(df.columns[column]).to_list() if v]
+    return values[0] if values else None
+
 
 if TYPE_CHECKING:
     from uie_core.wizard.service import MigrationWizardService
@@ -170,8 +185,10 @@ class FormatFlow:
             saved,
             saved_shared,
             self._data_year(p, data, file_name, decisions),
-            without_partner=data_type == CASH_BOOK,
+            kind="cash" if data_type == CASH_BOOK else "bank" if data_type == BANK_STATEMENT else None,
         )
+        if data_type == BANK_STATEMENT:
+            settings = self._bank_account_setting(settings, statement_iban(data, file_name, decisions))
         choices = {q.decision: q.default for q in settings if q.decision and q.default}
         # décisions du moteur de valeurs et du constructeur du CDM (sur les réponses présélectionnées)
         state = self._state(answers, p, data, file_name, decisions, choices)
@@ -245,6 +262,19 @@ class FormatFlow:
             scope=built.scope,
             saved=self._saved_mappings(),
         )
+
+    def _bank_account_setting(self, settings: list[QuickQuestion], iban: str | None) -> list[QuickQuestion]:
+        """Compte bancaire du relevé : celui retenu pour CET IBAN au téléchargement précédent (« from your
+        settings »), sinon la présélection d'usage (table, à valider)."""
+        remembered = self._saved_mappings().get(f"{MAPPING}{BANK_KIND}:{iban}") if iban else None
+        if not remembered:
+            return settings
+        return [
+            q.model_copy(update={"default": remembered, "default_from": "your_settings"})
+            if q.decision == SETTING + BANK_SETTING
+            else q
+            for q in settings
+        ]
 
     def _chart(self, choices: dict[str, str]) -> str | None:
         """Plan comptable du dossier : réponse, sinon vos réglages."""
@@ -526,6 +556,10 @@ class FormatFlow:
                 )
             if gen is not None:
                 content, filename = gen.content, gen.filename
+                iban = statement_iban(data, file_name, decisions) if built.scope == "BANK" else None
+                if iban and choices.get(SETTING + BANK_SETTING):
+                    # compte bancaire retenu pour CET IBAN : repris au relevé suivant du même compte (D2)
+                    choices = {**choices, f"{MAPPING}{BANK_KIND}:{iban}": choices[SETTING + BANK_SETTING]}
                 self._remember_mappings(org, choices)
                 if plan is not None and built.scope in ("SALE", "PURCHASE"):
                     # factures écrites : registre des factures ouvertes du dossier (rapprochement bancaire)

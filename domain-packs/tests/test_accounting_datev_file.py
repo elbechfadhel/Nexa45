@@ -286,7 +286,7 @@ def test_history_keeps_an_audit_without_amounts(prep):
         1,
         "cp1252",
     )
-    assert run.instance_id == iid and run.target_snapshot_id is not None and run.binding_version == "1.4.0"
+    assert run.instance_id == iid and run.target_snapshot_id is not None and run.binding_version == "1.5.0"
     assert run.file_sha256 == hashlib.sha256(file.content).hexdigest()
     d = run.details
     assert (d["company"], d["format_version"], d["source_documents"], d["exported_documents"]) == (

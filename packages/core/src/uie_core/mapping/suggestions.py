@@ -201,6 +201,10 @@ class CashAccountTable(_Spec):
     def tax_key_for(self, rate: Decimal) -> str | None:
         return self.tax_keys.get(f"{rate.normalize():f}")
 
+    @property
+    def own_account(self) -> str:
+        return self.cash_account
+
 
 class CashAccountRegistry:
     """Tables des livres de caisse, par (système, format, plan comptable)."""
@@ -214,6 +218,55 @@ class CashAccountRegistry:
 
     @classmethod
     def find(cls, system: str, product: str, chart: str | None) -> CashAccountTable | None:
+        return cls._tables.get((system, product, chart)) if chart else None
+
+
+BANK_PREFIX = "bank"
+
+
+def bank_category_ref(key: str, counterparty: str | None = None) -> str:
+    """Catégorie d'un mouvement bancaire hors factures : « bank:<clé> », ou « bank:<clé>:<IBAN> » quand le
+    compte dépend de la contrepartie (un loyer par bailleur)."""
+    return f"{BANK_PREFIX}:{key}" + (f":{counterparty}" if counterparty else "")
+
+
+def parse_bank_ref(ref: str) -> tuple[str, str | None] | None:
+    """(clé, contrepartie) d'une catégorie bancaire ; None : autre catégorie."""
+    parts = ref.split(":")
+    if parts[0] != BANK_PREFIX or len(parts) not in (2, 3):
+        return None
+    return parts[1], parts[2] if len(parts) == 3 else None
+
+
+class BankAccountTable(_Spec):
+    """Comptes d'usage d'un relevé bancaire : compte de la banque et contre-compte des mouvements hors
+    factures (clé de catégorie de la source → compte ; absente : jamais présélectionné)."""
+
+    kind: Literal["bank_accounts"]
+    table_version: str
+    target: TargetProductRef
+    chart: str
+    status: str  # « à valider par le Steuerberater » : affiché avec chaque présélection
+    bank_account: str = Field(pattern=r"^\d+$")
+    accounts: dict[str, str] = {}
+
+    @property
+    def own_account(self) -> str:
+        return self.bank_account
+
+
+class BankAccountRegistry:
+    """Tables des relevés bancaires, par (système, format, plan comptable)."""
+
+    _tables: ClassVar[dict[tuple[str, str, str], BankAccountTable]] = {}
+
+    @classmethod
+    def register(cls, table: BankAccountTable) -> BankAccountTable:
+        cls._tables[(table.target.system, table.target.product, table.chart)] = table
+        return table
+
+    @classmethod
+    def find(cls, system: str, product: str, chart: str | None) -> BankAccountTable | None:
         return cls._tables.get((system, product, chart)) if chart else None
 
 
@@ -254,6 +307,8 @@ class CategoryAccountRegistry:
 
 
 __all__ = [
+    "BankAccountRegistry",
+    "BankAccountTable",
     "CashAccountRegistry",
     "CashAccountTable",
     "CashCategory",
@@ -264,8 +319,10 @@ __all__ = [
     "VatAccountRegistry",
     "VatAccountTable",
     "automatic_accounts",
+    "bank_category_ref",
     "cash_category_ref",
     "category_key",
+    "parse_bank_ref",
     "parse_cash_ref",
     "parse_vat_ref",
     "vat_category_ref",

@@ -169,9 +169,9 @@ class ProfileParam(_Spec):
     required_for_file: bool = False
     # ligne de résumé des réglages (« Customer account = {value} + customer number ») ; sans elle : libellé
     summary: str | None = None
-    # « without_partner » : réglage des seules pièces SANS partenaire (compte de la caisse), posé seulement
-    # pour un fichier de telles pièces
-    applies_to: Literal["all", "without_partner"] = "all"
+    # « cash » / « bank » : réglage des seules écritures de caisse (compte de la caisse) ou de banque (compte
+    # bancaire), posé seulement pour un fichier de telles pièces
+    applies_to: Literal["all", "cash", "bank"] = "all"
 
 
 class AccountSpec(_Spec):
@@ -231,11 +231,11 @@ class PartnerAccountSpec(_Spec):
 
 
 class OwnAccountSpec(_Spec):
-    """Compte PROPRE du dossier écrit à la place du compte du tiers pour une pièce SANS partenaire (écriture
-    de caisse : le compte de la caisse) : valeur d'un paramètre du profil, jamais devinée."""
+    """Compte PROPRE du dossier écrit à la place du compte du tiers pour une écriture de CAISSE ou de BANQUE
+    (le compte de la caisse, le compte bancaire) : valeur d'un paramètre du profil, jamais devinée."""
 
     field: str  # même position que le compte du tiers
-    param: str  # paramètre du profil (propre au binding) qui donne le compte
+    params: dict[Literal["cash", "bank"], str]  # sorte de pièce → paramètre du profil qui donne le compte
     length_from: str | None = None  # paramètre (hérité) : longueur exacte attendue
 
 
@@ -330,8 +330,8 @@ class TargetBinding(_Spec):
         if self.partner_account:
             lengths.append(self.partner_account.length_from)
         if self.own_account:
-            if self.own_account.param not in params:
-                raise ValueError(f"paramètre de profil inconnu : {self.own_account.param}")
+            if missing_own := sorted(set(self.own_account.params.values()) - set(params)):
+                raise ValueError(f"paramètres de profil inconnus : {missing_own}")
             if self.own_account.length_from:
                 lengths.append(self.own_account.length_from)
         if unknown := sorted(set(lengths) - known):

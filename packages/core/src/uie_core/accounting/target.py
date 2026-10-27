@@ -1765,7 +1765,7 @@ def _document(
     partner_issue = None
     if doc.partner is None:
         # pièce SANS partenaire (écriture de caisse) : compte propre du dossier, jamais un compte inventé
-        partner_account, partner_issue = _own_account(target, values)
+        partner_account, partner_issue = _own_account(target, values, "cash")
     elif b.partner_account:
         fd = target.resolved.field(b.partner_account.field)
         who = "Customer" if role == "CUSTOMER" else "Supplier"
@@ -1919,19 +1919,20 @@ def _counter_key(bk: Booking) -> tuple[LookupKind, str, str, str | None]:
     return LookupKind.CATEGORY, cat.source_ref, cat.name or cat.source_ref, None
 
 
-def _own_account(target: _Target, values: dict[str, Any]) -> tuple[str | None, TargetIssue | None]:
-    """Compte propre du dossier pour une pièce sans partenaire (réglage du profil déclaré par le binding), ou
-    le problème qui bloque l'écriture."""
+def _own_account(target: _Target, values: dict[str, Any], kind: str) -> tuple[str | None, TargetIssue | None]:
+    """Compte propre du dossier d'une écriture de caisse ou de banque (`kind` : cash | bank ; réglage du
+    profil déclaré par le binding), ou le problème qui bloque l'écriture."""
     b = target.binding
     spec = b.own_account
-    if spec is None:
+    param = spec.params.get(kind) if spec is not None else None  # type: ignore[call-overload]
+    if spec is None or param is None:
         return None, TargetIssue(
             level=IssueLevel.BLOCKING,
-            message=f"{_name(target)} has no account for a booking without customer or supplier",
+            message=f"{_name(target)} has no account for this kind of booking ({kind})",
         )
     fd = target.resolved.field(spec.field)
-    label = next((p.label for p in b.profile if p.name == spec.param), spec.param)
-    value = str(values.get(spec.param) or "").strip()
+    label = next((p.label for p in b.profile if p.name == param), param)
+    value = str(values.get(param) or "").strip()
     if not value:
         return None, TargetIssue(
             level=IssueLevel.BLOCKING,

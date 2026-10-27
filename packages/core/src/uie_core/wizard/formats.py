@@ -36,10 +36,12 @@ from uie_core.mapping import (
     TargetBindingRegistry,
 )
 from uie_core.mapping.suggestions import (
+    BankAccountRegistry,
     CashAccountRegistry,
     CategoryAccountRegistry,
     VatAccountRegistry,
     automatic_accounts,
+    parse_bank_ref,
     parse_cash_ref,
     parse_vat_ref,
 )
@@ -74,6 +76,7 @@ ASKED = (
     "currency",
     "lock_bookings",
     "cash_account",
+    "bank_account",
 )
 NEVER_INVENTED = frozenset({"advisor_number", "client_number"})
 
@@ -227,26 +230,32 @@ def settings_questions(
     saved: dict[str, Any],
     saved_shared: dict[str, Any],
     data_year: int,
-    without_partner: bool = False,
+    kind: str | None = None,
 ) -> list[QuickQuestion]:
     """Une question par réglage : valeur de VOS réglages (enregistrés) d'abord, sinon valeur d'usage
-    présélectionnée ; Beraternummer et Mandantennummer : jamais de présélection inventée. Les réglages des
-    pièces sans partenaire (compte de la caisse) ne sont posés que pour un fichier de telles pièces
-    (`without_partner`) ; leur valeur d'usage vient de la table du plan comptable (à valider)."""
+    présélectionnée ; Beraternummer et Mandantennummer : jamais de présélection inventée. Le compte de la
+    caisse ou de la banque n'est posé que pour un fichier de caisse ou de banque (`kind` : cash | bank) ; sa
+    valeur d'usage vient de la table du plan comptable (à valider)."""
     length = int(saved_shared.get("account_length") or saved.get("account_length") or 4)
     chart = str(saved_shared.get("chart_of_accounts") or _usual("chart_of_accounts", length, data_year))
     b = fmt.binding
     cash = CashAccountRegistry.find(b.target.system, b.target.product, chart)
+    bank = BankAccountRegistry.find(b.target.system, b.target.product, chart)
+    usual_own = {"cash": cash, "bank": bank}
     out = []
     for p, shared in params(fmt):
-        if p.applies_to == "without_partner" and not without_partner:
+        if p.applies_to != "all" and p.applies_to != kind:
             continue
         own = _shown(p, (saved_shared if shared else saved).get(p.name))
         # comptes de personne : longueur des comptes généraux + 1 (10000-69999 pour une longueur 4)
         default = own or (None if p.name in NEVER_INVENTED else _usual(p.name, length, data_year))
         status = None
-        if b.own_account and p.name == b.own_account.param and not own and cash is not None:
-            default, status = cash.cash_account, cash.status  # compte de la caisse d'usage, à valider
+        table = usual_own.get(p.applies_to)
+        if b.own_account and p.name in b.own_account.params.values() and not own and table is not None:
+            default, status = (
+                table.own_account,
+                table.status,
+            )  # compte de la caisse / banque d'usage, à valider
         choices = [MissingChoice(value=c, label=c) for c in p.choices]
         if p.type == ParamType.CHOICE and p.name == "lock_bookings":
             choices = [
@@ -339,6 +348,7 @@ def mapping_questions(
     table = CategoryAccountRegistry.find(b.target.system, b.target.product, chart, scope)
     vat_table = VatAccountRegistry.find(b.target.system, b.target.product, chart)
     cash_table = CashAccountRegistry.find(b.target.system, b.target.product, chart)
+    bank_table = BankAccountRegistry.find(b.target.system, b.target.product, chart)
     automatic = automatic_accounts(b.target.system, b.target.product, chart, scope)
     automatic_cash = automatic_accounts(b.target.system, b.target.product, chart, scope, cash=True)
     lookup = b.lookup(LookupKind.CATEGORY)
@@ -347,13 +357,19 @@ def mapping_questions(
     for ref, name in sorted(categories.items()):
         decision = f"{MAPPING}CATEGORY:{ref}"
         cash = parse_cash_ref(ref)
-        # « purchase:bürobedarf:19 », « sale:19 » : le taux en dernier ; caisse sans TVA : aucun taux
-        rate_of = ref.rsplit(":", 1)[-1] if cash is None or cash[1] is not None else ""
+        bank = parse_bank_ref(ref)
+        # « purchase:bürobedarf:19 », « sale:19 » : le taux en dernier ; caisse sans TVA, banque : aucun taux
+        rate_of = "" if bank is not None or (cash is not None and cash[1] is None) else ref.rsplit(":", 1)[-1]
         usual = hint.categories.get(ref) if hint else None
         from_table = None
         status = table.status if table is not None else ""
         vat = parse_vat_ref(ref)
-        if cash is not None:
+        if bank is not None:
+            # relevé bancaire : compte d'usage du mouvement hors factures (table des comptes bancaires)
+            if bank_table is not None:
+                usual = from_table = bank_table.accounts.get(bank[0])
+                status = bank_table.status
+        elif cash is not None:
             # livre de caisse : compte d'usage de la catégorie à ce taux (ou sans TVA), table de la caisse
             if cash_table is not None:
                 usual = from_table = cash_table.account_for(cash[0], cash[1])
@@ -402,6 +418,7 @@ def mapping_questions(
                 decision=decision,
                 mapping=QuickMapping(
                     category=name.removesuffix(f" at {rate_of} % VAT").removesuffix(" (no VAT)"),
+                    # banque : jamais une clé de taxe (les comptes de la table bancaire ne portent pas de TVA)
                     rate=rate_of,
                     tax_decision=f"{MAPPING}TAX:rate:{scope}:{rate_of}" if rate_of else None,
                     automatic_accounts=automatic_cash if cash is not None else automatic,

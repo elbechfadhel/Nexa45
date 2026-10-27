@@ -58,6 +58,18 @@ class TaxRates(_Model):
     rates: list[Decimal]
 
 
+class BankCategory(_Model):
+    """Mouvement bancaire HORS factures reconnu par des mots du motif ou de la contrepartie (jamais par le
+    montant) : frais, dépôt d'espèces, impôt… `per_counterparty` : son compte dépend de la contrepartie (un
+    loyer par bailleur) ; `never_booked` : jamais écrit, toujours avec ce motif (versement des cartes)."""
+
+    key: str = Field(pattern=r"^[a-z][a-z0-9_]*$")
+    label: str
+    words: list[str] = Field(min_length=1)
+    per_counterparty: bool = False
+    never_booked: str | None = None
+
+
 class FileTableSpec(_Model):
     table_version: str
     domain: DomainKey
@@ -82,6 +94,10 @@ class FileTableSpec(_Model):
     # mots d'un PAIEMENT PAR CARTE dans le texte d'une ligne de caisse (« EC-Karte ») : pas de l'argent
     # liquide ; lus dans le texte de l'écriture seulement, jamais dans une remarque libre
     card_words: list[str] = []
+    # relevé bancaire : mouvements hors factures (par mots) ; mots d'un ESCOMPTE (Skonto) dans le motif d'un
+    # paiement : jamais rapproché d'office
+    bank_categories: list[BankCategory] = []
+    discount_words: list[str] = []
     # pays du fichier quand aucun n'est donné (adresse sans pays, taux de TVA) ; None : jamais supposé
     home_country: str | None = None
 
@@ -165,4 +181,4 @@ class FileTableRegistry:
         return list(cls._tables.values())
 
 
-__all__ = ["FileTableRegistry", "FileTableSpec", "TableColumn", "TaxRates"]
+__all__ = ["BankCategory", "FileTableRegistry", "FileTableSpec", "TableColumn", "TaxRates"]

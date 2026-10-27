@@ -991,3 +991,33 @@ def test_a_bank_statement_is_its_own_kind_of_file_recognized_by_its_columns():
         infer_data_type(["Re-Nr.", "Re-Datum", "Kd-Nr.", "Kunde", "Netto €", "USt %", "Brutto €"])
         == "Invoices"
     )
+
+
+def test_the_usual_accounts_of_a_bank_statement_are_data_to_be_validated():
+    from uie_core.mapping.suggestions import BankAccountRegistry, bank_category_ref, parse_bank_ref
+    from uie_core.wizard.formats import format_target, mapping_questions, settings_questions
+
+    table = BankAccountRegistry.find("datev", "buchungsstapel", "03")
+    assert table is not None and "to be validated by your tax advisor" in table.status
+    assert (table.bank_account, table.accounts) == (
+        "1200",
+        {"bank_fees": "4970", "cash_deposit": "1360", "vat_prepayment": "1780"},
+    )
+    keys = {c.key: c for c in INVOICES.bank_categories}
+    assert keys["rent"].per_counterparty and keys["card_settlement"].never_booked
+    assert "Skonto" in INVOICES.discount_words
+    rent = bank_category_ref("rent", "DE27100777770209299700")
+    assert parse_bank_ref(rent) == ("rent", "DE27100777770209299700") and parse_bank_ref("cash:x") is None
+    fmt = format_target("datev", "buchungsstapel", "13", "DATEV Buchungsstapel 13")
+    assert fmt is not None
+    cats = {"bank:bank_fees": "Bank fees", rent: "Rent (Immobilien Vogel GbR)"}
+    qs = {q.decision: q for q in mapping_questions(fmt, cats, [], "03", {}, scope="PURCHASE")}
+    fees = qs["map:CATEGORY:bank:bank_fees"]
+    assert fees.default == "4970" and fees.mapping is not None and fees.mapping.tax_decision is None
+    assert qs[f"map:CATEGORY:{rent}"].default is None  # loyer : jamais deviné
+    # compte bancaire : posé pour un relevé seulement, présélectionné depuis la table (à valider)
+    bank = {q.decision: q for q in settings_questions(fmt, {}, {}, 2026, kind="bank")}
+    assert bank["setting:bank_account"].default == "1200" and "setting:cash_account" not in bank
+    assert "to be validated" in (bank["setting:bank_account"].question.help or "")
+    plain = {q.decision for q in settings_questions(fmt, {}, {}, 2026)}
+    assert not {"setting:bank_account", "setting:cash_account"} & plain

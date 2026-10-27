@@ -1,0 +1,23 @@
+# Comptes d'usage en SKR03 d'un RELEVÉ BANCAIRE pour DATEV Buchungsstapel : compte de la banque et contre-compte
+# des mouvements HORS factures (catégories de mouvements reconnues par la source, voir le tableau de source
+# ACCOUNTING `bank_categories`). USAGE COURANT, À VALIDER PAR LE STEUERBERATER : présélection seulement,
+# changeable dans « Decided for you » ; une catégorie sans compte ici (loyer…) n'est jamais devinée (question).
+# Un paiement RAPPROCHÉ d'une facture exportée n'utilise pas cette table : son contre-compte est le compte du
+# client ou du fournisseur. Pas un domain pack (`kind: bank_accounts`). Toute modification : incrémenter
+# table_version.
+#
+# 4970 Nebenkosten des Geldverkehrs (sans TVA) ; 1360 Geldtransit (dépôt d'espèces) ; 1780 Umsatzsteuer-
+# Vorauszahlungen. Aucune clé de taxe.
+
+kind: bank_accounts
+table_version: "1.0.0"
+target: {system: datev, product: buchungsstapel}
+chart: "03"
+status: usual practice, to be validated by your tax advisor (Steuerberater)
+
+bank_account: "1200"       # Bank : compte bancaire du dossier (réglage présélectionné, repris pour le même IBAN)
+
+accounts:
+  bank_fees: "4970"
+  cash_deposit: "1360"
+  vat_prepayment: "1780"

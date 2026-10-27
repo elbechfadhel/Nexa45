@@ -17,8 +17,9 @@
 # (motif de l'en-tête 5 dans le Registry) ; les versions 10-12 restent dans le Registry pour Compare.
 # Le sens (2) se rapporte au champ 7 Konto (description officielle) : S = débit du compte du tiers.
 
-binding_version: "1.4.0"   # 1.2.0 : Bezeichnung d'une plage de mois ; 1.3.0 : 0 % sans compte d'usage ;
-                           # 1.4.0 : écritures de caisse (compte de la caisse dans le Konto)
+binding_version: "1.5.0"   # 1.2.0 : Bezeichnung d'une plage de mois ; 1.3.0 : 0 % sans compte d'usage ;
+                           # 1.4.0 : écritures de caisse (compte de la caisse dans le Konto) ;
+                           # 1.5.0 : relevés bancaires (compte bancaire dans le Konto)
 name: DATEV Buchungsstapel (EXTF)
 source: {model: accounting, version: "1"}
 target:
@@ -47,7 +48,7 @@ partner_account:
 # `cash_account`, présélectionné depuis la table des comptes de caisse, à valider), jamais un compte inventé
 own_account:
   field: "007"
-  param: cash_account
+  params: {cash: cash_account, bank: bank_account}
   length_from: account_length
 
 lookups:
@@ -113,6 +114,11 @@ profile:
      help: "CP1252 works for every DATEV import; UTF-8 (with BOM) only for manual import or the DATEV API."}
   # livre de caisse seulement : compte de la caisse (une caisse par fichier), présélectionné depuis la table des
   # comptes de caisse du plan comptable du dossier, à valider avec le Steuerberater
-  - {name: cash_account, label: Cash account (Kasse), type: text, applies_to: without_partner,
+  - {name: cash_account, label: Cash account (Kasse), type: text, applies_to: cash,
      summary: "Cash account {value}",
      help: "The G/L account of this cash register, written in every booking (Konto). One cash register per file."}
+  # relevé bancaire seulement : compte bancaire du relevé (une banque par fichier), présélectionné depuis la table
+  # des comptes bancaires, puis repris pour le même IBAN ; à valider avec le Steuerberater
+  - {name: bank_account, label: Bank account (Bank), type: text, applies_to: bank,
+     summary: "Bank account {value}",
+     help: "The G/L account of this bank account, written in every booking (Konto). One bank account per file."}
