@@ -76,6 +76,9 @@ class FileTableSpec(_Model):
     # jamais déduite des motifs
     eu_members: list[str] = []
     tax_rates: list[TaxRates] = []
+    # texte d'une ligne d'OUVERTURE d'un livre de caisse (« Anfangsbestand ») : pas une écriture, son solde
+    # est le point de départ du contrôle du solde
+    opening_words: list[str] = []
     # pays du fichier quand aucun n'est donné (adresse sans pays, taux de TVA) ; None : jamais supposé
     home_country: str | None = None
 

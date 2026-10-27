@@ -774,3 +774,94 @@ def test_the_usual_accounts_of_a_cash_book_are_data_to_be_validated():
         None,
     )
     assert qs["map:CATEGORY:cash:bewirtung:19"].default is None  # question, jamais devinée
+
+
+# livre de caisse INVENTÉ qui reproduit les pièges de la vérité terrain du domaine 3 (valeurs mises en forme)
+CASH_ROWS = [
+    ("2026-09-01", "", "Anfangsbestand", "", "", "", "", "850"),
+    ("2026-09-01", "K-001", "Tageslosung Laden", "Barverkauf", "329.5", "", "19", "1179.5"),
+    ("2026-09-02", "K-002", "Tageslosung Laden", "Barverkauf", "358.03", "", "19", "1537.53"),
+    ("2026-09-02", "K-003", "Tageslosung Laden Bücher", "Barverkauf", "77.71", "", "7", "1615.24"),
+    ("2026-09-03", "K-004", "Tageslosung Laden", "Barverkauf", "406.19", "", "19", "2021.43"),
+    ("2026-09-03", "K-005", "Briefmarken", "Porto", "", "17", "0", "2004.43"),
+    ("2026-09-04", "K-006", "Tageslosung Laden", "Barverkauf", "357.58", "", "19", "2362.01"),
+    ("2026-09-04", "K-007", "Druckerpapier Baumarkt", "Bürobedarf", "", "23.8", "19", "2338.21"),
+    ("2026-09-07", "K-008", "Tageslosung Laden", "Barverkauf", "401.36", "", "19", "2739.57"),
+    ("2026-09-07", "K-009", "Tageslosung Laden Bücher", "Barverkauf", "31.74", "", "7", "2771.31"),
+    ("2026-09-08", "K-010", "Tageslosung Laden", "Barverkauf", "291.75", "", "19", "3063.06"),
+    ("2026-09-08", "K-011", "Einzahlung auf Bankkonto", "Bankeinzahlung", "", "1200", "", "1863.06"),
+    ("2026-09-09", "K-012", "Tageslosung Laden", "Barverkauf", "406.41", "", "19", "2269.47"),
+    ("2026-09-10", "K-013", "Tageslosung Laden", "Barverkauf", "335.75", "", "19", "2605.22"),
+    ("2026-09-10", "K-014", "Tageslosung EC-Karte", "Barverkauf", "640", "", "19", "3245.22"),
+    ("2026-09-11", "K-015", "Tageslosung Laden", "Barverkauf", "396.22", "", "19", "3641.44"),
+    ("2026-09-11", "K-016", "Geschäftsessen Kunde", "Bewirtung", "", "95.2", "19", "3546.24"),
+    ("2026-09-14", "K-017", "Barentnahme Inhaber", "Privatentnahme", "", "300", "", "3246.24"),
+    ("2026-09-14", "K-018", "Tageslosung Laden", "Barverkauf", "207.17", "", "19", "3453.41"),
+    ("2026-09-15", "K-019", "Tageslosung Laden", "Barverkauf", "292.58", "", "19", "3745.99"),
+    ("2026-09-15", "K-020", "Einzahlung auf Bankkonto", "Bankeinzahlung", "", "4246", "", "-500.01"),
+    ("2026-09-16", "K-021", "Abhebung für Wechselgeld", "Bankabhebung", "250", "", "", "-250.01"),
+    ("2026-09-16", "K-022", "Tageslosung Laden", "Barverkauf", "239.18", "", "19", "-10.83"),
+    ("2026-09-17", "K-023", "Tageslosung Laden", "Barverkauf", "310.5", "", "19", "299.67"),
+    ("2026-09-17", "", "Kaffee und Milch Büro", "Bürobedarf", "", "12.4", "19", "287.27"),
+    ("2026-09-18", "K-024", "Tageslosung Laden", "Barverkauf", "317.75", "", "19", "605.02"),
+    ("2026-09-18", "K-025", "Tageslosung Laden", "Barverkauf", "210", "35", "19", "780.02"),
+    ("2026-09-21", "K-026", "Tageslosung Laden", "Barverkauf", "183.15", "", "19", "963.17"),
+    ("2026-09-21", "K-027", "Toner Drucker", "Bürobedarf", "", "59.5", "19", "903.67"),
+    ("2026-09-22", "K-028", "Tageslosung Laden", "Barverkauf", "357", "", "19", "1260.67"),
+    ("2026-09-22", "K-028", "Tageslosung Laden", "Barverkauf", "357", "", "19", "1617.67"),
+    ("2026-09-19", "K-029", "Tageslosung Laden", "Barverkauf", "288", "", "19", "1905.67"),
+    ("2026-09-23", "K-030", "Tageslosung Laden", "Barverkauf", "305", "", "16", "2210.67"),
+    ("2026-09-24", "K-031", "Tageslosung Laden", "Barverkauf", "199", "", "19", "2419.67"),
+]
+CASH_KEYS = (
+    "document_date",
+    "document_number",
+    "booking_text",
+    "cash_category",
+    "cash_in",
+    "cash_out",
+    "tax_rate",
+    "cash_balance",
+)
+
+
+def _cash_rows() -> list[dict[str, str]]:
+    return [{k: v for k, v in zip(CASH_KEYS, r, strict=True) if v} for r in CASH_ROWS]
+
+
+def _no_vat(name: str) -> bool:
+    from uie_core.mapping.suggestions import CashAccountRegistry
+
+    table = CashAccountRegistry.find("datev", "buchungsstapel", "03")
+    return table is not None and table.without_vat(name)
+
+
+def test_a_cash_book_becomes_entries_without_partner_and_every_trap_is_listed():
+    from uie_cdm import DocumentType
+    from uie_core.wizard.cdm_cash import documents_from_cash_rows
+
+    t = documents_from_cash_rows(INVOICES, _cash_rows(), {}, "EUR", {}, no_vat=_no_vat)
+    assert t.opening_balance == Decimal("850")
+    docs = {d.number: d for d in t.documents}
+    reasons = {e.row: (e.kind, e.reason) for e in t.skipped}
+    assert reasons[1][0] == "opening"  # Anfangsbestand : pas une écriture
+    assert reasons[25][0] == "missing_number"  # pièce vide
+    assert reasons[27][0] == "cash_both"  # K-025 : recette ET dépense
+    assert reasons[31][0] == "duplicate"  # second K-028 : exporté une fois
+    assert reasons[33][0] == "rate" and "16 %" in reasons[33][1]  # K-030
+    assert len(t.documents) == 29 and all(d.partner is None for d in t.documents)
+    # recette : caisse au débit (ligne au crédit) ; dépense : ligne au débit ; montant brut, TVA déduite
+    k027, k028 = docs["K-027"], docs["K-028"]
+    assert k027.document_type == DocumentType.CASH_PAYMENT and k027.lines[0].gross_amount == Decimal("59.5")
+    assert (k027.lines[0].amount, k027.tax_amount) == (Decimal("50.00"), Decimal("9.50"))
+    assert k028.document_type == DocumentType.CASH_RECEIPT and k028.lines[0].gross_amount == Decimal("-357")
+    assert k027.lines[0].description == "Toner Drucker" and k027.source_ref == "file:cash:K-027"
+    # sans TVA : seulement pour une catégorie déclarée sans TVA (Geldtransit, Privatentnahme)
+    assert docs["K-011"].lines[0].tax_rate is None and docs["K-011"].lines[0].category.source_ref == (
+        "cash:bankeinzahlung"
+    )
+    assert docs["K-003"].lines[0].category.source_ref == "cash:barverkauf:7"
+    assert t.category_scope["cash:barverkauf:19"] == "SALE" and t.category_scope["cash:porto:0"] == "PURCHASE"
+    assert t.rates == {"SALE": ["19", "7"], "PURCHASE": ["19", "0"]}
+    strict = documents_from_cash_rows(INVOICES, _cash_rows(), {}, "EUR", {}, no_vat=None)
+    assert {e.row for e in strict.skipped if e.kind == "rate"} >= {12, 18, 21, 22}  # jamais admis sans table

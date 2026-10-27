@@ -143,3 +143,7 @@ columns:
 
 tax_rates:
   - {country: DE, since: 2021-01-01, rates: [19, 7, 0]}
+
+# livre de caisse : texte d'une ligne d'ouverture (sans recette, dépense ni pièce) ; son solde = point de départ
+opening_words: [Anfangsbestand, Anfangssaldo, Übertrag, Uebertrag, Saldovortrag, Vortrag, Kassenvortrag,
+                Opening balance, Balance brought forward, Solde initial, Report à nouveau]
