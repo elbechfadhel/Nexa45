@@ -198,7 +198,8 @@ export function StartScreen({
         {/* sans fichier : le fichier à donner ; fichier sans format reconnu : le format à choisir */}
         {(!file || !target) && (
           <p className="meta text-muted-foreground">
-            {(file ? entry.targetHint : entry.startHint) ?? L.startHint}
+            {/* fichier refusé par le serveur (format, relevé illisible) : sa raison, jamais « non reconnu » */}
+            {(file ? (detect.error?.message ?? entry.targetHint) : entry.startHint) ?? L.startHint}
           </p>
         )}
         <Button onClick={onStart} disabled={!file || !target}>
@@ -298,7 +299,7 @@ function FileDrop({ file, onPick }: { file: File | null; onPick: (file: File) =>
       <input
         ref={input}
         type="file"
-        accept=".xlsx,.csv"
+        accept=".xlsx,.csv,.xml"
         className="hidden"
         onChange={(e) => {
           pick(e.target.files?.[0]);

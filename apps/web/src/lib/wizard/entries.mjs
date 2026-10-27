@@ -44,7 +44,7 @@ export const WIZARD_ENTRIES = {
     systems: ["datev"],
     groups: ["registry"],
     detect: true,
-    prepares: ["Customers", "Suppliers", "Sales invoices", "Purchase invoices", "Cash book"],
+    prepares: ["Customers", "Suppliers", "Sales invoices", "Purchase invoices", "Cash book", "Bank statement"],
     // le format est choisi d'après le fichier : seul le fichier reste à donner
     startHint: "Choose a file to continue.",
     // fichier déposé mais non reconnu : le choix du format revient à l'utilisateur

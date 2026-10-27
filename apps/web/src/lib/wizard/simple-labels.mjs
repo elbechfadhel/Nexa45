@@ -29,6 +29,7 @@ const CHECKS = {
   Invoices: "Amounts, VAT rates, dates, accounts and invoices already exported.",
   "Purchase invoices": "Suppliers, amounts, VAT rates, dates, expense accounts and invoices already exported.",
   "Cash book": "Receipts and payments, VAT rates, the cash balance and entries already exported.",
+  "Bank statement": "Payments matched with your exported invoices, bank fees, the statement balance and movements already exported.",
 };
 
 /** @param {string[]} receives */
@@ -73,6 +74,7 @@ export const SIMPLE_LABELS = {
     Invoices: "Bookings",
     "Purchase invoices": "Bookings",
     "Cash book": "Bookings",
+    "Bank statement": "Bookings",
     "Customers & suppliers": "Customers and suppliers",
     Customers: "Customers",
     Suppliers: "Suppliers",
@@ -152,6 +154,7 @@ export const SIMPLE_LABELS = {
     Invoices: { one: "invoice", many: "invoices" },
     "Purchase invoices": { one: "purchase invoice", many: "purchase invoices" },
     "Cash book": { one: "cash book entry", many: "cash book entries" },
+    "Bank statement": { one: "bank movement", many: "bank movements" },
   },
   nounFallback: { one: "record", many: "records" },
 

@@ -1105,8 +1105,14 @@ Détail et décisions : **`docs/ROADMAP_STEUERBERATER.md`** (à lire avant tout 
   (`own_account`, réglage `cash_account`), comptes dans `domain-packs/accounting/datev/skr03_cash_accounts.yaml`
   (à valider par le Steuerberater), contrôles du solde (recalcul, négatif en tête avec décision), carte, ordre ;
   un montant reconnu seulement par l'IA est « à confirmer ».
-- Ordre : factures d'achat → TVA dans les écritures (§13b, UE, hors UE) → caisse ; point d'étape ; puis banque
-  (CAMT, MT940), paie (rien avant la documentation officielle, protection des données des salariés d'abord).
+- Domaine 4 (banque, 2026-10-27) : CAMT.053 (`uie_core.sources.camt`, defusedxml) ou CSV de la banque, type « Bank
+  statement » ; Accounting CDM 1.4.0 (`BANK_RECEIPT` / `BANK_PAYMENT`, partenaire facultatif, `settles`) ; Konto =
+  réglage `bank_account` (1200, mémorisé par IBAN) ; registre des factures ouvertes du dossier
+  (`uie_core.exports.open_items`, fiche `docs/PROTECTION_DES_DONNEES_REGISTRE_DES_FACTURES.md`) ; rapprochement
+  par règles (`uie_core.wizard.cdm_bank` : numéro ET montant, jamais le montant seul, « à confirmer ») ; solde
+  contrôlé ; doublons jamais exportés deux fois. Escompte (Skonto) = domaine à part.
+- Ordre : factures d'achat → TVA dans les écritures (§13b, UE, hors UE) → caisse → banque ; puis escompte, MT940,
+  paie (rien avant la documentation officielle, protection des données des salariés d'abord).
 - Hors périmètre : déclarations fiscales (bilan, E-Bilanz, KSt, GewSt).
 - Méthode : fichier réaliste + vérité terrain jamais retouchée ; mesurer puis corriger (un commit par point,
   avec test) ; chemin fichier → tableau de source → CDM → binding DATEV → EXTF → journal ; Simple = rien de ce

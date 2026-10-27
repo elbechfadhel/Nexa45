@@ -268,7 +268,7 @@ export const USE_CASES = [
     flow: ["Your file", "DATEV format", "Summary", "DATEV file"],
     systems: { source: ["file"], target: ["datev"] },
     demo: {
-      instance: "a customer or supplier list, sales or purchase invoices, a cash book (.xlsx or .csv)",
+      instance: "a customer or supplier list, sales or purchase invoices, a cash book (.xlsx or .csv), a bank statement (CAMT .xml or bank .csv)",
       minutes: 5,
     },
     steps: [
@@ -283,6 +283,7 @@ export const USE_CASES = [
       "Purchase invoices: the expense account of each category (Kostenart) is preselected from a usual chart of accounts table, to be confirmed by the tax advisor; an unknown category is never guessed",
       "Invoices with another country: the account follows the partner's zone (EU with a valid VAT ID, outside the EU) and the kind of supply (goods or services), from a VAT accounts table to be confirmed by the tax advisor; a missing kind of supply is one question, never guessed",
       "Cash book: every booking on the cash account of the client (preselected, to be confirmed), receipts and payments by category; the cash balance is recalculated, a negative balance is shown first and its entry needs your decision; card payments are never exported as cash",
+      "Bank statement (CAMT .xml or the bank's .csv export): every movement on the bank account of the client (preselected, remembered for its IBAN); payments are matched with the invoices already exported for this client by invoice number and amount, never by the amount alone; bank fees on the usual account; rent, unknown payers, discounts and card settlements are never guessed; the statement balance is checked when the file has one; a movement is never exported twice",
       "The same screens as the AI Migration Wizard: only the title, the introduction and the targets differ",
       "Nothing is written to your systems and nothing is sent to DATEV",
     ],

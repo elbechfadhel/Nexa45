@@ -496,7 +496,9 @@ test("an entry point reuses the Simple screens: only its title, introduction and
   assert.equal(WIZARD_ENTRIES.general.stepStart, undefined);
   assert.equal(SIMPLE_LABELS.stepStart, "Your file and target");
   const start = readFileSync(join(here, "..", "..", "components", "wizard-simple", "start-screen.tsx"), "utf8");
-  assert.match(start, /\(file \? entry\.targetHint : entry\.startHint\) \?\? L\.startHint/);
+  assert.match(start, /\(file \? \(detect\.error\?\.message \?\? entry\.targetHint\) : entry\.startHint\) \?\? L\.startHint/);
+  // fichier refusé par le serveur (relevé CAMT illisible, autre XML) : sa raison, jamais « non reconnu »
+  assert.match(start, /accept="\.xlsx,\.csv,\.xml"/);
   // la question de l'étape 2 : propre au parcours ; le Wizard garde la sienne
   assert.equal(WIZARD_ENTRIES.datev.targetHeading, "2. What do you want to prepare?");
   assert.equal(WIZARD_ENTRIES.general.targetHeading, undefined);
@@ -666,6 +668,7 @@ test("what an entry point can prepare comes from its configuration, validated do
     "Sales invoices",
     "Purchase invoices",
     "Cash book",
+    "Bank statement",
   ]);
   assert.equal(WIZARD_ENTRIES.general.prepares, undefined); // Wizard général inchangé
   assert.equal(SIMPLE_LABELS.preparesHeading, "What you can prepare here:");
