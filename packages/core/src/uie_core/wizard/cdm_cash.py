@@ -251,11 +251,21 @@ def documents_from_cash_rows(  # noqa: C901, PLR0912, PLR0915
     entries: list[int] = []
     for i in used:
         if opening is None and not entries and is_opening(table, rows[i]):
+            # pas une ligne refusée : le point de départ du solde, dit en information
             opening = _amount(val(i, "cash_balance"))
-            skip(
-                i,
-                "Opening balance of the cash book: not a booking, it is where the balance starts.",
-                "opening",
+            issues.append(
+                ValueIssue(
+                    field="cash_balance",
+                    column=columns.get("cash_balance", ""),
+                    kind="cash_opening",
+                    count=1,
+                    examples=[],
+                    message=f"Opening balance read: {_money(opening)} (row {i + 1})."
+                    if opening is not None
+                    else f"Opening balance line without an amount (row {i + 1}).",
+                    rows=[i + 1],
+                    severity="info",
+                )
             )
             continue
         entries.append(i)

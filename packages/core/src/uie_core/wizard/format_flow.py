@@ -456,7 +456,27 @@ class FormatFlow:
             for d in prep.documents:
                 row = built.row_of.get(d.source_ref, 0)
                 every = [*d.issues, *(i for bk in d.bookings for i in bk.issues)]
-                if d.target_status == RecordStatus.BLOCKED:
+                # compte d'une catégorie encore en question : la pièce attend la réponse (même texte
+                # qu'une autre décision en attente), jamais « no mapping »
+                waiting = next(
+                    (
+                        bk.counter_category.name or bk.counter_category.source_ref
+                        for bk in d.bookings
+                        if bk.counter_category is not None
+                        and not choices.get(f"{MAPPING}CATEGORY:{bk.counter_category.source_ref}")
+                    ),
+                    None,
+                )
+                if d.target_status == RecordStatus.BLOCKED and waiting:
+                    excluded.append(
+                        ExcludedRow(
+                            row=row,
+                            reason=f"{one.capitalize()} {d.number}: account for {waiting}, waiting for your "
+                            "answer above: not exported.",
+                            kind="waiting",
+                        )
+                    )
+                elif d.target_status == RecordStatus.BLOCKED:
                     excluded.append(
                         ExcludedRow(
                             row=row,

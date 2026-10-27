@@ -153,8 +153,18 @@ def test_a_cash_book_is_booked_on_the_cash_account_without_customer_or_supplier(
         "The cash balance becomes negative with K-020"
     )
     reasons = {e["row"]: (e["kind"], e["reason"]) for e in pre["excluded_rows"]}
-    assert reasons[1][0] == "opening"
-    assert "has no DATEV mapping yet" in reasons[17][1] and "has no DATEV mapping yet" in reasons[18][1]
+    assert 1 not in reasons  # le solde d'ouverture n'est pas une ligne refusée
+    opening = [i for i in pre["value_issues"] if i["kind"] == "cash_opening"]
+    assert (
+        opening[0]["message"] == "Opening balance read: 850.00 € (row 1)."
+        and opening[0]["severity"] == "info"
+    )
+    # comptes encore en question : même texte qu'une autre décision en attente
+    assert reasons[17] == (
+        "waiting",
+        "Entry K-016: account for Bewirtung at 19 % VAT, waiting for your answer above: not exported.",
+    )
+    assert reasons[18][1].endswith("Privatentnahme (no VAT), waiting for your answer above: not exported.")
 
     res = _download(c, flow)
     assert res.status_code == 200, res.text

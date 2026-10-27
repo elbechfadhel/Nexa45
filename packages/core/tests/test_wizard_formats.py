@@ -845,7 +845,10 @@ def test_a_cash_book_becomes_entries_without_partner_and_every_trap_is_listed():
     assert t.opening_balance == Decimal("850")
     docs = {d.number: d for d in t.documents}
     reasons = {e.row: (e.kind, e.reason) for e in t.skipped}
-    assert reasons[1][0] == "opening"  # Anfangsbestand : pas une écriture
+    # Anfangsbestand : ni une écriture, ni une ligne refusée : dit en information
+    assert 1 not in reasons
+    (opening,) = [i for i in t.issues if i.kind == "cash_opening"]
+    assert (opening.severity, opening.message) == ("info", "Opening balance read: 850.00 € (row 1).")
     assert reasons[25][0] == "missing_number"  # pièce vide
     assert reasons[27][0] == "cash_both"  # K-025 : recette ET dépense
     assert reasons[31][0] == "duplicate"  # second K-028 : exporté une fois
