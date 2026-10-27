@@ -11,6 +11,7 @@ from pathlib import Path
 
 import pytest
 import uie_domain_packs  # noqa: F401 — enregistre les packs découverts
+from test_catalog_customer17_v1b1 import odoo_dump
 from test_catalog_semantics_odoo import analyzed, world  # noqa: F401 — fixtures partagées
 from uie_connectors.odoo import OdooSchemaLoader
 from uie_core.domains import (
@@ -38,7 +39,7 @@ def _pack(version: str = "17"):  # noqa: ANN202
 
 def _classify_dump(version: str):  # noqa: ANN202
     pack = _pack(version)
-    resolved = pack.resolve(OdooSchemaLoader({"json": DUMPS / f"odoo{version}_ref.json"}).build_snapshot())
+    resolved = pack.resolve(OdooSchemaLoader({"json": odoo_dump(f"odoo{version}_ref.json")}).build_snapshot())
     fields = {f.path: f for f in resolved.fields if f.present}
     return fields, {d.path: d for d in classify(resolved.fields, resolved.entities, pack.semantics())}
 

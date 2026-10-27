@@ -28,6 +28,17 @@ from uie_core.registry import RegistryService
 
 ROOT = Path(__file__).resolve().parents[2]
 DUMPS = ROOT / "docs" / "dumps"
+
+
+def odoo_dump(name: str) -> Path:
+    """Dump de référence ; absent (le dump Odoo 19 n'est pas publié sur le dépôt distant, donc pas en CI) :
+    test sauté avec sa raison, jamais une erreur."""
+    path = DUMPS / name
+    if not path.exists():
+        pytest.skip(f"docs/dumps/{name} absent (not published on the remote repository)")
+    return path
+
+
 V1B = json.loads((Path(__file__).parent / "fixtures" / "customer17_identified_v1b.json").read_text("utf-8"))
 PASSWORD = "Odoo-Cust0mer-S3cret"
 POSSIBLE_V1B1 = 23  # chiffre atteint (objectif < 40)
@@ -35,7 +46,7 @@ POSSIBLE_V1B1 = 23  # chiffre atteint (objectif < 40)
 
 def _analyze(session, version: str, instance_dump: str):  # noqa: ANN001, ANN202
     RegistryService(session, SystemContext("test")).publish_snapshot(
-        OdooSchemaLoader({"json": DUMPS / f"odoo{version}_ref.json"}).build_snapshot()
+        OdooSchemaLoader({"json": odoo_dump(f"odoo{version}_ref.json")}).build_snapshot()
     )
     fake = FakeOdooServer.from_dump(DUMPS / instance_dump, password=PASSWORD)
     instances = InstanceService(

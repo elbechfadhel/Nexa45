@@ -10,6 +10,7 @@ from pathlib import Path
 
 import pytest
 import uie_domain_packs  # noqa: F401 — enregistre les packs découverts
+from test_catalog_customer17_v1b1 import odoo_dump
 from uie_connectors.odoo import OdooSchemaLoader
 from uie_core.domains import (
     DomainKey,
@@ -160,7 +161,7 @@ def test_odoo_media(ref17):
 # --------------------------------------------------------------------------- #
 @pytest.mark.parametrize(("version", "detailed_type"), [("17", True), ("19", False)])
 def test_real_odoo_versions_resolve(version, detailed_type):
-    resolved = _resolve(DUMPS / f"odoo{version}_ref.json", version)
+    resolved = _resolve(odoo_dump(f"odoo{version}_ref.json"), version)
     assert all(e.present for e in resolved.entities)  # les 9 entités du catalogue existent en 17 et 19
     fields = _fields(resolved)
     assert fields["product.template.detailed_type"].present is detailed_type

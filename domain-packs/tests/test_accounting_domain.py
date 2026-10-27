@@ -10,7 +10,8 @@ from pathlib import Path
 
 import pytest
 import uie_domain_packs  # noqa: F401 — enregistre les packs découverts
-from test_partner_domain import CTX, DUMPS, _instance
+from test_catalog_customer17_v1b1 import odoo_dump
+from test_partner_domain import CTX, _instance
 from uie_cdm import DocumentStatus, DocumentType, LineKind, TaxComputation, TaxScope
 from uie_connectors.odoo import OdooSchemaLoader
 from uie_core.domains import (
@@ -73,7 +74,7 @@ def _selections() -> dict[str, dict[str, set[str]]]:
     """Valeurs de sélection des champs traduits, par version (dumps standard 17 / 18 / 19)."""
     out: dict[str, dict[str, set[str]]] = {}
     for version in ("17", "18", "19"):
-        snap = OdooSchemaLoader({"json": DUMPS / f"odoo{version}_ref.json"}).build_snapshot()
+        snap = OdooSchemaLoader({"json": odoo_dump(f"odoo{version}_ref.json")}).build_snapshot()
         for vm in _pack(version).value_maps():
             field = next(f for f in snap.entity(vm.entity).fields if f.technical_name == vm.field)
             out.setdefault(version, {})[vm.path] = {o["value"] for o in field.metadata["selection"]}

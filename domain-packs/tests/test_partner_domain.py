@@ -13,6 +13,7 @@ from pathlib import Path
 import pytest
 import uie_domain_packs  # noqa: F401 — enregistre les packs découverts
 from pydantic import SecretStr
+from test_catalog_customer17_v1b1 import odoo_dump
 from test_catalog_odoo_instance import FakeOdooResolver
 from uie_connectors.odoo import OdooSchemaLoader
 from uie_connectors.odoo.testing import FakeOdooServer
@@ -37,7 +38,7 @@ CTX = SystemContext("test")
 
 def _instance(session, version: str, instance_dump: str):  # noqa: ANN001, ANN202
     RegistryService(session, CTX).publish_snapshot(
-        OdooSchemaLoader({"json": DUMPS / f"odoo{version}_ref.json"}).build_snapshot()
+        OdooSchemaLoader({"json": odoo_dump(f"odoo{version}_ref.json")}).build_snapshot()
     )
     fake = FakeOdooServer.from_dump(DUMPS / instance_dump, password=PASSWORD)
     instances = InstanceService(

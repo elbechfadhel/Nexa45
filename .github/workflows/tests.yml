@@ -1,0 +1,106 @@
+# Suite complète à chaque envoi vers main, par groupes (un job par groupe, en parallèle, chacun avec son
+# PostgreSQL de service) : sur une machine de développement, la suite entière dans un seul processus manque de
+# mémoire.
+#
+# Sautés en CI, et dit dans le résumé du workflow (jamais en échec) :
+#   - spec DATEV locale (var/datev/specs, hors git : licence de redistribution non établie) ;
+#   - Odoo réel (instances Docker de test : Odoo 18 de référence, accounting17) ;
+#   - dumps non publiés sur le dépôt distant (docs/dumps/odoo19_ref.json).
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint (ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv run --frozen ruff check .
+      - run: uv run --frozen ruff format --check .
+
+  python:
+    name: pytest · ${{ matrix.group.name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        group:
+          - { name: core, paths: "packages/core/tests packages/cdm/tests packages/connectors/tests packages/ai/tests" }
+          - { name: domain-packs-1, paths: "domain-packs/tests/test_[a-l]*.py" }
+          - { name: domain-packs-2, paths: "domain-packs/tests/test_[m-z]*.py" }
+          - { name: api-1, paths: "apps/api/tests/test_[a-o]*.py" }
+          - { name: api-2, paths: "apps/api/tests/test_[p-z]*.py" }
+          - { name: root, paths: "tests" }
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: uie
+          POSTGRES_PASSWORD: uie
+          POSTGRES_DB: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U uie" --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      UIE_TEST_DATABASE_URL: postgresql+psycopg://uie:uie@127.0.0.1:5432/uie_test
+      UIE_LLM_PROVIDER: none
+      PYTHONUTF8: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: uv sync --frozen
+      - name: pytest
+        shell: bash
+        run: |
+          set -o pipefail
+          uv run --frozen pytest -q -p no:cacheprovider -rs ${{ matrix.group.paths }} 2>&1 | tee pytest.txt
+      - name: Résumé (tests sautés et leur raison)
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "### pytest · ${{ matrix.group.name }}"
+            echo
+            echo "$(grep -E '^[0-9]+ (passed|failed)|^=+ .*(passed|failed|error)' pytest.txt | tail -1)"
+            echo
+            echo "Sautés en CI par construction : tests qui ont besoin de la spec DATEV locale (var/datev, hors git),"
+            echo "d'un Odoo réel (Docker) ou d'un dump non publié (docs/dumps/odoo19_ref.json)."
+            echo
+            echo "| Tests sautés | Raison |"
+            echo "|---:|---|"
+            grep -E '^SKIPPED \[[0-9]+\]' pytest.txt \
+              | sed -E 's/^SKIPPED \[([0-9]+)\] [^:]+:[0-9]+: (.*)$/\2\t\1/' \
+              | awk -F'\t' '{n[$1]+=$2} END {for (r in n) printf "| %d | %s |\n", n[r], r}' \
+              | sort -t'|' -k2 -rn || true
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  web:
+    name: Web (typecheck, lint, node --test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm test
