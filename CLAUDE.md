@@ -123,6 +123,9 @@ uv run uie partner analyze | questions | list --instance <id|nom>       # domain
 uv run uie partner confirm --instance <id|nom> --entity res.partner --field x_customer_no [--key K]
 uv run uie export targets | profile show|set -t datev/debitoren-kreditoren --org <slug> [--set nom=valeur]*
 uv run uie export preview | generate -t datev/debitoren-kreditoren -i <id|nom> [-o fichier.csv]
+uv run uie demo prepare --org <slug> --answers temp/demo_answers.yaml [--out dossier] --yes   # démo DATEV :
+                                                  # remise à zéro (réglages gardés) + fichiers déclarés, réponses
+                                                  # déclarées (question sans réponse = arrêt, rien d'enregistré)
 docker compose -f docker/docker-compose.yml --profile odoo up -d         # Odoo 17/18/19 de référence
 uv run uie registry import odoo --url http://localhost:8017 --db ref17 -u admin -p admin
 uv run uie registry dump odoo --url ... -o docs/dumps/odoo17_ref.json   # dump reproductible (compact ; --indent N)
