@@ -65,6 +65,14 @@ jobs:
         with:
           node-version: 22
       - run: uv sync --frozen
+      # clé de chiffrement des secrets JETABLE, générée à chaque exécution (jamais dans le dépôt) : en local,
+      # elle vient du .env
+      - name: Clé UIE_SECRET_KEY de test
+        shell: bash
+        run: |
+          key="$(uv run --frozen uie secret gen-key | head -1)"
+          echo "::add-mask::$key"
+          echo "UIE_SECRET_KEY=$key" >> "$GITHUB_ENV"
       - name: pytest
         shell: bash
         run: |
