@@ -50,7 +50,7 @@ for _stream in (sys.stdout, sys.stderr):
     if hasattr(_stream, "reconfigure"):
         _stream.reconfigure(encoding="utf-8")
 
-from uie_cli import identity, instances, partners, product_domain  # noqa: E402
+from uie_cli import demo, identity, instances, partners, product_domain  # noqa: E402
 
 app = typer.Typer(help="Universal Integration / Interface Engine — Admin CLI", no_args_is_help=True)
 registry = typer.Typer(help="System Knowledge Registry", no_args_is_help=True)
@@ -64,6 +64,7 @@ app.add_typer(instances.secret_app, name="secret")
 app.add_typer(product_domain.app, name="product-domain")
 app.add_typer(partners.partner_app, name="partner")
 app.add_typer(partners.export_app, name="export")
+app.add_typer(demo.app, name="demo")
 app.add_typer(identity.app, name="admin")
 app.add_typer(identity.org_app, name="org")
 app.add_typer(identity.user_app, name="user")

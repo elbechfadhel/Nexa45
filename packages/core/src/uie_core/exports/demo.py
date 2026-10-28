@@ -132,4 +132,22 @@ def reset_file_exports(
     )
 
 
-__all__ = ["DemoReset", "reset_file_exports"]
+def file_accounts(s: Session, organization_id: uuid.UUID, client_key: str | None = None) -> int:
+    """Numéros de compte réservés pour une source FICHIER de l'organisation (un dossier, ou tous)."""
+    profiles = select(ExportProfileRecord.id).where(ExportProfileRecord.organization_id == organization_id)
+    if client_key is not None:
+        profiles = profiles.where(ExportProfileRecord.client_key == client_key)
+    return len(
+        list(
+            s.scalars(
+                select(ExportAccountAssignmentRecord.id).where(
+                    ExportAccountAssignmentRecord.profile_id.in_(profiles),
+                    ExportAccountAssignmentRecord.instance_id.is_(None),
+                    ExportAccountAssignmentRecord.source_ref.like(f"{FILE_PREFIX}%"),
+                )
+            )
+        )
+    )
+
+
+__all__ = ["DemoReset", "file_accounts", "reset_file_exports"]
