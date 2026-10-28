@@ -16,6 +16,7 @@ from uie_cli.main import app as cli_app
 from uie_core.exports.demo import file_accounts
 from uie_core.exports.open_items import OpenItemRegister
 from uie_core.identity import Organization
+from uie_core.wizard.demo import DemoPlan, prepare_demo
 
 SETTINGS = {
     "setting:advisor_number": "1234567",
@@ -86,3 +87,15 @@ def test_a_question_without_a_declared_answer_stops_the_demo_preparation(world, 
     assert "Arrêt, rien n'est enregistré. Rechnungen.csv: question" in text
     assert "add `accounting:supply_kind` (options: GOODS, SERVICES, skip)" in text
 
+
+def test_the_summary_counts_the_written_records(world, tmp_path):  # noqa: F811
+    """Le résumé d'un téléchargement donne le NOMBRE d'enregistrements écrits (il était remplacé par
+    l'ensemble des pièces écrites, dans le registre des factures ouvertes)."""
+    session = world["session"]
+    path = _files(tmp_path, {**SETTINGS, "accounting:supply_kind": "GOODS"})
+    plan = DemoPlan.model_validate(yaml.safe_load(path.read_text(encoding="utf-8")))
+    data = {f.file: (tmp_path / f.file).read_bytes() for f in plan.files}
+    ctx = cli_demo._tenant(session, "acme", None)
+    results = prepare_demo(cli_demo._wizard(session, ctx), plan, data)
+    assert [r.summary.rows for r in results] == [8, 6]  # 8 clients, 6 factures
+    assert all(isinstance(r.summary.rows, int) for r in results)

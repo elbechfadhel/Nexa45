@@ -603,13 +603,13 @@ class FormatFlow:
                 self._remember_mappings(org, choices)
                 if plan is not None and built.scope in ("SALE", "PURCHASE"):
                     # factures écrites : registre des factures ouvertes du dossier (rapprochement bancaire)
-                    written = {r.document_ref for r in plan.rows}
+                    written_refs = {r.document_ref for r in plan.rows}
                     OpenItemRegister(self.svc.s, org, self.client, t.system, t.product).record_invoices(
-                        [d for d in built.documents if d.source_ref in written], gen.run.id
+                        [d for d in built.documents if d.source_ref in written_refs], gen.run.id
                     )
                 if plan is not None and built.scope == "BANK":
                     # paiements rapprochés écrits : règlements au registre (le montant ouvert diminue)
-                    written = {r.document_ref for r in plan.rows}
+                    written_refs = {r.document_ref for r in plan.rows}
                     register = OpenItemRegister(self.svc.s, org, self.client, t.system, t.product)
                     ids = {i.document_ref: i.id for i in register.items()}
                     dated = {d.source_ref: d.accounting_date for d in built.documents}
@@ -617,7 +617,7 @@ class FormatFlow:
                         [
                             Settlement(ids[ref], payment, paid, dated[payment])
                             for payment, parts in built.settlements.items()
-                            if payment in written
+                            if payment in written_refs
                             for ref, paid in parts
                             if ref in ids
                         ],
