@@ -4,9 +4,9 @@
 
 .DESCRIPTION
   Arrête les processus enregistrés dans var\demo\pids.json (et leurs descendants), après avoir vérifié qu'il
-  s'agit bien des mêmes (heure de démarrage). Sans ce fichier, n'arrête que les processus qui écoutent sur les
-  ports de la démo ET dont la ligne de commande est celle de la démo (next start, uie api serve sans --reload) :
-  jamais un « next dev » ni une API lancée en mode développement.
+  s'agit bien des mêmes (heure de démarrage). Aucun autre processus n'est arrêté : sans ce fichier, le script
+  indique seulement ce qui écoute encore sur les ports de la démo (jamais deviné : une API lancée à la main sans
+  --reload a la même ligne de commande que celle de la démo).
 #>
 param(
     [int]$ApiPort = 8000,
@@ -37,28 +37,20 @@ if (Test-Path $PidFile) {
     Remove-Item $PidFile
 }
 
-# filet : un serveur de démo resté sur les ports (fichier perdu), reconnu par sa ligne de commande
+if ($stopped -gt 0) { Start-Sleep -Seconds 1 }   # le temps de libérer les ports
+
+# sans fichier de PID (perdu), rien n'est arrêté : une API ou un site lancés à la main ont la même ligne de commande
+# que ceux de la démo. Les processus qui écoutent encore sur les ports sont seulement indiqués.
 foreach ($port in @($ApiPort, $WebPort)) {
     $listen = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
     if (-not $listen) { continue }
-    $ids = @([int]$listen.OwningProcess)
-    $cur = Get-CimInstance Win32_Process -Filter "ProcessId = $($ids[0])"
-    while ($cur -and $cur.ParentProcessId) {   # remonte jusqu'au processus lancé par demo-start (uv, node)
-        $parent = Get-CimInstance Win32_Process -Filter "ProcessId = $($cur.ParentProcessId)"
-        if (-not $parent -or $parent.CommandLine -notmatch 'next|uie|uvicorn') { break }
-        $ids += [int]$parent.ProcessId; $cur = $parent
-    }
-    $line = ($ids | ForEach-Object { (Get-CimInstance Win32_Process -Filter "ProcessId = $_").CommandLine }) -join " "
-    $isDemo = ($line -match 'next(\.js)?["'' ]+start' -or $line -match 'uie["'' ]+api["'' ]+serve') `
-        -and $line -notmatch 'next(\.js)?["'' ]+dev' -and $line -notmatch '--reload'
-    if ($isDemo) {
-        KillTree $ids[-1] "serveur de démo sur le port $port"; $stopped++
-    } else {
-        Write-Host "   port $port : un autre programme écoute (mode développement ?), laissé tel quel" -ForegroundColor Yellow
-    }
+    $proc = Get-CimInstance Win32_Process -Filter "ProcessId = $($listen.OwningProcess)"
+    $line = "$($proc.CommandLine)"
+    Write-Host "   port $port pris par PID $($listen.OwningProcess) : $($line.Substring(0, [math]::Min(160, $line.Length)))" -ForegroundColor Yellow
+    Write-Host "   s'il s'agit de la démo : taskkill /PID $($listen.OwningProcess) /T /F" -ForegroundColor Yellow
 }
 
-Start-Sleep -Seconds 1
 $left = @($ApiPort, $WebPort) | Where-Object { Get-NetTCPConnection -LocalPort $_ -State Listen -ErrorAction SilentlyContinue }
-if ($stopped -eq 0) { Write-Host "Aucune démo en cours." }
-if ($left) { Write-Host "Ports encore pris : $($left -join ', ')" -ForegroundColor Yellow } else { Write-Host "Démo arrêtée." -ForegroundColor Green }
+if ($left) { Write-Host "Ports encore pris : $($left -join ', ')" -ForegroundColor Yellow }
+elseif ($stopped -eq 0) { Write-Host "Aucune démo en cours." }
+else { Write-Host "Démo arrêtée." -ForegroundColor Green }
