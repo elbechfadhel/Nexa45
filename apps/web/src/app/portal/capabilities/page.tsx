@@ -25,7 +25,8 @@ import {
   stateLabel,
   systemCapabilityRows,
 } from "@/lib/use-cases/capabilities.mjs";
-import { listUseCases, SYSTEM_NAMES } from "@/lib/use-cases/catalog.mjs";
+import { listUseCases, SYSTEM_NAMES, USE_CASES } from "@/lib/use-cases/catalog.mjs";
+import { visibleRows, visibleUseCases } from "@/lib/use-cases/profile.mjs";
 import { cn } from "@/lib/utils";
 
 const ORDER = Object.keys(SYSTEM_NAMES); // ordre d'affichage des systèmes : celui du catalogue
@@ -38,7 +39,7 @@ export default function CapabilitiesPage() {
 }
 
 function Capabilities() {
-  const useCases = listUseCases("supplier");
+  const useCases = listUseCases("supplier", visibleUseCases(USE_CASES));
   return (
     <div className="page-stack">
       <div className="space-y-1.5">
@@ -59,7 +60,7 @@ function Integrations({ useCases }: { useCases: UseCases }) {
   const [source, setSource] = useState("");
   const [target, setTarget] = useState("");
   const systems = flowSystems(useCases, ORDER);
-  const rows = filterRows(capabilityRows(useCases, ORDER), { source, target });
+  const rows = filterRows(visibleRows(capabilityRows(useCases, ORDER)), { source, target });
 
   return (
     <section className="space-y-4">

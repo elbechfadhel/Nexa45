@@ -20,6 +20,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { MeOut } from "@/lib/api/client";
 import { homeFor, isAdmin, isPortalPath, useLogout, useMe } from "@/lib/auth";
+import { USE_CASES } from "@/lib/use-cases/catalog.mjs";
+import { linkVisible } from "@/lib/use-cases/profile.mjs";
 import { cn } from "@/lib/utils";
 
 type NavLink = { href: string; label: string; match: string[]; exact?: boolean };
@@ -59,9 +61,17 @@ const PORTAL_NAV: NavItem[] = [
   },
 ];
 
+/** Profil démo : liens qui ne mènent qu'à des use cases non validés retirés (groupe vide retiré). */
+function shown(items: NavItem[]): NavItem[] {
+  const visible = (link: NavLink) => linkVisible(link.href, USE_CASES);
+  return items
+    .map((item) => (item.children ? { ...item, children: item.children.filter(visible) } : item))
+    .filter((item) => (item.children ? item.children.length > 0 : visible(item)));
+}
+
 function navFor(me: MeOut | null | undefined, pathname: string): NavItem[] {
   if (!me || pathname === "/login") return [];
-  return isAdmin(me) && !isPortalPath(pathname) ? ADMIN_NAV : PORTAL_NAV;
+  return shown(isAdmin(me) && !isPortalPath(pathname) ? ADMIN_NAV : PORTAL_NAV);
 }
 
 export function AppHeader() {

@@ -9,7 +9,7 @@
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
     "gen:api": "uv run uie api openapi -o openapi.json && openapi-typescript openapi.json -o src/lib/api/schema.d.ts",
-    "test": "node --test src/lib/use-cases/catalog.test.mjs src/lib/use-cases/capabilities.test.mjs src/lib/accounting/presentation.test.mjs src/lib/accounting/preparation.test.mjs src/lib/accounting/api-target.test.mjs src/lib/connect/form.test.mjs src/lib/partners/target.test.mjs src/lib/wizard/flow.test.mjs src/lib/wizard/review.test.mjs src/lib/wizard/templates.test.mjs src/lib/wizard/simple.test.mjs"
+    "test": "node --test src/lib/use-cases/catalog.test.mjs src/lib/use-cases/capabilities.test.mjs src/lib/use-cases/profile.test.mjs src/lib/accounting/presentation.test.mjs src/lib/accounting/preparation.test.mjs src/lib/accounting/api-target.test.mjs src/lib/connect/form.test.mjs src/lib/partners/target.test.mjs src/lib/wizard/flow.test.mjs src/lib/wizard/review.test.mjs src/lib/wizard/templates.test.mjs src/lib/wizard/simple.test.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",

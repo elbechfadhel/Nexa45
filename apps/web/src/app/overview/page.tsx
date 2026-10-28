@@ -4,10 +4,13 @@
  *  le catalogue des use cases (audience admin) ; les use cases du portail fournisseur sont listés à part, issus
  *  du même catalogue, sans démarrage depuis la console (ils exigent un compte fournisseur). */
 import { UseCaseSections } from "@/components/use-case-overview";
-import { listOtherUseCases, listUseCases } from "@/lib/use-cases/catalog.mjs";
+import { listOtherUseCases, listUseCases, USE_CASES } from "@/lib/use-cases/catalog.mjs";
+import { visibleUseCases } from "@/lib/use-cases/profile.mjs";
+
+const SHOWN = visibleUseCases(USE_CASES); // profil démo : seuls les use cases validés
 
 export default function AdminOverview() {
-  const adminUseCases = listUseCases("admin");
+  const adminUseCases = listUseCases("admin", SHOWN);
   return (
     <div className="page-stack">
       <div className="space-y-1.5">
@@ -20,7 +23,7 @@ export default function AdminOverview() {
         <p className="page-description">Demonstrate these with a supplier account (they run in the portal).</p>
       </div>
       <UseCaseSections
-        useCases={listOtherUseCases("admin")}
+        useCases={listOtherUseCases("admin", SHOWN)}
         variant="admin"
         startable={false}
         note="Sign in as a supplier to demonstrate"
