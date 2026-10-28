@@ -254,11 +254,13 @@ body:has([data-page-background="login"]) {
   font-size: 0.75rem; /* 12px */
   line-height: 1.5;
   color: var(--muted-foreground);
+  /* `meta tech` sur un même élément : la taille reste celle de meta (sinon tech l'emporte, en em du parent) */
+  --tech-size: 0.75rem;
 }
 /* données techniques uniquement (DM Mono) : versions, hashes, références, identifiants. */
 @utility tech {
   font-family: var(--font-mono);
-  font-size: 0.9375em;
+  font-size: var(--tech-size, 0.9375em);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0;
 }
