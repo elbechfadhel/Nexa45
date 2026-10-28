@@ -64,7 +64,7 @@ from uie_core.wizard.quick import (
     infer_data_type,
 )
 from uie_core.wizard.text import count, say
-from uie_core.wizard.values import ExcludedRow, ValueIssue, ValueQuestion, rows_of
+from uie_core.wizard.values import ExcludedRow, ValueIssue, ValueQuestion, merge_transforms, rows_of
 
 BANK_SETTING = "bank_account"  # réglage du compte bancaire du dossier (paramètre du binding)
 BANK_KIND = "BANK_ACCOUNT"  # mémoire du dossier : IBAN du relevé → compte bancaire
@@ -92,6 +92,9 @@ if TYPE_CHECKING:
     from uie_core.wizard.service import MigrationWizardService
 
 DATA_TYPE_TOPIC = "data_type"
+
+
+BANK_CENTURY_LABEL = "Two-digit year completed for this bank format (20xx)"
 
 
 class FormatFlow:
@@ -375,6 +378,16 @@ class FormatFlow:
         summary, rows, pairs = prepare(
             p, data, file_name, decisions, choices=choices, keep_duplicates=data_type == BANK_STATEMENT
         )
+        if data_type == BANK_STATEMENT:
+            # siècle déclaré par le format bancaire (sinon : dates laissées vides), pas un choix
+            summary = summary.model_copy(
+                update={
+                    "value_transforms": [
+                        t.model_copy(update={"label": BANK_CENTURY_LABEL}) if t.kind == "date_century" else t
+                        for t in summary.value_transforms
+                    ]
+                }
+            )
         columns = {target: header for header, target in pairs}
         out = {e.row - 1 for e in summary.excluded_rows}
         table_rows = [
@@ -647,7 +660,9 @@ class FormatFlow:
                 "rows": written,
                 "value_issues": issues,
                 "value_questions": questions,
-                "value_transforms": [*summary.value_transforms, *getattr(built, "transforms", [])],
+                "value_transforms": merge_transforms(
+                    [*summary.value_transforms, *getattr(built, "transforms", [])]
+                ),
                 "excluded_rows": sorted(excluded, key=lambda e: (e.row, e.kind)),
                 "status": status,
                 "missing_required": [],

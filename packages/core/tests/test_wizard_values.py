@@ -40,7 +40,8 @@ def test_numbers_only_change_form_never_value() -> None:
         price, ['"57.79"', "1.795000000000000e+01", "3,479.00", "1.234,56", "12,5", "1 299,50", "null", ""]
     )
     assert r.values == ["57.79", "17.95", "3479", "1234.56", "12.5", "1299.5", "", ""]
-    assert {t.kind for t in r.transforms} == {"quotes", "scientific", "separators"}
+    # séparateurs de milliers / décimales : même nombre en forme standard, jamais listé
+    assert {t.kind for t in r.transforms} == {"quotes", "scientific"}
     assert r.questions == [] and r.issues == []
     # avant → après montré
     sci = next(t for t in r.transforms if t.kind == "scientific")

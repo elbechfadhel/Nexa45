@@ -53,6 +53,7 @@ from uie_core.wizard.values import (
     currency_question,
     detect_currency,
     is_money,
+    merge_transforms,
     rows_of,
     unwrap,
 )
@@ -880,7 +881,7 @@ def prepare(  # noqa: C901
             names[pos] for pos in range(df.width) if pos not in chosen and any(v.strip() for v in cells[pos])
         ],
         value_issues=issues,
-        value_transforms=transforms,
+        value_transforms=merge_transforms(transforms),
         value_conversions=[c for c in conversions if c.row - 1 not in out],
         value_questions=questions,
         currency_column=found_currency.header if found_currency and money else None,

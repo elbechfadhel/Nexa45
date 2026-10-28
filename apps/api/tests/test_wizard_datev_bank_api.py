@@ -245,7 +245,13 @@ def test_a_bank_export_never_books_a_movement_twice_and_says_it_has_no_balances(
     assert [g["count"] for g in pre["already_exported"]] == [1]
     assert pre["rows"] == 1  # les frais de novembre, une fois
     kinds = {t["kind"] for t in pre["value_transforms"]}
-    assert "date_century" in kinds  # siècle complété : listé
+    # siècle complété : UNE ligne pour les deux colonnes de dates, dit comme une règle du format bancaire ;
+    # montants à virgule simplement remis en forme standard : pas listés
+    century = [t for t in pre["value_transforms"] if t["kind"] == "date_century"]
+    assert [(t["column"], t["label"]) for t in century] == [
+        ("Buchungstag, Valutadatum", "Two-digit year completed for this bank format (20xx)")
+    ]
+    assert "separators" not in kinds
     assert any(i["kind"] == "bank_no_balance" for i in pre["value_issues"])
 
 

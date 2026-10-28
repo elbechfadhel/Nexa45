@@ -1137,11 +1137,12 @@ def test_the_prepared_excel_suits_a_native_spreadsheet_import(shop):
     assert data["barcode"].to_list() == ["00123457", "00123464"]  # EAN-8 en texte : zéros conservés
     sheet = zipfile.ZipFile(io.BytesIO(content)).read("xl/worksheets/sheet1.xml").decode()
     cell = {m.group(1): m.group(2) for m in re.finditer(r'<c r="(D[23])"([^>]*)>', sheet)}
-    # « 39,9 » : virgule décimale SANS ambiguïté (un seul chiffre après) → 39.9, écrit comme nombre, montré
+    # « 39,9 » : virgule décimale SANS ambiguïté (un seul chiffre après) → 39.9, écrit comme nombre ; même
+    # nombre, autre écriture : pas listé dans « Written differently »
     assert 't="s"' not in cell["D2"] and 't="s"' not in cell["D3"]
     assert data["list_price"].to_list() == ["39.9", "39.9"]
     assert summary.value_issues == []
-    assert [(t.kind, t.examples) for t in summary.value_transforms] == [("separators", [["39,9", "39.9"]])]
+    assert summary.value_transforms == []
     about = dict(pl.read_excel(io.BytesIO(content), sheet_name="Read me", has_header=False).rows())
     assert about["Completed by you"] == "None" and about["Filled from your answers"] == "type = Goods"
     assert about["Left out (no value)"].startswith("sale_ok:")

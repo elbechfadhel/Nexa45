@@ -594,7 +594,9 @@ class _Acc:
         return ""
 
     def form(self, kind: str | None, raw: str, out: str) -> str:
-        if kind and out and out != raw.strip():
+        # séparateurs de milliers / décimales : même nombre écrit en forme standard, rien d'interprété (un
+        # séparateur ambigu est une QUESTION) : pas listé
+        if kind and kind != "separators" and out and out != raw.strip():
             self.forms[kind].append([raw, out])
         return out
 
@@ -627,6 +629,27 @@ class _Acc:
             for kind, pairs in self.forms.items()
         ]
         return issues, transforms
+
+
+def merge_transforms(transforms: list[ValueTransform]) -> list[ValueTransform]:
+    """Une ligne par transformation (même sorte, même libellé), les colonnes nommées ensemble : l'année
+    complétée de deux colonnes de dates n'est pas dite deux fois."""
+    merged: dict[tuple[str, str], ValueTransform] = {}
+    for t in transforms:
+        key = (t.kind, t.label)
+        if key not in merged:
+            merged[key] = t
+            continue
+        m = merged[key]
+        seen = {e[0] for e in m.examples}
+        merged[key] = m.model_copy(
+            update={
+                "column": ", ".join(dict.fromkeys([*m.column.split(", "), t.column])),
+                "count": m.count + t.count,
+                "examples": [*m.examples, *(e for e in t.examples if e[0] not in seen)][:EXAMPLES],
+            }
+        )
+    return list(merged.values())
 
 
 def _pairs(raws: list[str], fn: Callable[[str], str]) -> list[list[str]]:
