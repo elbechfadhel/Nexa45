@@ -126,6 +126,10 @@ uv run uie export preview | generate -t datev/debitoren-kreditoren -i <id|nom> [
 uv run uie demo prepare --org <slug> --answers temp/demo_answers.yaml [--out dossier] --yes   # démo DATEV :
                                                   # remise à zéro (réglages gardés) + fichiers déclarés, réponses
                                                   # déclarées (question sans réponse = arrêt, rien d'enregistré)
+powershell -ExecutionPolicy Bypass -File scripts\demo-start.ps1 [-SkipBuild]   # démo locale (docs/DEMO.md) : build
+                                                  # de production profil « demo » (use cases validés seulement :
+                                                  # NEXT_PUBLIC_UIE_PROFILE=demo), API sans --reload, démo préparée
+powershell -ExecutionPolicy Bypass -File scripts\demo-stop.ps1   # arrête les seuls processus de var/demo/pids.json
 docker compose -f docker/docker-compose.yml --profile odoo up -d         # Odoo 17/18/19 de référence
 uv run uie registry import odoo --url http://localhost:8017 --db ref17 -u admin -p admin
 uv run uie registry dump odoo --url ... -o docs/dumps/odoo17_ref.json   # dump reproductible (compact ; --indent N)
