@@ -122,8 +122,12 @@ Step "2. Construction du site (next build, profil demo)"
 $commit = (& git rev-parse HEAD).Trim()
 $dirty = [bool](& git status --porcelain -- apps/web)
 $marker = if (Test-Path $BuildMarker) { Get-Content $BuildMarker -Raw | ConvertFrom-Json } else { $null }
+$buildIdFile = Join-Path $Web ".next\BUILD_ID"
+$buildId = if (Test-Path $buildIdFile) { (Get-Content $buildIdFile -Raw).Trim() } else { "" }
+# même commit, rien de modifié, même API, et le build présent est bien CELUI de la démo (un `pnpm build` normal le
+# remplace sans profil : son BUILD_ID diffère)
 $reuse = $SkipBuild -and $marker -and $marker.commit -eq $commit -and -not $marker.dirty -and -not $dirty `
-    -and $marker.api -eq $ApiUrl -and (Test-Path (Join-Path $Web ".next\BUILD_ID"))
+    -and $marker.api -eq $ApiUrl -and $buildId -and $marker.buildId -eq $buildId
 if ($reuse) {
     Ok "construction démo réutilisée (commit $($commit.Substring(0, 7)))"
 } else {
@@ -135,7 +139,8 @@ if ($reuse) {
     Push-Location $Web
     try { & pnpm exec next build } finally { Pop-Location }
     if ($LASTEXITCODE -ne 0) { Fail "next build a échoué" }
-    @{ commit = $commit; dirty = $dirty; api = $ApiUrl; profile = "demo"; built = (Get-Date).ToString("s") } |
+    $buildId = (Get-Content $buildIdFile -Raw).Trim()
+    @{ commit = $commit; dirty = $dirty; api = $ApiUrl; profile = "demo"; buildId = $buildId; built = (Get-Date).ToString("s") } |
         ConvertTo-Json | Set-Content -Encoding utf8 $BuildMarker
     Ok ("site construit en {0:N0} s" -f ((Get-Date) - $started).TotalSeconds)
 }
