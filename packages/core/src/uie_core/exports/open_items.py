@@ -20,12 +20,16 @@ from uie_cdm import AccountingDocument
 
 from uie_core.exports.records import (
     ExportAccountAssignmentRecord,
+    ExportDocumentRecord,
     ExportOpenItemRecord,
     ExportOpenItemSettlementRecord,
     ExportProfileRecord,
 )
 
 ZERO = Decimal("0")
+# références des pièces d'une source FICHIER (tableau de source) : facture de vente « file:<n°> », d'achat
+# « file:purchase:<fournisseur>:<n°> », écritures de caisse et mouvements bancaires (jamais des factures)
+FILE_PREFIX, PURCHASE_PREFIX, CASH_PREFIX, BANK_PREFIX = "file:", "purchase:", "cash:", "bank:"
 
 
 @dataclass(frozen=True)
@@ -72,6 +76,30 @@ class OpenItemRegister:
             ExportOpenItemRecord.target_system == self.system,
             ExportOpenItemRecord.target_product == self.product,
         ]
+
+    def exported_before_register(self) -> set[tuple[str, str]]:
+        """Factures de ce dossier écrites dans un fichier (journal des pièces) mais ABSENTES du registre :
+        exportées avant qu'il existe. (rôle, numéro lisible) ; jamais une écriture de caisse ou de banque."""
+        known = set(self.s.scalars(select(ExportOpenItemRecord.document_ref).where(*self._scope())))
+        rows = self.s.execute(
+            select(ExportDocumentRecord.source_ref, ExportDocumentRecord.source_number).where(
+                ExportDocumentRecord.organization_id == self.org,
+                ExportDocumentRecord.client_key.is_(None)
+                if self.client is None
+                else ExportDocumentRecord.client_key == self.client,
+                ExportDocumentRecord.target_system == self.system,
+                ExportDocumentRecord.target_product == self.product,
+                ExportDocumentRecord.instance_id.is_(None),
+                ExportDocumentRecord.source_ref.like(f"{FILE_PREFIX}%"),
+            )
+        )
+        out: set[tuple[str, str]] = set()
+        for ref, number in rows:
+            kind = ref[len(FILE_PREFIX) :]
+            if ref in known or not number or kind.startswith((CASH_PREFIX, BANK_PREFIX)):
+                continue
+            out.add(("SUPPLIER" if kind.startswith(PURCHASE_PREFIX) else "CUSTOMER", number))
+        return out
 
     def record_invoices(self, documents: list[AccountingDocument], run_id: uuid.UUID | None) -> int:
         """Factures écrites dans un fichier : une ligne chacune, une seule fois (présente : inchangée)."""

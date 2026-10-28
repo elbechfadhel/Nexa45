@@ -401,14 +401,16 @@ class FormatFlow:
             # relevé bancaire : rapprochement avec le registre des factures ouvertes du dossier (règles)
             t = self.fmt.binding.target
             org = self._org()
+            register = OpenItemRegister(self.svc.s, org, self.client, t.system, t.product) if org else None
             built = documents_from_bank_rows(
                 self.fmt.table,
                 table_rows,
                 columns,
                 own.get("currency") or summary.currency or "EUR",
-                OpenItemRegister(self.svc.s, org, self.client, t.system, t.product).items() if org else [],
+                register.items() if register else [],
                 choices,
                 balances=statement_balances(data, file_name),
+                exported_before=register.exported_before_register() if register else None,
             )
         else:
             currency = own.get("currency") or summary.currency or "EUR"

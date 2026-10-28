@@ -190,10 +190,12 @@ def documents_from_bank_rows(  # noqa: C901, PLR0912, PLR0915
     open_items: list[OpenItem],
     choices: dict[str, str] | None = None,
     balances: tuple[Decimal | None, Decimal | None] | None = None,
+    exported_before: set[tuple[str, str]] | None = None,
 ) -> BankTable:
     """`rows` : une entrée par ligne (clé du tableau → valeur mise en forme) ; `open_items` : registre des
     factures ouvertes du dossier (montant ouvert, partenaire, compte, IBAN) ; `balances` : soldes d'ouverture
-    et de clôture du relevé (CAMT) ; None : le format n'en donne pas (export tabulaire)."""
+    et de clôture du relevé (CAMT) ; None : le format n'en donne pas (export tabulaire) ; `exported_before` :
+    factures (rôle, numéro) exportées avant l'existence du registre, donc sans montant connu."""
     choices = choices or {}
     skipped: list[ExcludedRow] = []
     already: dict[str, int] = {}
@@ -435,6 +437,17 @@ def documents_from_bank_rows(  # noqa: C901, PLR0912, PLR0915
                         description=purpose or name or None,
                     ),
                 )
+            )
+            continue
+        # facture exportée AVANT le registre : montant et partenaire inconnus, jamais rapprochée, dit tel quel
+        before = [t for t in _tokens(purpose) if (role, t) in (exported_before or set())]
+        if before:
+            skip(
+                i,
+                (f"Invoice {before[0]} was" if len(before) == 1 else f"Invoices {', '.join(before)} were")
+                + " exported before the open-items register existed: this payment cannot be matched "
+                "automatically.",
+                "exported_before_register",
             )
             continue
         # 3. référence qui a la forme d'une facture du dossier, mais inconnue du registre

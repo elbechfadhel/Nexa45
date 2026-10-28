@@ -22,7 +22,7 @@ from test_wizard_datev_api import (  # noqa: F401 - fixture et aides partagées
     world,
 )
 from uie_core.exports.open_items import OpenItemRegister
-from uie_core.exports.records import ExportAccountAssignmentRecord
+from uie_core.exports.records import ExportAccountAssignmentRecord, ExportOpenItemRecord
 from uie_core.identity import Organization
 
 
@@ -292,3 +292,21 @@ def test_bank_questions_stay_few_and_answers_are_remembered_for_the_folder(world
     paid = _by(rows, 11, "RE-3")
     assert [paid[i] for i in (0, 1, 6, 7)] == ["3200,00", '"S"', "1200", "11004"]
     assert next(r for r in rows if r[7] == "4210")[1] == '"H"'
+
+
+def test_an_invoice_exported_before_the_register_existed_is_said_never_matched(world):  # noqa: F811
+    """Factures exportées avant le registre (simulé : registre vidé) : le paiement qui cite l'une d'elles est
+    dit tel quel, jamais rapproché ; l'analyse n'écrit rien dans le registre."""
+    c, session = world["client"], world["session"]
+    _folder(c)
+    session.query(ExportOpenItemRecord).delete()
+    session.flush()
+    flow = _bank(c, STATEMENT, "Kontoauszug.camt053.xml")
+    reasons = {e["row"]: (e["kind"], e["reason"]) for e in flow["preview"]["excluded_rows"]}
+    assert reasons[1] == (
+        "exported_before_register",
+        "Invoice RE-1 was exported before the open-items register existed: this payment cannot be matched "
+        "automatically.",
+    )
+    assert reasons[2][0] == "exported_before_register"  # « Teilzahlung RE-2 »
+    assert session.query(ExportOpenItemRecord).count() == 0  # une analyse n'écrit jamais rien
