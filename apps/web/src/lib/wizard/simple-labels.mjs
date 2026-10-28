@@ -189,7 +189,7 @@ export const SIMPLE_LABELS = {
   toCheckHeading: "To check",
   infoHeading: "For your information",
   transformsHeading: "Written differently",
-  transformsHelp: "Same value, another spelling, as you decided above.",
+  transformsHelp: "Same value, another spelling.",
   /** @param {number} n */
   transformCount: (n) => count(n, "value"),
   missingHeading: "Still missing",

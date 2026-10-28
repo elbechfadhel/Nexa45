@@ -715,3 +715,10 @@ test("start over is a fresh start: neither the file nor the target is kept", () 
   assert.match(restart, /setTarget\(""\)/);
   assert.match(restart, /setScreen\("start"\)/);
 });
+
+test("« Written differently » : l'aide ne prétend pas qu'une question a été posée", () => {
+  // une transformation peut venir du format (siècle d'un relevé bancaire) sans aucune décision ; seule la ligne de
+  // la transformation dit quand elle suit une réponse (« with the century you chose »)
+  assert.equal(SIMPLE_LABELS.transformsHelp, "Same value, another spelling.");
+  assert.doesNotMatch(SIMPLE_LABELS.transformsHelp, /decided|chose|answer/i);
+});
